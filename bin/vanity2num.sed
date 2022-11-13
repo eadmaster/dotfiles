@@ -1,0 +1,1 @@
+../../../bin/vanity2num.sed

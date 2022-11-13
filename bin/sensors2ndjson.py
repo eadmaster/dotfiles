@@ -1,0 +1,1 @@
+../../../bin/sensors2ndjson.py

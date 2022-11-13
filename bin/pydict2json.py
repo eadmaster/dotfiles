@@ -1,0 +1,1 @@
+../../../bin/pydict2json.py

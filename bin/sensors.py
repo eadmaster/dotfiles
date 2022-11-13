@@ -1,0 +1,1 @@
+../../../bin/sensors.py

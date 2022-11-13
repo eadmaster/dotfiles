@@ -1,0 +1,1 @@
+../../../bin/ndjson2csv.py
