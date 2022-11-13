@@ -1,0 +1,19 @@
+#!/bin/sh
+
+command -p links "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+elinks "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+lynx "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+w3m "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# wget -q -U Firefox -O - "$@" | file2txt
+
+#else
+exit 127
+

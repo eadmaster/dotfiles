@@ -685,11 +685,11 @@ alias repair=filefix
 alias crack=filecrack
 
 # c-like commands
-#alias ctime=epochtimeget
-alias getepochtime=epochtimeget
-alias unixtime=epochtimeget
-alias epoch2local=epochtime2local
-alias unix2local=epochtime2local
+#alias ctime=epochtime
+#alias getepochtime=epochtime
+alias unixtime=epochtime
+alias epoch2local=epochtime2human
+#alias unix2local=epochtime2human
 #alias strlen="expr length" -> MOVED in script
 #alias strftime=...  -> MOVED in script
 #alias strtolower=tr '[A-Z]' '[a-z]'  -> MOVED in script
@@ -706,9 +706,8 @@ alias uppercase=strtoupper
 alias lower=strtolower
 alias lowercase=strtolower
 
-[ -f "$THIS_SCRIPT_DIR/netbench" ] || netbench() { curl -o /dev/null http://speedtest.qsc.de/1GB.qsc ; }
-alias netspeed=netbench
-alias speedtest=netbench
+alias netbench=webbench
+alias speedtest=webbench
 
 alias replace=sd
 alias wildcards2re="sed 's/\./\\\./g; s/\*/\.\*/g; s/?/./g'"

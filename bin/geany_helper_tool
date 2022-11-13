@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "$(cat)" | "$@"  2> /dev/null
+exit 0

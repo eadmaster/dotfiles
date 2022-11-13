@@ -1,0 +1,21 @@
+#!/bin/sh
+
+echo "$0: about to delete:"
+docker images --filter "dangling=true" -q --no-trunc --format "{{.Repository}}:{{.Tag}} @ {{.ID}}  {{.Size}}"
+
+echo
+
+docker system prune
+
+# OLD:
+#docker volume rm $(docker volume ls -qf dangling=true)
+#docker rmi $(docker images --filter "dangling=true" -q --no-trunc)
+#docker rmi $(docker images | grep "none" | awk '/ / { print $3 }')
+
+# DELETE STOPPED CONTAINERS
+# docker rm $(docker ps -qa --no-trunc --filter "status=exited" --filter "status=dead")
+# docker system prune -a
+
+# sources:  https://gist.github.com/bastman/5b57ddb3c11942094f8d0a97d461b430
+# https://getintodevops.com/blog/keeping-the-whale-happy-how-to-clean-up-after-docker
+

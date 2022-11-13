@@ -1,0 +1,34 @@
+#!/bin/bash 
+
+_SEARCHDIR=$PENDRIVE/Documents/db/cal
+
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) EVENT_NAME|DATE"
+	echo
+	exit 0
+fi
+
+# search in contacts first (birthdays, etc.)
+#findcontact "$1"
+#[ $? -eq 0 ] && exit 0
+
+if [ -d "$_SEARCHDIR" ]; then
+	grep -i "$1" $_SEARCHDIR/*.txt $_SEARCHDIR/*.tsv
+	[ $? -eq 0 ] && exit 0
+	
+	# search in icals
+	#2FIX: awk -v RS='BEGIN:VEVENT' -v 'IGNORECASE=1' "/$1/{print FILENAME': 'print $0}" $_SEARCHDIR/*.ics | grep -E 'SUMMARY|DTSTART|DTEND' ;
+	awk -v RS='BEGIN:VEVENT' -v 'IGNORECASE=1' "/$1/" $_SEARCHDIR/*.ics | grep -E 'SUMMARY|DTSTART|DTEND' ;
+	[ $? -eq 0 ] && exit 0
+	
+else
+	echo "$(basename $0) warn: search dir not found: $_SEARCHDIR" >&2
+fi
+
+# based on calendar from bsdmainutils  https://ostechnix.com/view-significant-events-world-history-command-line/
+grep -i "$1" /usr/share/calendar/calendar.history
+grep -i "$1" /usr/share/calendar/calendar.computer
+grep -i "$1" /usr/share/calendar/calendar.holiday
+grep -i "$1" /usr/share/calendar/calendar.music
+
+# TODO: if nothing found online search on wikipedia/google?

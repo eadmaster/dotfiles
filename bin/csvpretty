@@ -1,0 +1,11 @@
+
+# pretty-print a CSV
+
+csvtool readable - | less
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# csvlook from csvkit (autodetects headers)
+csvlook | less
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+column -s, -t

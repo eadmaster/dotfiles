@@ -1,0 +1,11 @@
+
+command -p mkisofs "$@"
+[ $? -ne 127 ] && exit $?
+
+genisoimage "$@"
+[ $? -ne 127 ] && exit $?
+
+# alternative: 7z a -tiso %* 
+ 
+#else
+exit 127
