@@ -1,1 +1,18 @@
-../../../bin/xml2paths
+#!/bin/sh
+
+if [ -f "$1" ]; then
+	INPUT=$(cat "$1")
+else
+	# read from stdin
+	INPUT=$(cat)
+fi
+
+# preferred, this also shows the values:
+echo "$INPUT" | xml2
+[ $? -ne 127 ] && exit 0
+
+# this do not show the values
+echo "$INPUT" | xmlstarlet el -a | sort -u  # MEMO: remove duplicates
+[ $? -ne 127 ] && exit 0
+
+# TODO: python alternative

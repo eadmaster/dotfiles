@@ -1,1 +1,131 @@
-../../../bin/factor
+#!/bin/bash
+
+command -p factor "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+qalc "factor($1)"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#NO? Python sympy alternative
+#python -c "from sympy.ntheory import factorint; print(factorint($1))" ; }  # add ".keys()" to get the factors only  
+
+# else replacement using bash
+# factr.sh: Factor a number
+MIN=2       # Will not work for number smaller than this.
+E_NOARGS=85
+E_TOOSMALL=86
+
+if [ -z $1 ]
+then
+  echo "Usage: $0 number"
+  exit $E_NOARGS
+fi
+
+if [ "$1" -lt "$MIN" ]
+then
+  echo "Number to factor must be $MIN or greater."
+  exit $E_TOOSMALL
+fi  
+
+#echo "Factors of $1:"
+echo -n "$1: "
+exit 0
+
+
+# -------------------------------------------------------
+# 2FIX: syntax error?
+#echo  "$1[p]s2[lip/dli%0=1dvsr]s12sid2%0=13sidvsr[dli%0=\
+#1lrli2+dsi!>.]ds.xd1<2" | dc
+#_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+# -------------------------------------------------------
+#  Above code written by Michel Charpentier <charpov@cs.unh.edu>
+#  (as a one-liner, here broken into two lines for display purposes).
+#  Used in ABS Guide with permission (thanks!).
+
+# ALTERNATIVE USING awk FROM http://rosettacode.org/wiki/Prime_decomposition#AWK
+echo $1 | awk "
+function pfac(n,    r, f){
+	r = \"\"; f = 2
+	while (f <= n) {
+		while(!(n % f)) {
+			n = n / f
+			r = r \" \" f
+		}
+		f = f + 2 - (f == 2)
+	}
+	return r
+}
+ 
+# For each line of input, print the prime factors.
+{ print pfac($1) }"
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+
+# ALTERNATIVE USING BASH FUNCTIONS FROM http://www.onestoplinux.com/2013/05/prim-factors-shell-script.html
+# SCRIPT:  primefactors.sh
+# USAGE :  primefactors.sh <Positive Integer>
+# PURPOSE: Produces prime factors of a given number.
+#
+
+###############################################################################
+#                              Functions                                      #
+###############################################################################
+# To know how to find prime number check bellow link:
+# Shell script to find prime number
+# Bellow function finds supplied argument is a prime or not.
+
+primenumber()
+{
+           primenum=$1
+           for ((counter2=2;$((counter2*counter2))<=$primenum;counter2++))
+           do
+               if [ $((primenum%counter2)) -eq 0 ]
+               then
+                    return 1
+               fi
+           done
+           return 0
+}
+
+primefind()
+{
+# It's good to check that the number it self is a prime or not before going to
+# find prime factors of a number. Comment out bellow line and supply a prime
+# number or semi-prime, you will find the difference.
+# Ex: primefactors.sh 2121979
+
+        primenumber $1 && echo "$1" && exit 0
+
+        for ((counter1=$2;counter1<=$1;counter1++))
+        do
+                primenumber $counter1 && factorcheck $1 $counter1 &&  break
+        done
+}
+
+factorcheck()
+{
+     prime=$2
+     newnum=$1
+     remainder=$((newnum%prime))
+
+     if [ $remainder -eq 0 ]
+     then
+          printf "%d " $prime
+          newnum=$((newnum/prime))
+          primefind $newnum 2
+          return
+     else
+          let prime++
+          primefind $newnum $prime
+    fi
+}
+
+###############################################################################
+#                                   Main                                      #
+###############################################################################
+
+#echo -n "Prime Factors of $1: "
+echo -n " "
+primefind $1 2
+#printf "\b \n"                   # \b is used for removing last x.
+

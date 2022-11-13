@@ -1,1 +1,45 @@
-../../../bin/str2hex
+#!/bin/bash
+
+INPUT="$@"
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+# via hexdump (in busybox)
+echo -n "$INPUT" | hexdump -e '/1 "%02x"'
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+echo -n "$INPUT" | xxd -pu  # TODO: add spaces?
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using radare2
+rax2 -S "$INPUT"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using rizin
+rz-ax -S "$INPUT"
+[ $? -eq 0 ] && exit 0
+
+# python alternative
+echo -n "$INPUT" | python -c "print(raw_input().encode('hex'))" # TODO: add spaces?
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using sttr
+sttr hex-encode "$INPUT"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else pure bash conversion from https://stackoverflow.com/questions/12847328/bash-ascii-to-hex
+str2hex_echo() {
+    # USAGE: hex_repr=$(str2hex_echo "ABC")
+    #        returns "0x410x420x43"
+    local str=${1:-""}
+    #local fmt="0x%x"
+    local fmt="%x"
+    local chr
+    local -i i
+    for i in `seq 0 $((${#str}-1))`; do
+        chr=${str:i:1}
+        printf  "${fmt}" "'${chr}"
+    done
+}
+
+str2hex_echo "$INPUT"

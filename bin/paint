@@ -1,1 +1,37 @@
-../../../bin/paint
+#!/bin/sh
+
+#wine mspaint "$@"
+#[ $? -ne 2 ] && exit $?
+
+kolourpaint "$@"
+[ $? -ne 127 ] && exit $?
+
+mypaint "$@"
+[ $? -ne 127 ] && exit $?
+
+krita "$@"
+[ $? -ne 127 ] && exit $?
+
+pinta "$@"
+[ $? -ne 127 ] && exit $?
+
+lazpaint "$@"
+[ $? -ne 127 ] && exit $?
+
+rgbpaint "$@"
+[ $? -ne 127 ] && exit $?
+
+mtpaint "$@"
+[ $? -ne 127 ] && exit $?
+
+xpaint "$@"
+[ $? -ne 127 ] && exit $?
+
+tuxpaint "$@"
+[ $? -ne 127 ] && exit $?
+
+gimp "$@"
+[ $? -ne 127 ] && exit $?
+
+#else
+exit 127

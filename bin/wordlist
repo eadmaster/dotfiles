@@ -1,1 +1,9 @@
-../../../bin/wordlist
+ 
+cat /usr/share/dict/american-english
+#cat /usr/share/dict/british-english
+
+zcat $PENDRIVE/Documents/db/dict/english.dic.gz
+
+# TODO: zcat /usr/share/dictd/freedict-ita-eng.dict.dz  | grep -V. ...  https://unix.stackexchange.com/questions/351858/getting-a-wordlist-from-a-dict-formatted-dictionary/423914
+
+# TODO: more alternatives

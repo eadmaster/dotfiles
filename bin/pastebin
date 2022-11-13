@@ -1,1 +1,14 @@
-../../../bin/pastebin
+
+# via ix.io
+curl -F 'f:1=<-' ix.io
+
+# via http://termbin.com/
+nc termbin.com 9999
+
+# via transfer.sh
+curl --upload-file - https://transfer.sh/test.txt 
+
+# via fuwafuwa.moe
+#curl -F file=@myfile https://fuwafuwa.moe/upload.php
+
+# more: https://www.reddit.com/r/linux/comments/5zqku2/list_of_command_line_curl_tools_like_ixio_0x0st/

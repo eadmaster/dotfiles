@@ -1,1 +1,24 @@
-../../../bin/usftpd
+#!/bin/sh
+
+#command -p usftpd "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+DIR_SERVED="$PWD"
+[ ! -z "$1" ] && DIR_SERVED="$1"
+cd "$DIR_SERVED"
+
+PORT=2022 
+
+_MYIP=$( ip -f inet -o addr show dev $IFACE | cut -d\  -f 7 | cut -d/ -f 1 | tail -n1 )
+_HOSTNAME=$(hostname)  # $HOSTNAME envvar is only defined in bash
+echo "$(basename $0): serving $DIR_SERVED at sftp://$_MYIP/ or sftp://${_HOSTNAME}.local/"
+echo "$(basename $0): press CTRL+C to abort"
+
+# using rclone https://rclone.org/commands/rclone_serve_sftp/
+rclone serve sftp --addr :$PORT "$DIR_SERVED" --no-auth
+[ $? -eq 0 ] && exit 0
+
+# TODO: more alternatives
+
+#else
+exit 127

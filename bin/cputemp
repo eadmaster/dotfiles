@@ -1,1 +1,26 @@
-../../../bin/cputemp
+
+
+TEMPPATHSLIST="/proc/acpi/thermal_zone/THRM/temperature /sys/class/thermal/thermal_zone0/temp /sys/devices/virtual/thermal/thermal_zone0/temp /sys/devices/virtual/thermal/thermal_zone1/temp"
+for P in $TEMPPATHSLIST
+do
+	if [ -e "$P" ]; then
+		echo "$(basename $0): temperature from $P:"
+		cat "$P"
+		echo
+	fi
+done
+
+echo "$(basename $0): temperature from acpi -t:"
+acpi -t
+
+echo
+
+echo "$(basename $0): temperature from lm-sensors:"
+sensors | grep Core
+sensors | grep CPUTIN
+
+echo
+
+#TurionPowerControl -temp
+
+#echo

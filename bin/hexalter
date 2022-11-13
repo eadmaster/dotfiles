@@ -1,1 +1,58 @@
-../../../bin/hexalter
+#!/bin/sh
+
+# clone of http://www.kuwanger.net/hexalter.zip
+# with added view mode
+
+command -p hexalter "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "syntax: $(basename $0) FILE ADDRESS[=NEW VALUE]"
+	echo ""
+	exit 0
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+elif [ -z "$2" ]; then
+	echo "$(basename $0) error: no address specified" >&2
+	exit 1
+fi
+
+INPUTFILE="$1"
+
+shift
+
+# iterate over args
+for ARG in "$@"
+do
+	case "$ARG" in
+		*=* )
+			# edit mode
+			BASEADDR=$( echo -n $ARG | cut -d= -f1 )
+			BASEADDRDEC=$( printf "%d" $BASEADDR )
+			# iterate over comma-separated list
+			for VALUE in $( echo -n $ARG | cut -d= -f2 | sed "s/,/ /g"  )
+			do
+				VALUEHEX=$( printf "%v" $VALUE )
+				echo "$(basename $0) warn: patching $VALUEHEX in $BASEADDRDEC" >&2
+				printf "\x0$VALUEHEX" | dd of="$INPUTFILE" bs=1 seek=$BASEADDRDEC conv=notrunc
+				#ALTERNATIVE: echo -ne "\x$VALUEHEX" | dd ..
+				#MORE ALTERNATIVEs: ucon64 --nbak --poke="$1" "$2";
+				BASEADDRDEC=$( expr $BASEADDRDEC + 1 ) # increase baseaddr
+			done
+			#echo "Patching successful"
+			exit 0
+			;;
+	esac
+	
+	# else read mode
+	hexdump "$INPUTFILE" -s $ARG -n 1 -e '1/1 "%.2X\n"'
+
+	# check invalid address
+	#if [ "$(printf "%d" $ADDR)" -gt "$(stat -c%s "$1")" ]; then
+	#	echo "$(basename $0) error: invalid address specified: $ADDR (max allowed is $(printf "%X\n" $(stat -c%s "$1")))" >&2
+	#	continue
+	#fi
+
+done
+

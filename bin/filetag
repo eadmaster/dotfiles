@@ -1,1 +1,80 @@
-../../../bin/filetag
+#!/bin/sh
+
+if [ -z "$1" ] || [ "$#" -gt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUT_FILE"
+	echo "usage: $(basename $0) -TAG_NAME[=NEW_VALUE] INPUT_FILE"
+	echo
+	exit 0
+elif [ ! -f "$2" ] && [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1 $2" >&2
+	exit 1
+fi
+
+case $1 in
+	*=* ) # tag editing 
+		# just continue the script
+		;;
+	* )  # tag reading
+		exiftool "$@"  # MEMO: supports pdf files too!
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		# some alternatives
+		if [ -f "$1" ]; then
+			# print all the tags, filename passed in $1
+			mediainfo "$1"
+			_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+			ffmpeg -i "$1"
+			_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		elif [ -f "$2" ]; then
+			# print a single tag, filename passed in $2
+			mediainfo -f "$2" | grep -i $1
+			_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+			ffmpeg -i "$2" 2>&1 | grep -i $1
+			_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		fi
+		# else 
+		exit 127
+		;;
+esac
+
+# detect the extension of the 1st passed file
+[ ! -f "$2" ] && exit 1
+INPUTFILE="$2"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+INPUTFILENAME="`basename \"$INPUTFILE\" | rev | cut -d'.' -f2- | rev`"
+# parse the new tag assignment
+FIELD="$( echo "$1" | cut -d- -f2 )"
+case $INPUTFILEEXT in
+	mp3 )
+		mid3v2 "$@"
+		[ $? -ne 127 ] && continue
+		mp3info "$@"
+		[ $? -ne 127 ] && continue
+		;&  # else fallthru
+	avi|mpeg|mpg|aac|wma|wmv|mp4 )
+		# ffmpeg alternative (not inplace)
+		ffmpeg -i "$INPUTFILE" -metadata "$FIELD" -codec copy "$TMPDIR/${INPUTFILENAME}_tagged.$INPUTFILEEXT"
+		mv "$TMPDIR/${INPUTFILENAME}_tagged.$INPUTFILEEXT" "$INPUTFILE"
+		exit $?
+		;;
+	mkv )
+		mkvpropedit --set "$FIELD" "$INPUTFILE"
+		exit $?
+		;;
+	ogg )
+		vorbiscomment --write --tag "$FIELD" "$INPUTFILE"  # --raw force utf8
+		exit $?
+		;;
+	flac )
+		metaflac --set-tag="$FIELD" "$INPUTFILE"
+		exit $?
+		;;
+	# TODO: more containers without write support in exiftool
+esac
+
+# else fallback to exiftool
+exiftool "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else 
+exit 127

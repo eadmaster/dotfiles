@@ -1,1 +1,7 @@
-../../../bin/strtolower
+#!/bin/sh
+
+INPUT=$1
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+echo "$INPUT" | tr '[A-Z]' '[a-z]'

@@ -1,1 +1,20 @@
-../../../bin/sha1
+#!/bin/sh
+
+command -p sha1sum "$@"  2> /dev/null
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+busybox sha1sum "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+openssl dgst -sha1 -r "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+if [ -z "$1"]; then
+	rhash --sha1 -
+else
+	rhash --sha1 "$@"
+fi
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

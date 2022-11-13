@@ -1,1 +1,12 @@
-../../../bin/max
+#!/bin/sh
+
+INPUT="$(echo $@ | tr ' ' '\n')"  # replace spaces with newlines
+[ -z "$1" ] && INPUT="$(cat)"
+[ -f "$1" ] && INPUT="$(cat $1)"
+
+echo "$INPUT" | sort | tail -1 
+
+# ALTERNATIVES:
+# numbound  # from "num-utils" package
+# csvtool max  # only for files
+# datamash max 1

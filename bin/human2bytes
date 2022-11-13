@@ -1,1 +1,16 @@
-../../../bin/human2bytes
+#!/bin/sh
+
+INPUT=$1
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+# remove 'B' and 'b' suffixes from the input
+INPUT=$(echo $INPUT | tr -d 'bB')
+
+numfmt --from=iec $INPUT
+[ $? -eq 0 ] && exit 0
+
+# alternative using sed
+echo $INPUT | echo $((`sed 's/.*/\L\0/;s/t/Xg/;s/g/Xm/;s/m/Xk/;s/k/X/;s/b//;s/X/ *1024/g'`))
+
+# MORE ALTERNATIVES: https://stackoverflow.com/questions/17615881/simplest-method-to-convert-file-size-with-suffix-to-bytes

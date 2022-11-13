@@ -1,1 +1,27 @@
-../../../bin/md5
+#!/bin/sh
+
+#command -p md5sum "$@"
+/usr/bin/md5sum "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+busybox md5sum "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+openssl dgst -md5 -r "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+sfk md5 "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+if [ -z "$1"]; then
+	rhash -M -
+else
+	rhash -M "$@"
+fi
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127
+
+# more alternatives: 
+#  busybox httpd -m "$@" # cannot pipe to it directly

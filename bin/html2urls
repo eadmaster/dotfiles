@@ -1,1 +1,72 @@
-../../../bin/html2urls
+#!/bin/bash
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) [INPUT_FILE|URL]"
+	echo
+	exit 0
+elif [ -z "$1" ] || [ "$1" = "-" ]; then
+	echo "$(basename $0) warn: reading input file from stdin" >&2
+	INPUTFILE="$TMPDIR/$$.tmp"
+	cat > $INPUTFILE
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) warn: trying to download the input file: $1" >&2
+	INPUTFILE="$TMPDIR/$$.tmp"
+	wget -q -U Firefox -O "$INPUTFILE" "$1"
+elif [ ! -z "$2" ]; then
+	# iterate over passed args and recursive call
+	for CURR_FILE in "$@"
+	do
+		$0 "$CURR_FILE"
+	done
+	exit $?
+fi
+
+#else
+# inputfile it is a local file
+INPUTFILE="$1"
+
+# extract the base url if possible
+if [ ! -z "$1" ]; then
+	#BASE_URL=$( echo -n "$1" | rev | cut -d'/' -f2- | rev )
+	BASE_URL=$( dirname "$1" )
+else
+	BASE_URL="/"
+fi
+
+# WANTED: javascript URL deobfuscator  http://scraping.pro/javascript-protected-content-scrape/
+
+# python DOM alternative
+python - "$INPUTFILE" "$BASE_URL"  <<EOF
+import sys
+if sys.version_info[0] <= 2:
+	from HTMLParser import HTMLParser
+else:
+	from html.parser import HTMLParser
+if sys.version_info[0] <= 2:
+	from urlparse import urljoin
+else:
+	from urllib.parse import urljoin
+class MyHTMLParser(HTMLParser):
+    def handle_starttag(self, tag, attrs):
+        if tag != 'a':
+            return
+        attr = dict(attrs)
+        #print(attr['title'])
+        if('href' in attr):
+                print(urljoin(sys.argv[2], attr['href']))
+        if('src' in attr):
+                print(urljoin(sys.argv[2], attr['src']))
+url = sys.argv[1]
+html = open(url).read()
+parser = MyHTMLParser()
+parser.feed(html)
+EOF
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# less reliable sed alternative
+cat "$INPUTFILE" | \
+grep -E 'href="([^"#]+)"|src="([^"#]+)"'
+cut -d'"' -f2 | sed -e "/^http/! s#^#$BASE_URL/#"  # force absolute urls to lines not starting with "http"  http://stackoverflow.com/questions/4953738/how-to-globally-replace-strings-in-lines-not-starting-with-a-certain-pattern
+
+#ALTERNATIVE: grep -E '\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))'

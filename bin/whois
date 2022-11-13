@@ -1,1 +1,21 @@
-../../../bin/whois
+
+command -p whois "$@"
+[ $? -ne 127 ] && exit $? 
+
+busybox whois "$@"
+[ $? -ne 127 ] && exit $?
+
+nmap -sn --script=whois-domain "$@"
+[ $? -ne 0 ] && exit $?
+
+netwox 197 -q "$@"
+[ $? -ne 0 ] && exit $?
+
+wget -q -O- -T2 "http://api.hackertarget.com/whois/?q=$1"
+[ $? -ne 0 ] && exit $?
+
+wget -q -O- -T2 "http://ip-api.com/json/$1" | jq .
+[ $? -ne 0 ] && exit $?
+
+# else
+exit 127

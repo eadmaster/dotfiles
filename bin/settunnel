@@ -1,1 +1,29 @@
-../../../bin/settunnel
+#!/bin/bash
+
+#REMOTE_SSH_SERVER=serveo.net
+REMOTE_SSH_SERVER=ssh.localhost.run  # no custom name? also provide https
+# REMOTE_SSH_SERVER=ssi.sh (req. auth) https://github.com/antoniomika/sish
+# ... https://alternativeto.net/software/serveo/
+
+if [ "$1" = "" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) LOCAL_PORT [CUSTOM_ADDRESS]"
+	echo
+	echo "serve LOCAL_PORT on $REMOTE_SSH_SERVER:80"
+	echo "tip: to test the tunnel from another IP you may use the Tor network."
+	echo
+	exit 0
+fi
+
+PORT=$1
+CUSTOM_ADDR=$2
+
+echo "$(basename $0) info: tunnelling localhost:$PORT -> $CUSTOM_ADDR.$REMOTE_SSH_SERVER:80..."
+
+if [ ! -z "$CUSTOM_ADDR" ]; then
+	# forward with custom address
+	ssh -o ServerAliveInterval=60 -R localhost:80:localhost:$PORT $CUSTOM_ADDR@$REMOTE_SSH_SERVER
+	exit $?
+fi
+
+# else forward with server-provided address
+ssh -o ServerAliveInterval=60 -R 80:localhost:$PORT $REMOTE_SSH_SERVER

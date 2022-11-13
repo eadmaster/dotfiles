@@ -1,1 +1,51 @@
-../../../bin/usbreset
+#!/bin/sh
+
+#command -p usbreset "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) [USB_BUS:USB:DEV]"
+	echo
+	echo "will reset ALL USB ports if no one specified."
+	echo "tip: check USB ports addresses with the lsusb command"
+	exit 0
+fi
+
+if [ ! -e "$1" ]; then
+	echo "$(basename $0): about to reset ALL USB ports"
+	echo "$(basename $0): type 'ok' and press Enter to continue"
+	read
+	if [ "$REPLY" != "ok" ]; then
+		echo "$(basename $0): reset cancelled"
+		exit 1
+	fi
+
+	# http://askubuntu.com/a/290519
+	# TODO: check mounted usb mass storage devices
+	for i in $(ls /sys/bus/pci/drivers/ehci_hcd/|grep :)
+		do echo $i >/sys/bus/pci/drivers/ehci_hcd/unbind
+		echo $i >/sys/bus/pci/drivers/ehci_hcd/bind
+	done
+	for i in $(ls /sys/bus/pci/drivers/xhci_hcd/|grep :)
+		do echo $i >/sys/bus/pci/drivers/xhci_hcd/unbind
+		echo $i >/sys/bus/pci/drivers/xhci_hcd/bind
+	done
+
+	exit 0
+fi
+
+# else reset a single port
+echo "$(basename $0): about to reset the USB port $1"
+echo "$(basename $0): Press any key to continue or Ctrl-C to abort... "; read -s -n 1
+
+#sudo sh -c "echo 1 > /sys/bus/usb/drivers/usb/$1/remove"
+
+sudo sh -c "echo 0 > /sys/bus/usb/devices/$1/authorized"
+sudo sh -c "echo 1 > /sys/bus/usb/devices/$1/authorized"
+
+#	... http://billauer.co.il/blog/2013/02/usb-reset-ehci-uhci-linux/
+#	... http://www.linux.org/threads/resetting-the-usb-subsystem.6256/
+#	... http://askubuntu.com/questions/645/how-do-you-reset-a-usb-device-from-the-command-line
+
+exit 0

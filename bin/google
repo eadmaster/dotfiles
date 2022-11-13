@@ -1,1 +1,80 @@
-../../../bin/google
+#!/bin/sh 
+
+# args checking
+if [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] ; then
+	echo "usage: $(basename $0) mail|contact|map|drive|trans [QUERY]"
+	echo
+	exit 0
+fi
+
+TARGET="$1"
+
+case $1 in
+	*mail* )
+		URL="https://mail.google.com/"
+		# search an email
+		[ ! -z "$2" ] && URL=https://mail.google.com/mail/u/0/#search/$( urlencode "$2" )
+		;;
+
+	contact* )
+		URL="https://contacts.google.com/"
+		# search a contact
+		[ ! -z "$2" ] && URL=https://contacts.google.com/u/0/preview/search/$( urlencode "$2" )
+		;;
+		
+	map* )
+		URL="https://maps.google.com/"
+		if [ -n "$2" ]; then
+			# search a place
+			if echo "$2" | grep -qE '^\-?[0-9]?\.?[0-9]+$'; then LAT=$2; fi  # valid float passed
+			if echo "$3" | grep -qE '^\-?[0-9]?\.?[0-9]+$'; then LONG=$3; fi  # valid float passed
+			ZOOM=10
+			if [ -n "$LAT" ] && [ -n "$LONG" ]; then
+				URL=$(printf 'https://www.google.com/maps/@%s,%s,%sz' "$LAT" "$LONG" "$ZOOM")
+			else
+				# else assume direct query
+				URL="https://www.google.com/maps/search/$2"
+			fi
+			# ALTERNATIVE: URL=https://www.google.it/maps/place/$( urlencode "$2" )/
+		fi
+		;;
+		
+	cal* )
+		URL="https://calendar.google.com/"
+		# search an event
+		[ ! -z "$2" ] &&  URL="https://calendar.google.com/calendar/r/search?q=$2"
+		;;
+		
+	*drive )
+		URL="https://drive.google.com/"
+		# search a file
+		[ ! -z "$2" ] && URL="https://drive.google.com/drive/search?q=$( urlencode \"$2\" )"
+		;;
+
+	trans* )
+		URL="https://translate.google.com/"
+		# translate the passed args
+		[ ! -z "$2" ] && URL="https://translate.google.com/?q=$( urlencode \"$2\" )"
+		;;
+
+	# https://en.wikipedia.org/wiki/Category:Google_services
+	
+	"" ) #empty
+		# shows the home page
+		URL="https://www.google.com/"
+		;;
+
+	* ) # default case
+		# random search
+		search=""
+		#search=$( urlencode -m $@ )
+		if [ -z $search ]; then
+			for term in $@; do
+				search="$search+$term"
+			done
+		fi
+		URL="https://www.google.it/search?q=$search&ie=utf-8&oe=utf-8"
+		;;
+esac
+
+xdg-open "$URL"

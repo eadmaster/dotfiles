@@ -1,1 +1,7 @@
-../../../bin/camera2barcode
+
+# from zbar-tools
+zbarcam "$@"
+
+#TODO: via zxing https://zxing-js.github.io/library/examples/qr-camera/
+
+#TODO: https://github.com/hongquan/CoBang

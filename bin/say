@@ -1,1 +1,73 @@
-../../../bin/say
+#!/bin/sh
+
+# Android detection
+if [ ! -z "$ANDROID_ROOT" ]; then
+	# using the Termux:API add-on
+	termux-tts-speak "$@"
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+	
+	#python -c "import androidhelper as android; android.Android().ttsSpeak(\"$@\");"
+	# WANTED ALTERNATIVE: am ...
+	exit 127
+fi
+
+# Windows detection
+if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
+	powershell.exe -Command "Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak(\"$@\");"
+	exit $?
+fi
+
+# MEMO: MacOSX has builtin "say" command
+command -p say "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# from speech-dispatcher (wrapper, apt install speech-dispatcher-pico)
+#spd-say -t female1 "$@"
+spd-say -w -o pico-generic -y en-EN "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# picotts (best option if available)
+pico2wave --lang=en-GB --wave=$TMPDIR/$$.wav "$@"
+_ES=$?
+if [ $_ES -ne 127 ]; then
+	#mplayer $TMPDIR/$$.wav
+	aplay $TMPDIR/$$.wav
+	rm $TMPDIR/$$.wav
+	exit $?
+fi
+
+# flite 
+#  pulseaudio fix  https://github.com/festvox/flite/issues/16
+flite -voice slt -t "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# espeak
+# temp fix for OSS bug https://bugs.launchpad.net/ubuntu/+source/espeak/+bug/353719
+#espeak -v f3 --stdout "$@" | aplay
+espeak -v f3 "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#OLD: via Kttsd http://api.kde.org/4.0-api/kdelibs-apidocs/interfaces/kspeech/html/index.html
+#qdbus org.kde.kttsd "/KSpeech" say "$@" 0
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# via festival
+#echo "$@" | festival --tts
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# alternative using sam  https://github.com/s-macke/SAM
+#samsay "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# alternative using translate-shell (req. internet connection)  https://github.com/soimort/translate-shell/
+trans -speak "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# TODO: google translate alternative http://tldp.org/LDP/abs/html/wrapper.html
+#echo "$(basename $0): no TTS engine found, trying with an online engine:" >&2
+
+#else
+echo "$(basename $0): no TTS engine found" >&2
+exit 127
+
+

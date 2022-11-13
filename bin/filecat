@@ -1,1 +1,84 @@
-../../../bin/filecat
+#!/bin/sh
+ 
+# args checking
+if [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUT_FILE1 INPUT_FILE2 [...] OUTPUT_FILE"
+	echo
+	exit 1
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+fi
+
+INPUTFILE="$1"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+INPUTFILENAME="`basename \"$INPUTFILE\" | rev | cut -d'.' -f2- | rev`"
+INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
+
+# get the last passed arg (portable way)
+#for OUTPUTFILE; do : ; done
+eval OUTPUTFILE=\$$#
+# check if outputfile not specified
+if [ "$OUTPUTFILE" = "$2" ]; then
+	OUTPUTFILE="${INPUTFILENAME}_merged.$INPUTFILEEXT"
+	INPUT_FILES="$@"
+else
+	INPUT_FILES="${*%${!#}}"
+fi
+
+# TODO: fix spaces in INPUT_FILES
+
+OUTPUTFILEEXT=$( echo -n "$OUTPUTFILE" | rev | cut -d'.' -f1 | rev )
+OUTPUTFILEEXT=$( echo -n $OUTPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+
+echo "creating $OUTPUTFILE from $INPUT_FILES"
+
+case $INPUTFILETYPE in
+	image/* )
+		if [ "$OUTPUTFILEEXT" = "pdf" ] || [ "$OUTPUTFILEEXT" = "tif" ] || [ "$OUTPUTFILEEXT" = "tiff" ]; then
+			# generate an ebook from images with lossless compression
+			imconvert $INPUT_FILES -compress zip "$OUTPUTFILE"
+			exit $?
+		else
+			# concatenate the images in a square table
+			imconvert $INPUT_FILES -append "$OUTPUTFILE"
+			# -append = append vertically
+			# +append = append horizontally
+			# -gravity Center 
+			exit $?
+		fi
+		;;
+	
+	audio/* | video/* ) 
+		# TODO: detect files with the same/different codec https://trac.ffmpeg.org/wiki/Concatenate
+		# TODO: test input and output files have the same extension
+		{ for f in $INPUT_FILES; do echo "file '$(realpath "$f")'"; done } > "$TMPDIR/$$_list.txt"
+		ffmpeg -f concat -safe 0 -i "$TMPDIR/$$_list.txt" -c copy "$OUTPUTFILE"
+		rm "$TMPDIR/$$_list.txt"
+		exit $?
+		;;
+		
+	application/pdf )
+		pdftk $INPUT_FILES cat output "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		pdfunite $INPUT_FILES "$OUTPUTFILE"
+		exit $?
+		;;
+	
+	image/vnd.djvu | image/x.djvu | image/x-djvu )
+		djvm -c "$OUTPUTFILE" $INPUT_FILES
+		exit $?
+		;;
+	
+	# WANTED: source code amalgamation tools
+	
+	text/* )
+		cat $INPUT_FILES > "$OUTPUTFILE"
+		exit $?
+		;;
+
+esac
+
+echo "$(basename $0) error: filetype not supported: $INPUTFILE ($INPUTFILETYPE)" >&2
+exit 1

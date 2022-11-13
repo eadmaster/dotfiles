@@ -1,1 +1,39 @@
-../../../bin/beep
+#!/bin/sh
+
+# check if the internal pc speaker is missing
+lsmod | grep -q pcspkr
+if [ $? -ne 0 ]; then
+	# PC speaker missing, beep via the external speakers
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		echo "usage: $(basename $0) [-f FREQ [-l LEN]]"
+		echo
+		exit 0
+	fi
+	# synth a squarewave sound with sox
+	FREQ=500
+	[ "$1" = "-f" ] && FREQ=$2
+	LEN=0.5
+	[ "$3" = "-l" ] && LEN=$(awk "BEGIN{ print $4/1000 }")
+	sox -n -d synth $LEN square $FREQ
+	[ $? -ne 127 ] && exit $?
+	# alternative using alsa speaker-test
+	( speaker-test -t sine -f $FREQ )& pid=$! ; sleep $LEN ; kill -9 $pid
+	exit $?
+fi
+
+command -p beep "$@"  2> /dev/null
+[ $? -ne 127 ] && exit $?
+
+python $PENDRIVE/SharedPrograms/beep.py "$@"
+[ $? -eq 0 ] && exit $?
+
+#busybox beep "$@"
+#[ $? -ne 1 ] && exit $?
+
+tput bel
+[ $? -ne 127 ] && exit $?
+
+echo -ne '\007'
+#echo -e "\a"
+#printf "\a"
+# > /dev/tty5  http://unix.stackexchange.com/questions/1974/how-do-i-make-my-pc-speaker-beep

@@ -1,1 +1,11 @@
-../../../bin/winfo
+
+# output infos on a remote file
+
+wget -S --spider "$@"  # MEMO: "--spider" is supported in busybox
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+curl --head --verbose --output /dev/null "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

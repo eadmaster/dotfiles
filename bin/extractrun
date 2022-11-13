@@ -1,1 +1,208 @@
-../../../bin/extractrun
+#!/bin/sh
+
+# Self Extracting PortableLinuxApp by eadmaster
+
+THIS_SCRIPT_DIR="$(dirname $0)"
+#THIS_SCRIPT_DIR="$(dirname $BASH_SOURCE)"
+
+if [ ! -z "$ANDROID_ROOT" ]; then
+	echo "$(basename $0): Android detect, quitting..." >&2
+	exit 1
+fi
+
+[ -z "$PENDRIVE" ] && source $HOME/.profile
+[ -z "$PENDRIVE" ] && export PENDRIVE=/mnt/home
+[ -z "$TMPDIR" ] && export TMPDIR=/tmp  # if not set, TMPDIR is initialized to /tmp
+
+filename="$(basename "$1")"
+#fbname="${filename%.*}"
+fbname=$( echo -n "$filename" | cut -d'.' -f1 )
+
+# TODO: case insensitive matching
+[ -f "$1" ] && ARCHIVENAME="$1"
+[ -f $PENDRIVE/SharedPrograms/$fbname.7z ] && ARCHIVENAME=$PENDRIVE/SharedPrograms/$fbname.7z
+[ -f $PENDRIVE/SharedPrograms/$fbname.zip ] && ARCHIVENAME=$PENDRIVE/SharedPrograms/$fbname.zip
+[ -f $PENDRIVE/PortableLinuxApps/$fbname.7z ] && ARCHIVENAME=$PENDRIVE/PortableLinuxApps/$fbname.7z
+[ -f $PENDRIVE/PortableLinuxApps/$fbname.zip ] && ARCHIVENAME=$PENDRIVE/PortableLinuxApps/$fbname.zip
+[ -f $PENDRIVE/PortableLinuxApps/$fbname.tgz ] && ARCHIVENAME=$PENDRIVE/PortableLinuxApps/$fbname.tgz
+[ -f $PENDRIVE/PortableLinuxApps/cliapps/$fbname.7z ] && ARCHIVENAME=$PENDRIVE/PortableLinuxApps/cliapps/$fbname.7z
+[ -f $PENDRIVE/PortableLinuxApps/cliapps/$fbname.zip ] && ARCHIVENAME=$PENDRIVE/PortableLinuxApps/cliapps/$fbname.zip
+[ -f $PENDRIVE/PortableLinuxApps/cliapps/$fbname.tgz ] && ARCHIVENAME=$PENDRIVE/PortableLinuxApps/cliapps/$fbname.tgz
+[ -f $PENDRIVE/PortableLinuxApps/cliapps/$fbname.gz ] && ARCHIVENAME=$PENDRIVE/PortableLinuxApps/cliapps/$fbname.gz
+[ -f $PENDRIVE/PortableLinuxApps/cliapps/$fbname.bz2 ] && ARCHIVENAME=$PENDRIVE/PortableLinuxApps/cliapps/$fbname.bz2
+[ -f "$THIS_SCRIPT_DIR/$filename.7z" ] && ARCHIVENAME="$THIS_SCRIPT_DIR/$filename.7z"
+#TODO:	find $THIS_SCRIPT_DIR -iname "$filename*.*" -exec export filename=$(basename "{}") \;
+if [ ! -f "$ARCHIVENAME" ]; then
+	echo "$(basename $0) err: archive not found: $fbname.*" >&2
+	exit 127
+fi
+#else
+#echo "$(basename $0) info: archive found: $ARCHIVENAME" >&2
+
+#TODO: check if the archive is encrypted
+#command -p 7z l -slt -- "$ARCHIVENAME" | grep -Fq 'Encrypted = +'  
+ 
+# read password from kde wallet
+export ARCHIVEPASSWORD=$(kwallet-query -f Scripts -r extractrun kdewallet)
+[ -z "$ARCHIVEPASSWORD" ] && export PASSWORD=$(kwalletcli -f Scripts -e extractrun)
+
+# else try to read from a file
+[ -z "$ARCHIVEPASSWORD" ] && [ -f $TMPDIR/r/password ] && export PASSWORD=$(cat $ARCHIVEPASSWORD_FILE)
+
+# else read interactively
+if [ -z "$ARCHIVEPASSWORD" ]; then
+	#echo -n "no password file found, please enter password (will not be echoed): "
+	#read -s PASSWORD
+	#echo -n $ARCHIVEPASSWORD > $ARCHIVEPASSWORD_FILE
+	ARCHIVEPASSWORD=$(zenity --entry --title="Cached password missing" --text="Enter your _password:" --hide-text)  # > $TMPDIR/r/password
+	# if [ $? -eq 1 ]; then ... # The user has either pressed Cancel, or used the window functions to close the dialog.
+	# ALTERNATIVE: kdialog --password "Please enter your password: " > $ARCHIVEPASSWORD_FILE
+	# if [ ! $? -eq 0 ]; then ... # The user has pressed Cancel
+	
+	# save password into the KDE wallet
+	kwalletcli -f "Scripts" -e "extractrun" -p "$ARCHIVEPASSWORD"
+	[ $? -eq 127 ] && echo "$ARCHIVEPASSWORD" | kwallet-query -v -f "Scripts" -w "extractrun"  kdewallet  # not working?
+	
+	# alternative with qdbus  https://nowardev.wordpress.com/2017/01/17/accessing-the-kde-wallet-from-the-command-line-kde-5-version/
+	
+fi
+
+export APPBASEDIR="$TMPDIR/$fbname"
+
+[ ! -d "$APPBASEDIR" ] && mkdir -p "$APPBASEDIR"
+
+if [ ! "$(ls -A $APPBASEDIR)" ]; then
+	# the directory is empty,
+	# we need to extract the archive
+	echo "$(basename $0): extracting $ARCHIVENAME to $APPBASEDIR..." >&2
+	extension=$( echo -n "$ARCHIVENAME" | rev | cut -d'.' -f1 | rev )
+	extension=$( echo -n $extension | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+	if [ "$extension" = "tgz" ]; then
+		tar -C "$APPBASEDIR" -xzf "$ARCHIVENAME"
+	else
+		7z x -aos -o"$APPBASEDIR" -p"$ARCHIVEPASSWORD" "$ARCHIVENAME" > /dev/null  # MEMO: -aos = Skip extracting of existing files. https://sevenzip.osdn.jp/chm/cmdline/switches/overwrite.htm
+		[ $? -eq 127 ] && "$THIS_SCRIPT_DIR/7za" x -o"$APPBASEDIR" -p"$ARCHIVEPASSWORD" "$ARCHIVENAME" > /dev/null
+		# > /dev/null -> MEMO: hides the password prompt
+	fi
+fi
+
+# search for the main EXE
+# MEMO: last has the higher priority:
+if [ -f "$APPBASEDIR/$fbname.exe" ]; then
+	# detect if mono or PE executable -> http://superuser.com/questions/569771/script-test-for-net-or-regular-pe-exe
+	EXEPATH="wine $APPBASEDIR/$fbname.exe"
+	
+	file "$APPBASEDIR/$fbname.exe" | grep -qi ".net"
+	[ $? -eq 0 ] && EXEPATH="mono $APPBASEDIR/$fbname.exe"
+
+	file "$APPBASEDIR/$fbname.exe" | grep -q "DOS"
+	[ $? -eq 0 ] && EXEPATH="dosbox $APPBASEDIR/$fbname.exe"
+fi
+[ -f "$APPBASEDIR/$fbname.jar" ] && EXEPATH="java -jar $APPBASEDIR/$fbname.jar"
+[ -f "$APPBASEDIR/$fbname.py" ] && EXEPATH="python2 $APPBASEDIR/$fbname.py"
+[ -f "$APPBASEDIR/App/usr/bin/$fbname" ] && EXEPATH="$APPBASEDIR/App/usr/bin/$fbname"
+[ -f "$APPBASEDIR/App/bin/$fbname" ] && EXEPATH="$APPBASEDIR/App/bin/$fbname"
+[ -f "$APPBASEDIR/App/$fbname" ] && EXEPATH="$APPBASEDIR/App/$fbname"
+[ -f "$APPBASEDIR/App/$fbname.bin" ] && EXEPATH="$APPBASEDIR/App/$fbname.bin"
+[ -f "$APPBASEDIR/bin/$fbname" ] && EXEPATH="$APPBASEDIR/bin/$fbname"
+[ -f "$APPBASEDIR/$fbname" ] && EXEPATH="$APPBASEDIR/$fbname"
+[ -f "$APPBASEDIR/$fbname.x86" ] && EXEPATH="$APPBASEDIR/$fbname.x86"
+[ -f "$APPBASEDIR/$fbname.sh" ] && EXEPATH="$APPBASEDIR/$fbname.sh"
+[ -f "$APPBASEDIR/${fbname}Portable.sh" ] && EXEPATH="$APPBASEDIR/${fbname}Portable.sh"
+# TODO: uppercase first letter
+
+# try to find the executable using find
+[ -z "$EXEPATH" ] && EXEPATH=$(find $APPBASEDIR -maxdepth 1  -iname ${fbname}* -type f -perm /u=x,g=x,o=x -print | head -n1 )
+#[ -z "$EXEPATH" ] && EXEPATH=wine $(find $APPBASEDIR -iname "$fbname.exe" -type f -perm /u=x,g=x,o=x -print | head -n1 )
+
+# check if $EXEPATH is not defined
+if [ -z "$EXEPATH" ]; then
+	echo "$(basename $0) err: main exe not found" >&2
+	exit 127
+fi
+#else
+#echo "$(basename $0): launching main exe: $EXEPATH"
+
+# make sure the executable flag is set
+if [ -f "$EXEPATH" ]; then
+	chmod u+x $EXEPATH
+fi
+
+#change dir
+#OLDDIR=`pwd`
+#cd $APPBASEDIR
+
+# TODO? mount unionfs ro /root -> $APPBASEDIR/Data
+
+[ ! -d $HOME ] || mkdir -p $APPBASEDIR/Data
+#[ ! -d $APPBASEDIR/Data/.kde ] && ln -sn $HOME/.kde $APPBASEDIR/Data/.kde  2>/dev/null   2FIX: keepass do not start  with this
+#export KDEHOME=$HOME/.kde
+[ ! -d $APPBASEDIR/Data/.fonts ] && ln -sn $HOME/.fonts $APPBASEDIR/Data/.fonts  2>/dev/null
+#[ ! -f $APPBASEDIR/Data/.alsoftrc ] && ln -sn $HOME/.openalrc $APPBASEDIR/Data/.alsoftrc  2>/dev/null
+#[ ! -f $APPBASEDIR/Data/.openalrc ] && ln -sn $HOME/.openalrc $APPBASEDIR/Data/.openalrc  2>/dev/null
+#[ ! -d $APPBASEDIR/Data/.pulse ] && ln -sn $HOME/.pulse $APPBASEDIR/Data/.pulse  2>/dev/null
+#[ ! -d $APPBASEDIR/Data/.pulse ] && cp -r $HOME/.pulse $APPBASEDIR/Data/.pulse  2>/dev/null
+#[ ! -f $APPBASEDIR/Data/.pulse-cookie ] && ln -sn $HOME/.pulse-cookie $APPBASEDIR/Data/.pulse-cookie  2>/dev/null
+#export PULSE_CONFIG_PATH=$APPBASEDIR/Data/.pulse-cookie
+export WINEPREFIX=$HOME/.wine
+#[ ! -d $APPBASEDIR/Data/.fltk ] && cp -r $HOME/.fltk $APPBASEDIR/Data/.fltk  2>/dev/null
+[ ! -f $APPBASEDIR/Data/.gtkrc-2.0 ] && ln -s $HOME/.gtkrc-2.0 $APPBASEDIR/Data/.gtkrc-2.0  2>/dev/null
+[ ! -f $APPBASEDIR/Data/.gtkrc.mine ] && ln -s $HOME/.gtkrc.mine $APPBASEDIR/Data/.gtkrc.mine  2>/dev/null
+[ ! -f $APPBASEDIR/Data/.gtk-bookmarks ] && ln -s $HOME/.gtk-bookmarks $APPBASEDIR/Data/.gtk-bookmarks  2>/dev/null
+#export GTK_???=$HOME
+#export GNOME_HOME=$HOME
+# TODO: override GTK g_get_home_dir -> nsswitch http://unix.stackexchange.com/questions/81670/overriding-home-location/81697
+
+[ -d $APPBASEDIR/App/bin ] && export PATH=$APPBASEDIR/App/bin:$PATH
+[ -d $APPBASEDIR/bin ] && export PATH=$APPBASEDIR/bin:$PATH
+#[ -d $APPBASEDIR/App/lib ] && export LD_LIBRARY_PATH=$APPBASEDIR/App/lib:$LD_LIBRARY_PATH
+#[ -d $APPBASEDIR/lib ] && export LD_LIBRARY_PATH=$APPBASEDIR/lib:$LD_LIBRARY_PATH
+#[ -d $APPBASEDIR/App/LIBS ] && export LD_LIBRARY_PATH=$APPBASEDIR/App/LIBS:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$APPBASEDIR:$APPBASEDIR/App/lib:$APPBASEDIR/lib:$APPBASEDIR/App/LIBS:$LD_LIBRARY_PATH
+export HOME=$APPBASEDIR/Data
+export XDG_DATA_HOME=$APPBASEDIR/Data
+export XDG_CONFIG_HOME=$APPBASEDIR/Data
+#export XDG_CACHE_HOME=$APPBASEDIR/Data
+export XDG_CACHE_HOME=$TMPDIR
+export XDG_DATA_DIRS=$APPBASEDIR/App/usr/share:$APPBASEDIR/usr/share:$XDG_DATA_DIRS
+export XDG_CONFIG_DIRS=$APPBASEDIR/Data:$XDG_CONFIG_DIRS
+export XDG_RUNTIME_DIR=$TMPDIR
+
+# redirect the "/usr" dir using proot (http://proot.me/)
+#[ -d $APPBASEDIR/App/usr/share/$fbname ] && EXEPATH="proot -b $APPBASEDIR/App/usr/share/$fbname:/usr/share/$fbname $EXEPATH"
+#[ -d $APPBASEDIR/usr/share/$fbname ] && EXEPATH="proot -b $APPBASEDIR/usr/share/$fbname:/usr/share/$fbname $EXEPATH"
+#[ -d $APPBASEDIR/usr ] && EXEPATH="proot $(cd $APPBASEDIR/usr; find -type f -printf " -b $APPBASEDIR/usr/%p:/usr/%p" ) $EXEPATH"
+#[ -d $APPBASEDIR/App/usr ] && EXEPATH="proot $(cd $APPBASEDIR/App/usr; find -type f -printf " -b $APPBASEDIR/App/usr/%p:/usr/%p" ) $EXEPATH"
+#[ -d $APPBASEDIR/App/share ] ...
+
+[ -f $APPBASEDIR/_MEMO.txt ] && xdg-open $APPBASEDIR/_MEMO.txt
+[ -f $PENDRIVE/Documents/note/app/$fbname ] && xdg-open $PENDRIVE/Documents/note/app/$fbname.txt
+
+shift
+
+#echo "$(basename $0): launching $EXEPATH $@..." >&2
+#echo
+
+$EXEPATH "$@"
+_EXITSTATUS=$?
+
+# change the exit status for interpreted scripts
+#case $EXEPATH in python*)
+#	["$_EXITSTATUS" -eq 1 ] && exit 127
+#esac
+
+exit $_EXITSTATUS
+
+# start the process detached from the console http://superuser.com/questions/177218/how-to-start-gui-linux-programs-from-the-command-line-but-separate-from-the-com
+#if [[ $ARCHIVENAME = *cliapps* ]]; then
+	# CLI app: do not detach from console
+#	($EXEPATH "$@")
+#else
+	# GUI app: detach from console
+	#($EXEPATH "$@" &)
+#	cd $APPBASEDIR
+#	nohup $EXEPATH "$@" >/dev/null 2>&1&  # doesn't create nohup.out
+#fi
+
+#cd $OLDDIR
+# exit $?

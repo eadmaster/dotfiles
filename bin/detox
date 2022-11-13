@@ -1,1 +1,40 @@
-../../../bin/detox
+#!/bin/sh
+ 
+# safe rename utility
+
+command -p detox "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# alternative
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) FILE [...]"
+	echo
+	exit 0
+fi
+IFS=$'
+	'
+for f in "$@"
+do
+	if [ ! -f "$f" ]; then
+		echo "$(basename $0) warn: this is not a regular file (skipped): $f" >&2
+		continue
+	fi
+
+	NEWFILENAME="$(basename "$f")"
+	NEWFILENAME="$( echo -n "$NEWFILENAME" | { transliterate || uconv -x 'Any-Latin;Latin-ASCII' || cat ; } )" # convert non-latin chars using my transliterate script OR uconv from the icu-devtools package
+	NEWFILENAME="$( echo -n "$NEWFILENAME" | iconv -f UTF-8 -t ascii//TRANSLIT//IGNORE )"
+	NEWFILENAME="$( echo -n "$NEWFILENAME" | tr -c '[A-Za-z0-9._\-]' '_' \
+		| tr '\[\]' '_' \
+		| sed -e 's/__*/_/g' \
+		| sed -e 's/_\././g' )"
+	# TODO: remove all dots except the last?
+	
+	if [ -f "$(basename $f)/$NEWFILENAME" ]; then
+		echo "$(basename $0) warn: target filename already exists (skipped): $(basename $f)/$NEWFILENAME" >&2
+		continue
+	fi
+	if [ "$(basename $f)" != "$NEWFILENAME" ]; then
+		echo "\`$f' -> \`$NEWFILENAME'"
+		mv -i "$f" "$NEWFILENAME"
+	fi
+done

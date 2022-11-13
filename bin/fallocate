@@ -1,1 +1,29 @@
-../../../bin/fallocate
+#!/bin/sh
+
+command -p fallocate "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else alternative using truncate or dd
+
+# args checking
+if [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) OUTPUT_FILENAME -l OUTPUT_FILESIZE[KMG]"
+	echo
+	exit 0
+fi
+if [ -f "$1" ]; then
+	echo "$(basename $0) error: file already exist: $1" >&2
+	exit 1
+fi
+
+echo "$(basename $0): creating new empty file $SIZE bytes big: $OUTPUTFILE"
+
+truncate -s $SIZE "$OUTPUTFILE"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+dd if=/dev/zero of="$OUTPUTFILE" bs=$2 count=1
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else
+echo "$(basename $0) error: cannot create file: $1" >&2
+exit 1

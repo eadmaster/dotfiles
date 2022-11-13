@@ -1,1 +1,249 @@
-../../../bin/fileunpack
+#!/bin/bash
+
+# perl script from atool package
+#command -p aunpack "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# see also:
+# https://github.com/xvoland/Extract/blob/master/extract.sh
+
+# else
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) FILE_TO_EXTRACT [OUTDIR]"
+	echo " if OUTDIR is omitted extract to the same path of FILE_TO_EXTRACT"
+	echo
+	exit 0
+fi
+
+[ -f "$1" ] && INPUTFILE="$1"
+[ -f "$2" ] && INPUTFILE="$2"
+
+if [ ! -f "$INPUTFILE" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+fi
+
+INPUTFILEFULLPATH="$(realpath $INPUTFILE)"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+INPUTFILENAME="`basename \"$INPUTFILE\" | rev | cut -d'.' -f2- | rev`"
+# fix for files with multiple extensions like "gbamidi-v1.0.tar.gz"
+INPUTFILEEXT2=$( echo -n "$INPUTFILENAME" | rev | cut -d'.' -f1 | rev )
+if [ "$INPUTFILEEXT2" = "tar" ]; then
+	# concatenate the extension
+	INPUTFILEEXT="$INPUTFILEEXT2.$INPUTFILEEXT"
+	# update the filename
+	INPUTFILENAME="`echo -n \"$INPUTFILENAME\" | rev | cut -d'.' -f2- | rev`"
+fi
+INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
+
+if [ ! -z "$2" ]; then
+	[ "$INPUTFILE" = "$1" ] && OUTPUTDIR="$2"
+	[ "$INPUTFILE" = "$2" ] && OUTPUTDIR="$1"
+else
+	OUTPUTDIR="$PWD/$INPUTFILENAME"
+fi
+
+[ ! -d "$OUTPUTDIR" ] && mkdir "$OUTPUTDIR"
+
+SCRIPT_START_TIMESTAMP=$(date +%s)
+NOTIFY_MIN_SECONDS=5
+# execute a function when the script exit
+function notify {
+	end=$(date +%s)
+	# notify only if some time is passed
+	if [ $(expr $end - $SCRIPT_START_TIMESTAMP) -gt $NOTIFY_MIN_SECONDS ]; then
+		exec notify "fileunpack finished"
+	fi
+}
+trap notify EXIT
+
+case "$INPUTFILEEXT" in
+	deb )
+		# try using dpkg-deb
+		dpkg-deb -x "$INPUTFILE" "$OUTPUTDIR"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		
+		# try using 7z + temp file
+		7z x -o"$TMPDIR"  "$INPUTFILE"
+		[ $? -eq 127 ] && exit 127
+		7z x -o"$OUTPUTDIR"  $TMPDIR/data.tar
+		rm $TMPDIR/data.tar
+		exit 0
+		;;
+	
+	rpm )
+		# try using rpm2cpio
+		cd $OUTPUTDIR
+		rpm2cpio "$INPUTFILEFULLPATH" | cpio -idvm
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		
+		# try using 7z + pipes
+		# 2IX: Reading archives from stdin is not implemented yet
+		#7z e "$INPUTFILE" -so | 7z e dummy -si -so | 7z e dummy -si
+
+		# try using 7z + temp file
+		7z x -o"$TMPDIR"  $INPUTFILE
+		[ $? -eq 127 ] && exit 127
+		7z x -o"$OUTPUTDIR"  "$TMPDIR/$INPUTFILENAME.cpio"
+		rm "$TMPDIR/$INPUTFILENAME.cpio"
+		exit 0
+		;;
+
+	gz )
+		gzip -dc < "$INPUTFILE" > "$OUTPUTDIR/$INPUTFILENAME"
+		exit $?
+		;;
+
+	tar )
+		tar -v -x -C "$OUTPUTDIR" -f "$INPUTFILE"
+		exit $?
+		;;
+	
+	tgz|tar.gz )
+		tar -v -x -z -C "$OUTPUTDIR" -f "$INPUTFILE"
+		exit $?
+		;;
+		
+	tbz|tar.bz2|tb2|tbz2 )
+		tar -v -x -j -C "$OUTPUTDIR" -f "$INPUTFILE"
+		exit $?
+		;;
+		
+	taz|tar.Z|tz )
+		tar -v -x -Z -C "$OUTPUTDIR" -f "$INPUTFILE"
+		exit $?
+		;;
+		
+	tlz|tar.lz|tar.lzma )
+		tar -v -x -a -C "$OUTPUTDIR" -f "$INPUTFILE"
+		exit $?
+		;;
+		
+	txz|tar.xz )
+		tar -v -x -J -C "$OUTPUTDIR" -f "$INPUTFILE"
+		exit $?
+		;;
+
+	cab )
+		cabextract -d"$OUTPUTDIR" "$INPUTFILE"
+		exit $?
+		;;
+		
+	zip|7z|arj|iso|cab )
+		7z x -bb1 -y -o"$OUTPUTDIR" "$INPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+		7za x -y -o"$OUTPUTDIR" "$INPUTFILE"
+		exit $?
+		;;
+	
+	rar )
+		rar x "$INPUTFILE" "$OUTPUTDIR"
+		exit $?
+		;;
+	
+	ace )
+		unace x -y "$INPUTFILE" "$OUTPUTDIR"
+		exit $?
+		;;
+	
+	msi|msp|doc|xls|ppt )
+		7z x -tCOMPOUND -y -o"$OUTPUTDIR"  "$INPUTFILE"
+		exit $?
+		;;
+	
+	swf )
+		swfextract -j 1 -p 1 -m 1 -M 1 -s 1 -F 1 -o "$OUTPUTDIR" "$INPUTFILE"
+		# WANTED: extract everything  https://github.com/matthiaskramm/swftools/issues/4
+		exit $?
+		;;
+		
+	bundle ) # source https://sskaje.me/2015/05/extract-vmware-bundle-file/
+		bash "$INPUTFILE" --extract "$OUTPUTDIR"
+		exit $?
+		;;
+	
+	srr )
+		srr -x "$INPUTFILE" -o"$OUTPUTDIR"
+		exit $?
+		;;
+	
+	exe ) # windows executable
+		# TODO: detect self-extracting archives
+		wrestool --verbose --extract --output="$OUTPUTDIR" "$INPUTFILE"
+		#exit $?
+		;;
+	
+	p7m )
+		# TODO: prevent creating subdir?
+		# extract the signed doc  https://en.quoll.it/faq/extracting-the-contents-of-a-digitally-signed-file-p7m/
+		openssl smime -verify -noverify -in "$INPUTFILE" -inform DER -out "$OUTPUTDIR/$INPUTFILENAME"
+		# extract the certificate  # TODO: detach user cert vs CA cert
+		openssl pkcs7 -inform DER -in "$INPUTFILE" -print_certs -out "$OUTPUTDIR/certs.pem"
+		# TODO: extract the detached signature in a p7s file
+		exit $?
+		;;
+esac
+
+case $INPUTFILETYPE in
+	application/pdf )
+		pdfimages -j "$INPUTFILE" "$OUTPUTDIR/"
+		pdftotext "$INPUTFILE" > "$OUTPUTDIR/$INPUTFILE.txt"
+		pdfdetach -saveall "$INPUTFILE" #-o "$OUTPUTDIR/"
+		exit $?
+		;;
+	
+	video/* )  # video files: extract individual tracks
+		#VIDEOEXT=$(ffmpeg -i "$INPUTFILE" 2>&1 | grep -io "video:....." | head -n 1 | cut -d ' ' -f2) # TODO: detect and extract all tracks, not just the 1st one
+		#ALTERNATIVE: VIDEOEXT=$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=nokey=1:noprint_wrappers=1 "$INPUTFILE")
+		VIDEOEXT=mkv  # force mkv container
+		ffmpeg -i "$INPUTFILE" -vcodec copy -an  "$OUTPUTDIR/${INPUTFILENAME}.$VIDEOEXT"
+		AUDIOEXT=$(ffmpeg -i "$INPUTFILE" 2>&1 | grep -io "audio:...." | head -n 1 | cut -d ' ' -f2) # TODO: detect and extract all tracks, not just the 1st one
+		ffmpeg -i "$INPUTFILE" -acodec copy -vn  "$OUTPUTDIR/${INPUTFILENAME}.$AUDIOEXT"
+		# alternatives:  mplayer -dumpvideo -dumpfile, mkvextract tracks , ...  http://softwarerecs.stackexchange.com/questions/34447/tool-to-dump-all-video-tracks-in-individual-files-with-automatic-file-extension
+		exit $?
+		;;
+	
+	#audio/* )# TODO: audio files -> extract album art and lyrics with exiftool
+	#	exiftool -a -picture -b "$INPUTFILE" -w "$OUTPUTFILE"
+	#	exiftool -a -lyric -b "$INPUTFILE" -w "$OUTPUTFILE"
+	
+	# TODO: image files -> extract embedded preview
+	#  exiftool -b -PreviewImage -w "$OUTPUTFILE" "$INPUTFILE"
+
+esac
+
+#else try with some generic unpackers
+
+# try game archives via GameExtractor  http://www.watto.org/game_extractor.html
+gameextractor -extract -input "$(readlink -f "$INPUTFILE")" -output "$OUTPUTDIR"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# try some generic unpackers
+binwalk --extract --carve "$INPUTFILE"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#retdec-unpacker "$INPUTFILE"
+
+foremost -v -o "$OUTPUTDIR" -i "$INPUTFILE"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+7z x -bb1 -y -o"$OUTPUTDIR" "$INPUTFILE"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+7za x -y -o"$OUTPUTDIR" "$INPUTFILE"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+rar x "$INPUTFILE" "$OUTPUTDIR"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+if [ "$INPUTFILEEXT" = "zip" ]; then
+	unzip "$INPUTFILE" -d "$OUTPUTDIR"
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+fi
+
+# TODO? shar
+# TODO? .lz -> lzip
+
+exit 127

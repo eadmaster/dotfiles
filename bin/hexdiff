@@ -1,1 +1,32 @@
-../../../bin/hexdiff
+#!/bin/sh
+
+# args checking
+if [ "$#" -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ ! -f "$1" ] || [ ! -f "$2" ]; then
+	echo "usage: $(basename $0) FILE1 FILE2"
+	exit 0
+fi
+
+# source: http://superuser.com/questions/125376/how-do-i-compare-binary-files-in-linux
+
+ucon64 -c="$@"
+[ $? -ne 127 ] && exit $?
+
+# else pure bash alternative
+echo "addr     oldnew"
+cmp -l "$@" | awk 'function oct2dec(oct,     dec) {
+          for (i = 1; i <= length(oct); i++) {
+              dec *= 8;
+              dec += substr(oct, i, 1)
+          };
+          return dec
+      }
+      {
+          printf "%08X %02X %02X\n", $1-1, oct2dec($2), oct2dec($3)
+      }'
+exit $?
+
+# ALTERNATIVEs:
+#  ? sfk ...
+#  ? diff <(od -An -tx1 -w1 "$1") <(od -An -tx1 -w1 "$2")
+
+

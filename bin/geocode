@@ -1,1 +1,182 @@
-../../../bin/geocode
+#!/bin/bash
+
+command -p geocode "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else bash alternative
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] ; then
+	echo "usage: $(basename $0) [-m reverse] [--distance] QUERY"
+	echo
+	echo "examples: geocode \"Ottawa, ON\", geocode LAT,LON, geocode --distance Milano Roma"
+	exit 0
+fi
+
+if [ "$1" = "-m" ] && [ "$2" = "reverse" ]; then
+	# geodecode
+	
+	if [ -z "$3" ] ; then
+		echo "usage: $(basename $0) -m reverse LAT,LON"
+		echo
+		exit 1
+	fi
+	# else
+	
+	LATLNG="$3"
+	LAT=$( echo "$LATLNG" | cut -d" " -f1 )
+	LONG=$( echo "$LATLNG" | cut -d" " -f2 )
+
+	# using python-geopy  https://github.com/geopy/geopy
+	python3 -c "from geopy.geocoders import Nominatim; p = Nominatim().reverse(\"$LATLNG\"); from pprint import pprint ; pprint(p.raw)" >&2   # TODO: colorize with IPython.utils.PyColorize?
+	echo
+	python3 -c "from geopy.geocoders import Nominatim; p = Nominatim().reverse(\"$LATLNG\"); print(str(p) + \" = \" + str(p.address) )"
+	[ $? -eq 0 ] && exit 0
+
+	# using node-geocoder-cli  https://www.npmjs.com/package/node-geocoder
+	geocoder reverse $LAT $LONG
+	[ $? -eq 0 ] && exit 0
+
+	# else alternative using remote web APIs
+
+	# TODO: check float args
+	echo "$LAT" | grep -qE '^\-?[0-9]?\.?[0-9]+'
+	[ $? -ne 0 ] && LAT=""
+	echo "$LONG" | grep -qE '^\-?[0-9]?\.?[0-9]+'
+	[ $? -ne 0 ] && LONG=""
+	if [ -z "$LAT" ] || [ -z "$LONG" ]; then
+		echo "$(basename $0) err: invalid coords specified"  >&2
+		exit 1
+	fi
+
+	# try with OSM Nominatim  https://wiki.openstreetmap.org/wiki/Nominatim
+	ZOOM=18
+	wget -q -U Firefox -O- "https://nominatim.openstreetmap.org/reverse?format=json&lat=$LAT&lon=$LONG&zoom=$ZOOM&addressdetails=1"
+	#[ $? -eq 0 ] && exit 0
+
+	# try with Photon OpenStreetMap public server
+	wget -q -U Firefox -O- "http://photon.komoot.de/reverse?lon=$LONG&lat=$LAT"
+	#[ $? -eq 0 ] && exit 0
+
+	# try with Google API
+	# TODO: detect "OVER_QUERY_LIMIT" in output
+	wget -q -U Firefox -O- "https://maps.googleapis.com/maps/api/geocode/json?latlng=$LAT,$LONG&sensor=false"
+	#[ $? -eq 0 ] && exit 0
+
+	#DISCONTINUED: try with yahoo apis
+	#"http://query.yahooapis.com/v1/public/yql?q=SELECT%20*%20FROM%20geo.placefinder%20WHERE%20text%3D%22{$LAT}%2C{$LONG}%22%20and%20gflags%3D%22R%22"
+
+	exit $?
+
+elif [ "$1" = "--distance" ]; then
+	# distance between 2 points
+	shift
+	
+	if [ -z "$3" ] ; then
+		echo "usage: $(basename $0) --distance LAT1 LON1 LAT2 LON2"
+		echo "usage: $(basename $0) --distance location_name1 location_name2"
+		echo
+		exit 1
+	fi
+	# else
+	
+	SRCQUERY="$2"
+	DSTQUERY="$3"
+	#LAT=$( echo "$LATLNG" | cut -d" " -f1 )
+	#LONG=$( echo "$LATLNG" | cut -d" " -f2 )
+	lat_1="$1"
+	lon_1="$2"
+	lat_2="$3"
+	lon_2="$4"
+	
+	# TODO: using qacl  https://github.com/Qalculate/libqalculate/issues/254
+	
+	# TODO: using python-geopy  https://github.com/geopy/geopy
+	echo 'python-geopy:'
+	python -c "from geopy.distance import geodesic; print(geodesic(($lat_1, $lon1), ($lat_2, $lon2)))"
+	#[ $? -eq 0 ] && exit 0
+	
+	# TODO: alternative using sklearn.metrics.pairwise.haversine_distances  https://stackoverflow.com/questions/29545704/fast-haversine-approximation-python-pandas#answer-41858332
+	
+	# TODO: OSM alternative  https://help.openstreetmap.org/questions/37861/distance-matrix-api
+	
+	# using Google Distance Matrix API  https://developers.google.com/maps/documentation/distance-matrix/start
+	wget -q -U Firefox -O- "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=$( urlencode -m "$SRCQUERY" )&destinations=$( urlencode -m "$DSTQUERY" )&key=GOOGLE_API_KEY"
+	#[ $? -eq 0 ] && exit 0
+	
+	echo
+
+	# else pure bash alternative
+	# source: https://ethertubes.com/bash-snippet-calculating-the-distance-between-2-coordinates/
+	# TODO: convert in a pure bc script
+	deg2rad () { bc -l <<< "$1 * 0.0174532925" ; }
+	rad2deg () { bc -l <<< "$1 * 57.2957795" ; }
+	acos () { pi="3.141592653589793" ; bc -l <<< "$pi / 2 - a($1 / sqrt(1 - $1 * $1))"; }
+	delta_lat=`bc <<<"$lat_2 - $lat_1"`
+	delta_lon=`bc <<<"$lon_2 - $lon_1"`
+	lat_1="`deg2rad $lat_1`"
+	lon_1="`deg2rad $lon_1`"
+	lat_2="`deg2rad $lat_2`"
+	lon_2="`deg2rad $lon_2`"
+	delta_lat="`deg2rad $delta_lat`"
+	delta_lon="`deg2rad $delta_lon`"
+	distance=`bc -l <<< "s($lat_1) * s($lat_2) + c($lat_1) * c($lat_2) * c($delta_lon)"`
+	distance=`acos $distance`
+	distance="`rad2deg $distance`"
+	#miles:
+	#distance=`bc -l <<< "$distance * 60 * 1.15078"`
+	# km:
+	distance=`bc -l <<< "$distance * 60 * 1.15078 * 1.609344"`
+	distance=`bc <<< "scale=4; $distance / 1"`
+	echo "$distance km"
+	exit $?
+
+else
+	# geoencode
+	QUERY="$@"
+	
+	# using python-geopy  https://github.com/geopy/geopy
+	python3 -c "from geopy.geocoders import Nominatim; p = Nominatim().geocode(\"$QUERY\"); from pprint import pprint ; pprint(p.raw)" >&2  # TODO: colorize with IPython.utils.PyColorize?
+	echo
+	python3 -c "from geopy.geocoders import Nominatim; p = Nominatim().geocode(\"$QUERY\"); print(str(p) + \" = \" + str(p.point) + \" = lon : \" + str(p.longitude) + \" , lat : \" + str(p.latitude) )"
+	[ $? -eq 0 ] && exit 0
+	
+	# using node-geocoder-cli  https://www.npmjs.com/package/node-geocoder
+	geocoder geocode "$QUERY"
+	[ $? -eq 0 ] && exit 0
+	
+	# else alternative using remote web APIs
+
+	# try with OSM Nominatim  https://wiki.openstreetmap.org/wiki/Nominatim
+	wget -q -U Firefox -O- "https://nominatim.openstreetmap.org/search?q=$( urlencode "$QUERY" )&format=json&limit=1&addressdetails=1" | jq .
+	[ $? -eq 0 ] && exit 0
+
+	# try with Photon OpenStreetMap public server
+	wget -q -U Firefox -O- "http://photon.komoot.de/api?q=$( urlencode "$QUERY" )" | jq .
+	[ $? -eq 0 ] && exit 0
+
+	# try with Yahoo API
+	# OLD URL="https://query.yahooapis.com/v1/public/yql?q=select centroid from geo.places where text=\"$1\"&format=json"
+	wget -q -U Firefox -O- "https://query.yahooapis.com/v1/public/yql?q=select * from geo.places where text=\"$QUERY\"&format=json"
+	[ $? -eq 0 ] && exit 0
+
+	# try with Google Maps Geocoding API  https://developers.google.com/maps/documentation/geocoding/intro
+	wget -q -U Firefox -O- "https://maps.googleapis.com/maps/api/geocode/json?language=it&address=$( urlencode "$QUERY" )"
+	exit $?
+fi
+
+# else
+exit 127
+
+
+# OLD ALTERNATIVE using xplanet
+#xplanet -pango -output "$TMPDIR/$$.png" -num_times 1 -geometry 640x480 -searchdir $PENDRIVE/Documents/img/space/maps/ -body earth -latitude $1 -longitude $2 -radius 1800 
+# WANTED: disable sun simulation:  NO? -date 19900617.120000
+# [-projection orthographic]
+# TODO: convert "$TMPDIR/$$.png" ... (add a marker @ coord 320:240) "$TMPDIR/$$-final.png"
+#cp "$TMPDIR/$$.png" "$TMPDIR/$$-final.png"
+#xdg-open "$TMPDIR/$$-final.png"
+#rm -f "$TMPDIR/$$.png"
+#rm -f "$TMPDIR/$$-final.png"

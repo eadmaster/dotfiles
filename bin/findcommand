@@ -1,1 +1,9 @@
-../../../bin/findcommand
+
+
+#ALTERNATIVE:  IFS=:
+find $(echo $PATH | sed -e 's/[:.]/ /g' ) -maxdepth 0 -perm /u=x,g=x,o=x  -name "*$1*" 2> /dev/null
+exit $?
+# -perm /u=x,g=x,o=x -prune -print
+#unset IFS
+
+# MORE ALTERNATIVES: http://unix.stackexchange.com/questions/186156/execute-a-command-in-path-matching-a-wildcard/

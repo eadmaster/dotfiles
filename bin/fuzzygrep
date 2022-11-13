@@ -1,1 +1,14 @@
-../../../bin/fuzzygrep
+
+
+# via ugrep
+ugrep -Z2 "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# via fzf  https://github.com/junegunn/fzf/wiki/examples#searching-file-contents
+rg --nobreak --nonumbers --noheading . | fzf --no-sort -f "$@"   # TODO: without rg + file wildcards?
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+tre-agrep --best-match --max-errors=1 --ignore-case "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#TODO: agrep "$@"

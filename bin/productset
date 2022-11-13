@@ -1,1 +1,7 @@
-../../../bin/productset
+#!/bin/sh
+
+
+#while read a; do while read b; do echo "$a, $b"; done <"$1"; done <"$2"
+
+python -c "import sys, itertools; set1=set(open(\"$1\").read().splitlines()) ; set2=set(open(\"$2\").read().splitlines()) ; print('\n'.join(map(str, list(itertools.product(set1, set2)))))"
+

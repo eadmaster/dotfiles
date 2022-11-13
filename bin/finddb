@@ -1,1 +1,39 @@
-../../../bin/finddb
+
+_QUERY="$1"
+_SEARCHDIR="$2"
+
+if [ ! -d "$_SEARCHDIR" ]; then
+	echo "$(basename $0) error: dir not found: $_SEARCHDIR" >&2
+	exit 1
+fi
+
+#echo "$(basename $0): searching in $_SEARCHDIR for $_QUERY ..." >&2
+
+# convert wildcards to regexpr
+#_QUERY=$( echo "$_QUERY" | tr '*' '\.*' | tr '\.' '\\\.'  | tr '?' '\.' )
+_QUERY=$( echo "$_QUERY" | sed 's/\./\\\./g; s/\*/\.\*/g; s/?/./g' )
+
+ugrep -i -I -r -z -w --exclude-dir=_\* --exclude=\*.{html,htm,xml,json} -H  "$_QUERY" "$_SEARCHDIR/" | cut -c 1-260  # TODO: exclude more files
+[ $? -eq 127 ] && grep -i -I -r --exclude-dir=_\* -H  "$_QUERY" "$_SEARCHDIR/"
+[ $? -eq 1 ] && echo "$(basename $0): nothing found" >&2
+exit $?
+
+
+# OLD:
+# also search in zipped files:
+#if [ "$3" = "-z" ]; then
+#OLD: zzfind "$_SEARCHDIR/*.zip" "$_QUERY" -dir!_*  #| grep -v '.htm\|wikipedia' #| less -S
+#NO(BUGGY)? zipgrep "$_QUERY" "$_SEARCHDIR/*.zip" 2>& 1  | grep -v 'filename not matched'
+#TODO: rg --search-zip ...  # https://github.com/BurntSushi/ripgrep/issues/1479
+
+
+
+# ALTERNATIVE:
+PAGER="less -S"
+IGNOREFILTER="grep -v -e '.htm' -e 'wikipedia'"
+# search in plaintext files
+#find "$_SEARCHDIR/" -not -name "*.csv" -not -name "*.tsv" -not -name "*.zip" -not -name "*.rar" -not -name "*.gz" -not -name "*.7z" -type f -print0 | xargs -0 -n 1 -r  grep -i -H -F "$1" | $IGNOREFILTER | $PAGER
+# search in csv files and pretty print the results
+#find "$_SEARCHDIR/" \( -iname "*.csv" -o -iname "*.tsv" \) -print0 | xargs -0 -n 1 -r  csv grep "$1"
+# search in compressed files
+find "$_SEARCHDIR/" \( -iname "*.zip" -o -iname "*.rar" -o -iname "*.7z" -o -iname "*.gz" \) -print0 | xargs -0 -n 1 -r  filegrep "$1" | less -S

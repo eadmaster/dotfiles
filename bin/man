@@ -1,1 +1,31 @@
-../../../bin/man
+#!/bin/bash
+
+command -p man "$@"
+[ $? -eq 0 ] && exit 0
+
+# else 
+echo "$(basename $0): regular man is not installed, try to retrive the manpage from the web..."
+
+# TODO: public web API returning txt directly
+
+pandoc -f html -t plain "http://linux.die.net/man/1/$1" | less
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+html2text --ignore-links --decode-errors=ignore "http://linux.die.net/man/1/$1" | less
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+wget --quiet -O- "http://manpages.ubuntu.com/manpages.gz/xenial/en/man1/$1.1.gz" | gzip -dc  | less  # TODO: | sed -e 's/<[^>]*>//g'
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+# try all manpages sections
+# from http://manpages.ubuntu.com/dman
+#DISTRIB_CODENAME=xenial
+#for i in `seq 1 9`; do
+#	echo "http://manpages.ubuntu.com/$DISTRIB_CODENAME/en/man$i/$PAGE.$i.gz"
+#	if wget -O- "http://manpages.ubuntu.com/$DISTRIB_CODENAME/en/man$i/$PAGE.$i.gz" 2>/dev/null | gzip -dc | less
+#	#	man $MAN_ARGS -l "$man" || true
+#done
+
+#else
+exit 16
+

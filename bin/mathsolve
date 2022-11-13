@@ -1,1 +1,51 @@
-../../../bin/mathsolve
+#!/bin/sh
+
+EQUATION="$1"
+VARIABLE="x"  # default
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ -z "$1" ] || [ "$1" = "-" ] ; then
+	echo "usage: $(basename $0) \"EQUATION\" [VARIABLE]"
+	echo
+	echo "expression examples: 1/sin(x), (ln(x))/(x), (x^2-3*x+2)/(x) >0"
+	# TODO: more examples
+	exit 0
+fi
+if [ ! -z "$2" ]; then
+	VARIABLE="$2"
+fi
+
+echo "$(basename $0) info: libqalculate result: "  >&2
+qalc "$@"
+#qalc "solve($EQUATION, $VARIABLE)"
+
+echo
+
+echo "$(basename $0) info: maxima result: "  >&2
+maxima --very-quiet -r  "solve ($EQUATION, $VARIABLE);"
+
+echo
+
+echo "$(basename $0) info: octave result: "  >&2
+octave -q --eval "syms a b c x y; solve($EQUATION, $VARIABLE);"
+
+echo
+
+#echo "$(basename $0) info: newton web API result: "  >&2
+#wget -q -O- "https://newton.now.sh/zeroes/$(urlencode $EQUATION)"  |  python -m json.tool
+
+echo
+
+#echo "$(basename $0) info: wolframalpha result: "  >&2
+#wget -q -O- "http://api.wolframalpha.com/v2/query?appid=R94KW8-YVW37V864K&output=JSON&format=plaintext&input=solve $(urlencode $EQUATION) for $VARIABLE" | grep -A5 "\"subpods\""  #| jq '.queryresult.pods[] | select(.title == "Solution") | .subpods[]'
+#echo
+
+echo "$(basename $0) info: sympy result: "  >&2
+# TODO: add support for implicit multiplication, full equations with "="
+python -c "from sympy import *; from sympy.abc import x, y, z, t; print(solve(\"$EQUATION\", \"$VARIABLE\", implicit=True));"  # TODO: enable Implicit multiplication https://github.com/sympy/sympy/pull/1546
+
+echo
+
+# TODO: using numpy/scipy  https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.fsolve.html
+
+echo "$(basename $0) info: generic AI result: "  >&2
+qa "$@"

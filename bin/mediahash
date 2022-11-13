@@ -1,1 +1,40 @@
-../../../bin/mediahash
+#!/bin/sh
+
+# args checking
+if [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) MEDIA_FILE"
+	echo
+	exit 0
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+fi
+
+INPUTFILE="$1"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
+
+ffmpeg -loglevel error -i "$INPUTFILE" -f crc - 2>/dev/null  # faster
+
+ffmpeg -loglevel error -i "$INPUTFILE" -f md5 - 2>/dev/null
+
+ffmpeg -loglevel error -i "$INPUTFILE" -f hash - 2>/dev/null  # default to SHA256 (slowest)?
+
+case $INPUTFILETYPE in
+	image/*|audio/* )
+		#TODO: alternative using vlc
+		#vlc -I rc "$INPUTFILE" :sout='#std{mux=raw,access=file,dst=-}' vlc://quit | md5sum
+		
+		# TODO: audio fingerprinting
+		
+		exit $?
+		;;
+	
+	video/* )
+		# TODO: video fingerprinting
+		
+		exit $?
+		;;
+		
+esac

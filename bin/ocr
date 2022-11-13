@@ -1,1 +1,25 @@
-../../../bin/ocr
+#!/bin/sh
+
+INPUTFILE="$1"
+if [ -z "$INPUTFILE" ]; then
+	INPUTFILE="$TEMP/$$.tmp"
+	cat > "$INPUTFILE"  # read from stdin
+fi
+ 
+# -l osd  -> buggy alphabet autodetection
+tesseract "$INPUTFILE" stdout -l eng+ita+jpn  # TODO: more aggressive noise text filter: -cenable_new_segsearch=1 -clanguage_model_penalty_non_dict_word=0.5 -clanguage_model_penalty_non_freq_dict_word=0.5
+#[ $? -ne 127 ] && exit $?
+
+# cuneiform alternative
+cuneiform -l eng "$INPUTFILE"
+cat cuneiform-out.txt 
+rm cuneiform-out.txt 
+#[ $? -ne 127 ] && exit $?
+
+# TODO: abbyyocr alternative
+
+# TODO: online service alternative
+
+#NO? imconvert "$1" pnm:- | ocrad -
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+#imconvert "$1" -depth 8 pnm:- | ocrad -

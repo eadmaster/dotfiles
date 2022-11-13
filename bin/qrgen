@@ -1,1 +1,62 @@
-../../../bin/qrgen
+#!/bin/sh
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) TEXT_TO_ENCODE [OUTPUT_FILE]"
+	echo
+	exit 0
+fi
+
+INPUT="$1"
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+echo "$(basename $0) info: encoding in QR code: \"$INPUT\"" >&2
+
+# NO? automatic output file
+#OUTFILE=$TMPDIR/qrgen_$$.png
+
+if [ ! -z "$2" ]; then
+	OUTFILE="$2"
+	# create output file and open it
+	echo "$(basename $0) info: saving in output file: $OUTFILE" >&2
+
+	qrencode --verbose --dpi=300 --size=6 -o "$OUTFILE" "$INPUT"
+	# -t SVG
+
+	# using ZXing (Java-based) https://github.com/zxing/zxing
+	[ ! -f $OUTFILE ] && zxing --output "$OUTFILE" --encode "$INPUT" # TODO: verbose
+
+	# using qr (python-based, from "python3-qrcode" package) https://github.com/lincolnloop/python-qrcode
+	[ ! -f $OUTFILE ] && qr "$INPUT" > "$OUTFILE"
+	#[ ! -f $OUTFILE ] && qr --factory=svg "$INPUT" > "$OUTFILE"
+
+	# using Treepoem (Python-based) https://github.com/adamchainz/treepoem
+	[ ! -f $OUTFILE ] && treepoem -o "$OUTFILE" -t qrcode "$INPUT"
+	
+	# TODO: more alternatives
+
+	if [ -f $OUTFILE ] ; then
+		echo "$(basename $0) info: opening $OUTFILE..." >&2
+		xdg-open $OUTFILE
+	fi
+
+else
+	# output the qr code into the console
+	
+	# using qrencode (from "qrencode" package) https://github.com/fukuchi/libqrencode
+	qrencode --verbose -t ansiutf8 "$INPUT"  # more compatible: -t ASCII
+	[ $? -eq 0 ] && exit 0
+
+	# using qr (python-based, from "python-qrcode" package) https://github.com/lincolnloop/python-qrcode
+	qr "$INPUT"
+	[ $? -eq 0 ] && exit 0
+
+	# using segno (python-based) https://github.com/heuer/segno
+	segno "$INPUT"
+	[ $? -eq 0 ] && exit 0
+
+fi
+
+# else
+exit 127

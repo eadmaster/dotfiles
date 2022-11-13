@@ -1,1 +1,116 @@
-../../../bin/patchcht
+
+
+# args checking
+if [ "$#" -ne 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ ! -f "$1" ] || [ ! -f "$2" ] ; then
+	echo "usage: $(basename $0) ORIGINAL_ROM_FILE INPUT_CHT_FILE"
+	echo "generate a patched ROM with the same name of INPUT_CHT_FILE"
+#	echo "MEMO:  INPUT_CHT_FILE must have unix line endings"
+#	echo "MEMO:  RAW codes usually require an un-headered ROM dump"
+	echo
+	exit 0
+fi
+
+INPUTROMFILE="$1"
+INPUTROMFILEEXT=$( echo -n "$INPUTROMFILE" | rev | cut -d'.' -f1 | rev )
+INPUTROMFILEEXT=$( echo -n $INPUTROMFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+INPUTCHTFILE="$2"
+INPUTCHTFILENAME="`echo -n \"$INPUTCHTFILE\" | rev | cut -d'.' -f2- | rev`"
+OUTPUTROMFILE="$INPUTCHTFILENAME.$INPUTROMFILEEXT"
+
+# try auto autodetect system using $INPUTROMFILEEXT
+case $INPUTROMFILEEXT in
+	nes ) ROM_SYSTEM=nes ; echo "$(basename $0) warn: NES GG patching requires ucon64 >= 2.0.2 to work properly" >&2 ;;
+	smc|sfc ) ROM_SYSTEM=snes ;;
+	sms|gg ) ROM_SYSTEM=sms ;;
+	gen|bin ) ROM_SYSTEM=gen ; echo "$(basename $0) warn: Genesis GG patching requires ucon64 >= 2.0.2 to work properly" >&2 ;;
+	smd ) echo "$(basename $0): error: ucon64 cannot patch Genesis ROMs in SMD format, convert them to Magicom/BIN/RAW format" >&2 ;;
+	gb|gbc|gba ) ROM_SYSTEM=gb ;;
+	pce ) ROM_SYSTEM=pce ;;
+	#z64|n64 ) ROM_SYSTEM=n64 ;;
+#--swan
+# --jag
+# --ngp
+# --vboy 
+# ...  http://ucon64.sourceforge.net/ucon64/readme.html
+esac
+
+if [ -z "$ROM_SYSTEM" ]; then
+	echo "$(basename $0) error: ROM dump format not supported: $INPUTFILEEXT" >&2
+	exit 1
+elif [ ! "$INPUTROMFILE" = "$OUTPUTROMFILE" ]; then
+	cp "$INPUTROMFILE" "$OUTPUTROMFILE"
+	[ $? -ne 0 ] && exit 1
+else
+#	echo "$(basename $0) error: conflicting filename (output would overwrite the input): $INPUTCHTFILE" >&2
+#	exit 1
+	cp "$INPUTROMFILE" "$INPUTROMFILE.bak"
+	[ $? -ne 0 ] && exit 1
+	echo "$(basename $0) warn: input and output filename are the same, a backup was made" >&2
+fi
+
+# remove ROM header if necessary
+#ucon64 "$OUTPUTROMFILE" | grep 'Backup unit/emulator header: Yes'
+#if [ $? -eq 0 ] ; then
+#	ucon64 --nbak --stp "$OUTPUTROMFILE"
+#	HEADER_REMOVED=true
+#fi
+
+# fix wrong newlines in the cht file
+#dos2unix "$INPUTCHTFILE"
+
+while read line          
+do
+	# skip empty lines
+	#[ ${#line} = 0 ] && continue 
+	[ -z "$line" ] && continue
+	# [ "$line" = "" ] && continue
+	
+	echo "$line" | grep -F '+'
+	if [ $? -eq 0 ]; then
+		echo "$(basename $0) warn: combined codes on the same line are not supported (line skipped): $line"  >&2
+		continue
+	fi
+	
+	# determine if current line is a cheat using grep (more reliable)
+	echo "$line" | grep -qE '^[0-9A-Z]{3,}-[0-9A-Z]{3,}|^[A-Z]{6,}'  # matches strings like "XXX-XXX" or "XXXXXX" (Game Genie codes)
+	if [ $? -eq 0 ]; then
+		# patch gamegenie code type
+		current_code=$line
+		echo "$(basename $0): patching code: $line"
+		ucon64 --nbak --$ROM_SYSTEM --gg=$current_code "$OUTPUTROMFILE"  > /dev/null
+		#[ $? -ne 0 ] && echo "$(basename $0) warn: code patching failed" >&2
+		continue
+	fi
+	
+	echo "$line" | grep -qE '^[0-9A-F]{3,}:[0-9A-F]{2,}'  # matches hex strings like "AAAA:VV" (RAW codes)
+	if [ $? -eq 0 ]; then
+		# patch RAW code types
+		current_code=$line
+		echo "$(basename $0): patching code: $line"
+		ucon64 --nbak --poke=$current_code "$OUTPUTROMFILE"  > /dev/null
+		#[ $? -ne 0 ] && echo "$(basename $0) warn: code patching failed" >&2
+		continue
+	fi
+	
+#endwhile
+done <"$INPUTCHTFILE"
+
+# restore the header
+#[ "$HEADER_REMOVED" = "true" ] && ucon64 --nbak --$ROM_SYSTEM --ins "$OUTPUTROMFILE"
+
+# fix the header checksum
+if [ "$INPUTROMFILEEXT" != "nes" ]; then
+	ucon64 --nbak --$ROM_SYSTEM --chk "$OUTPUTROMFILE"   > /dev/null
+	[ $? -ne 0 ] && echo "$(basename $0) warn: could not fix the header checksum" >&2
+fi
+
+# generate an ips patch
+ucon64 --mki="$INPUTROMFILE" "$OUTPUTROMFILE"   > /dev/null
+[ $? -ne 0 ] && echo "$(basename $0) warn: ips creation failed" >&2
+
+#rm "$OUTPUTROMFILE"
+#mv "$INPUTCHTFILENAME.ips" "$INPUTCHTFILENAME"
+
+#mv "$INPUTCHTFILENAME.ips" "../$INPUTROMFILE.ips"
+#cp "$INPUTCHTFILE" "../$INPUTROMFILE.ips.txt"
+#7z a "$PWD.7z" *.*

@@ -1,1 +1,50 @@
-../../../bin/rename
+#!/bin/bash
+
+#system default https://unix.stackexchange.com/questions/275254/why-is-the-rename-utility-on-debian-ubuntu-different-than-the-one-on-other-distr
+#command -p rename "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+# alternative from util-linux package
+rename.ul "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+# alternative from file-rename package (old perl ver?)
+file-rename "s/$1/$2/g" "$3"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+# alternative perl script from http://tips.webdesign10.com/files/rename.pl.txt
+if [ -f "$(dirname $0)/rename.pl" ]; then
+	perl "$(dirname $0)/rename.pl" "s/$1/$2/g" "$3"
+	[ $? -eq 0 ] && exit 0
+	#_ES=$? ; [ $_ES -ne 127 -a $_ES -ne 2 -a $_ES -ne 255 ] && exit $_ES
+fi
+
+# alternative using sed from filerenameutils  http://filerenameutils.sourceforge.net/lowercase.html
+mv_sed "s/$1/$2/g" "$3"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+# else builtin alternative using sed
+if [ "$#" -lt 3 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: rename expression replacement file..."
+	echo
+	exit 0
+fi
+if [ ! -f "$3" ]; then
+	echo "$(basename $0): nothing found: $3" >&2
+	exit 0
+fi
+EXPR=$1
+REPL=$2
+shift
+shift
+IFS=$'
+	'
+for f in "$@"
+do
+	#NEWFILENAME="$( echo "$f" | sed "s/$EXPR/$REPL/1" )"
+	NEWFILENAME="${f/$EXPR/$REPL}"
+	if [ "${f}" != "$NEWFILENAME" ]; then
+		echo "\`${f}' -> \`$NEWFILENAME'"
+		mv "${f}" "$NEWFILENAME"
+	fi
+done

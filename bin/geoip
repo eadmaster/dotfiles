@@ -1,1 +1,30 @@
-../../../bin/geoip
+#!/bin/sh
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ -z "$1" ] || [ "$1" = "-" ]; then
+	echo "usage: $(basename $0) IP_ADDR"
+	echo
+	exit 0
+fi
+
+# from the geoip-bin package
+geoiplookup $1
+
+echo
+
+# from public web apis
+wget -q -O-  http://ip-api.com/json/$1 | python -m json.tool
+
+echo
+
+wget -q -O-  https://ipapi.co/$1/json/ | python -m json.tool
+
+echo
+
+wget -q -O-  http://ipinfo.io/$1/json/ | python -m json.tool
+
+# TODO: more web APIs: https://github.com/toddmotto/public-apis#geocoding
+
+echo
+
+# using nmap scripts
+nmap --script=ip-geolocation-maxmind,ip-geolocation-geoplugin,ip-geolocation-ipinfodb $1

@@ -1,1 +1,25 @@
-../../../bin/emoji
+
+# lookup via uni https://github.com/arp242/uni/
+uni emoji "$@"
+
+echo
+
+# lookup via unicode
+unicode "$@"
+
+echo
+
+# lookup via emoj (npm install --global emoj) https://github.com/sindresorhus/emoj
+emoj "$@"
+
+echo
+
+# lookup via python art module  https://github.com/sepandhaghighi/art#cli
+python3 -m art art "$@"
+
+echo
+
+# TODO: add https://github.com/cspeterson/splatmoji/issues/42
+
+
+# TODO: web api alternative

@@ -1,1 +1,24 @@
-../../../bin/romaji2katakana
+#!/bin/sh
+
+# romaji to katakana converter
+
+# force current locale UTF-8-based (otherwise this script may not work correctly)
+export LC_ALL=en_GB.UTF-8
+
+INPUT="$1"
+[ -z "$1" ] && INPUT=$(cat)
+[ -f "$1" ] && INPUT=$(cat "$1")
+
+# using uconv
+echo "$INPUT" | uconv -f UTF8 -t UTF8 -x "NFKD; Lower; Latin-Katakana;"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# TODO: more alternatives:
+#kakasi -i utf8 -o utf8 ... "$INPUT"
+#mecab -O...
+#chasen...
+#juman...
+# ... http://guides.library.upenn.edu/japanesetext
+
+# else sed alternative
+echo "$INPUT" | tr '[a-z]' '[A-Z]' | sed -f kana2romaji.sed

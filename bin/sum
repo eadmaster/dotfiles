@@ -1,1 +1,13 @@
-../../../bin/sum
+#!/bin/sh
+
+INPUT="$(echo $@ | tr ' ' '\n')"  # replace spaces with newlines
+[ -z "$1" ] && INPUT="$(cat)"
+[ -f "$1" ] && INPUT="$(cat $1)"
+
+echo "$INPUT" | awk '{s+=$1} END {printf "%.0f\n", s}'
+
+# ALTERNATIVES:
+# numsum  # from "num-utils" package
+# csvtool sum  # only for files
+# datamash sum 1
+# ... https://stackoverflow.com/questions/450799/shell-command-to-sum-integers-one-per-line

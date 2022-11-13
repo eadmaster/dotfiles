@@ -1,1 +1,24 @@
-../../../bin/dict
+#!/bin/bash
+
+command -p dict "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+sdcv --utf8-output --color "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+# alternative using translate-shell  https://github.com/soimort/translate-shell/
+echo "$(basename $0): google translate: " >&2
+trans -d "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+# alternative using curl+dict servers
+curl dict://dict.org/d:$1:wn  # From WordNet
+curl dict://dict.org/d:$1:gcide  # From The Collaborative International Dictionary of English
+curl dict://dict.org/d:$1:fd-eng-ita  # English-Italian FreeDict Dictionary
+curl dict://dict.hewgill.com/d:$1:en-brief  # from Wiktionary  http://hewgill.com/dict/
+[ $? -ne 0 ] && html2text --ignore-links --decode-errors=ignore "https://en.wiktionary.org/w/index.php?title=$1&printable=yes"
+
+# alternative using web APIs
+wget -q -O- -T2 "http://api.pearson.com/v2/dictionaries/ldoce5/entries?headword=$1"  | python -m json.tool
+
+

@@ -1,1 +1,309 @@
-../../../bin/service
+#!/bin/bash
+
+# args checking
+SERVICE_NAME=$1
+CMD=$2
+case $1 in
+	start|stop|status|restart ) CMD=$1 ; SERVICE_NAME=$2 ;;
+esac
+
+# check aliases
+case $SERVICE_NAME in
+	rdp )  export SERVICE_NAME=xrdp  ;;
+	redis )  export SERVICE_NAME=redis-server  ;;
+	bobli* )  export SERVICE_NAME=boblight  ;;
+	amule|emule )  export SERVICE_NAME=amule-daemon  ;;
+	#softap|ap )  export SERVICE_NAME=hostapd  ;;   # https://wiki.archlinux.org/index.php/software_access_point
+	#apache* )  export SERVICE_NAME=apache2  ;;
+	#tomcat* )  export SERVICE_NAME=tomcat5.5  ;;
+	*ssh )  export SERVICE_NAME=ssh  ;;
+	internet|network|net )  export SERVICE_NAME=networking  ;;
+	bt )  export SERVICE_NAME=bluetooth  ;;
+	fluid*|midi )  export SERVICE_NAME=timidity  ;;   # fluidsynth
+	#*shell )  export SERVICE_NAME=shellinabox  ;;
+esac
+
+# check if running on Android
+if [ ! -z "$ANDROID_ROOT" ]; then
+	# termux services https://wiki.termux.com/wiki/Remote_Access
+	case $SERVICE_NAME in
+		ftp* )  export SERVICE_NAME=ftpd ;;  #OLD: tcpsvd -vE 0.0.0.0 1024 ftpd -w /
+		http*|apache )  export SERVICE_NAME=httpd  ;;
+		ssh* )  export SERVICE_NAME=sshd  ;;
+		upnp|dlna )  export SERVICE_NAME=gmediarender ;;
+	esac
+	# switch on SERVICE_NAME
+	if [ "$SERVICE_NAME" = "tethering" ]; then
+		svc usb setFunction rndis
+		exit $?
+	elif [ "$SERVICE_NAME" = "adb" ]; then
+		# enable adb
+		svc usb setFunction adb  # https://android.stackexchange.com/questions/29954/is-it-possible-to-activate-the-usb-tethering-android-setting-from-the-command
+		exit $?
+	elif [ "$SERVICE_NAME" = "radb" ]; then
+		# https://stackoverflow.com/questions/2604727/how-can-i-connect-to-android-with-adb-over-tcp
+		if [ "$CMD" = "start" ]; then
+			setprop service.adb.tcp.port 5555
+		elif [ "$CMD" = "stop" ]; then
+			setprop service.adb.tcp.port -1
+		fi
+		stop adbd
+		start adbd
+		exit $?
+	# TODO: more system services aliases
+	fi
+	
+	# switch on CMD
+	if [ "$CMD" = "start" ]; then
+		sv up $SERVICE_NAME
+		svc $SERVICE_NAME enable
+		$SERVICE_NAME &
+		exit $?
+	elif [ "$CMD" = "stop" ]; then
+		sv down $SERVICE_NAME
+		svc $SERVICE_NAME disable
+		pkill $SERVICE_NAME
+		killall $SERVICE_NAME
+		exit $?
+	elif [ "$CMD" = "enable" ]; then
+		sv-enable $SERVICE_NAME
+		svc $SERVICE_NAME enable
+		exit $?
+	elif [ "$CMD" = "disable" ]; then
+		sv-disable $SERVICE_NAME
+		svc $SERVICE_NAME disable
+		exit $?
+	fi
+	# else
+	exit 1
+fi
+
+# TODO: if [ "$SERVICE_NAME" = "androidswap" ]; then
+	# rclone mount...
+
+if [ "$SERVICE_NAME" = "anbox" ]; then
+	# https://www.linuxuprising.com/2018/07/anbox-how-to-install-google-play-store.html
+	sudo systemctl $CMD snap.anbox.container-manager.service
+	exit $?
+elif [ "$SERVICE_NAME" = "rtltcp" ]; then
+	rtl_tcp -a 127.0.0.1  # TODO: daemonize
+	exit $?
+elif [ "$SERVICE_NAME" = "redshift" ]; then
+	if [ "$CMD" = "start" ]; then
+		nohup redshift -v -r -c $HOME/.config/redshift/redshift.conf > /tmp/redshift.log &
+		#-l $(whereami | tr ',' ':')
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		#TODO: MORE 
+	elif [ "$CMD" = "stop" ]; then
+		killall redshift
+		exit $?
+	fi
+elif [ "$SERVICE_NAME" = "boblight" ]; then
+	if [ "$CMD" = "start" ]; then
+		boblightd -f
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		extractrun boblight
+		exit $?
+	elif [ "$CMD" = "stop" ]; then
+		sudo killall boblightd
+		sudo killall boblight-X11
+		exit $?
+	fi
+	#else
+	exit 1
+elif [ "$SERVICE_NAME" = "gdrive" ]; then
+	TARGET_DIR=$HOME/gdrive
+	[ ! -d "$TARGET_DIR" ] && mkdir "$TARGET_DIR"
+	if [ "$CMD" = "start" ]; then
+		if mountpoint -q "$TARGET_DIR" ; then
+			echo "$(basename $0): already mounted on $TARGET_DIR" >&2
+			exit 1
+		fi
+		rclone mount gdrive: $TARGET_DIR --vfs-cache-mode writes --daemon -vv
+		echo "$(basename $0) info: gdrive mounted on $TARGET_DIR" >&2
+		#sleep 1
+		#ls "$TARGET_DIR"
+		exit $?
+	elif [ "$CMD" = "stop" ]; then
+		fusermount -u $TARGET_DIR
+		exit $?
+	fi
+	#else
+	echo "$(basename $0) err: unsupported command: $CMD" >&2
+	exit 1
+elif [ "$SERVICE_NAME" = "nzbget" ] || [ "$SERVICE_NAME" = "nzb" ] || [ "$SERVICE_NAME" = "nbz" ]; then
+	if [ "$CMD" = "start" ]; then
+		nzbget -D
+		exit $?
+	elif [ "$CMD" = "stop" ]; then
+		nzbget -Q
+		exit $?
+	fi
+	#else
+	echo "$(basename $0) err: unsupported command: $CMD" >&2
+	exit 1
+elif [ "$SERVICE_NAME" = "vnc" ]; then
+	if [ "$CMD" = "start" ]; then
+		vncserver -verbose -useold -noxstartup -SecurityTypes Plain,TLSPlain -PlainUsers $USER -depth 16
+		exit $?
+	elif [ "$CMD" = "stop" ]; then
+		vncserver -verbose -clean -kill :*
+		exit $?
+	elif [ "$CMD" = "status" ]; then
+		pgrep Xtigervnc
+		ss -tulpn | egrep -i 'vnc|590'
+		vncserver -list
+		exit $?
+	fi
+	# TODO: try more alternatives
+	exit 1
+elif [ "$SERVICE_NAME" = "samba" ]; then
+	sudo service smbd $CMD
+	[ $? -eq 0 ] && exit 0
+	sudo service samba $CMD
+	[ $? -eq 0 ] && exit 0
+	sudo service smb $CMD
+	[ $? -eq 0 ] && exit 0
+	#else
+	exit 1
+elif [ "$SERVICE_NAME" = "networking" ]; then
+	# try various names
+	sudo service networking $CMD
+	[ $? -eq 0 ] && exit 0
+	sudo service network-manager $CMD
+	[ $? -eq 0 ] && exit 0
+	sudo systemctl $CMD NetworkManager.service
+	[ $? -eq 0 ] && exit 0
+	sudo netplan apply
+	[ $? -eq 0 ] && exit 0
+	sudo service NetworkManager $CMD
+	[ $? -eq 0 ] && exit 0
+	# service names from http://xmodulo.com/disable-network-manager-linux.html
+
+	# else turn on/off all network interfaces
+	# TODO: detect currently active interfaces
+	if [ "$CMD" = "start" ]; then
+		sudo ifconfig eth0 up
+		sudo ifconfig eth1 up
+		sudo ifconfig wlan0 up
+		sudo ifconfig wlan1 up
+		exit $?
+	elif [ "$CMD" = "stop" ]; then
+		sudo ifconfig eth0 down
+		sudo ifconfig eth1 down
+		sudo ifconfig wlan0 down
+		sudo ifconfig wlan1 down
+		# ALTERNATIVE: set default gateway to localhost  http://superuser.com/questions/710954/linux-command-line-quick-way-to-disable-internet-keeping-lan
+		exit $?
+	elif [ "$CMD" = "status" ]; then
+		#sudo ifconfig
+		ip addr
+		exit $?
+	else
+		echo "$(basename $0): unsupported command: $CMD" >&2
+		exit 1
+	fi
+	
+fi
+
+# more alternatives
+if [ "$CMD" = "stop" ] ; then  # || [ "$CMD" = "restart" ]
+	case $SERVICE_NAME in
+		*alsa* ) sudo alsactl kill quit ; exit $? ;;  # MEMO: cannot quit to restart
+		adb ) adb kill-server  ; exit $? ;;
+		reversetethering|rtethering ) gnirehtet stop ; pkill gnirehtet ; exit $? ;;
+		tor ) service privoxy stop  ;;  # continue
+	esac
+elif [ "$CMD" = "start" ] || [ "$CMD" = "restart" ] ; then
+	case $SERVICE_NAME in
+		*http* ) uhttpd ; exit $? ;;
+		*sftp* ) usftpd ; exit $? ;;
+		*ftp* ) uftpd ; exit $? ;;
+		*dlna*|*upnp* ) udlnad ; exit $? ;;
+		#*alsa* ) sudo alsactl init ; exit $? ;;
+		adb ) adb start-server ; exit $? ;;
+		#*dhcp* ) busybox udhcpd ; exit $? ;;
+		#*ssh ) extractrun dropbear ; exit $? ;;
+		#*synergy*|*barrier* ) barrier ; exit $? ;;
+		reversetethering|rtethering ) nohup gnirehtet run $ANDROID_SERIAL  > /tmp/gnirehtet.log & 
+			exit $? ;;
+		#TODO: tor ) command -p service tor start; service privoxy start; nffmetstat -a | grep 9050 ; exit $? ;;
+		#TODO: boblight
+	esac
+elif [ "$CMD" = "disable" ] ; then
+	sudo systemctl disable $SERVICE_NAME.service
+	[ $? -eq 0 ] && exit 0
+	sudo update-rc.d $SERVICE_NAME disable
+	exit $?
+elif [ "$CMD" = "enable" ] || [ "$CMD" = "auto" ] ; then
+	sudo systemctl enable $SERVICE_NAME.service
+	[ $? -eq 0 ] && exit 0
+	sudo update-rc.d $SERVICE_NAME defaults
+	sudo update-rc.d $SERVICE_NAME enable
+	[ $? -eq 0 ] && exit 0
+	sudo chkconfig $SERVICE_NAME on
+	exit $?
+elif [ "$CMD" = "remove" ] || [ "$1" = "rm" ] ; then
+	sudo update-rc.d $SERVICE_NAME remove
+	exit $?
+elif [ "$1" = "list" ] || [ "$1" = "ls" ] ; then
+	command -p service --status-all
+	systemctl --all --no-pager list-units --type=service
+	exit $?
+elif [ "$1" = "search" ] || [ "$1" = "find" ] ; then
+	service --status-all | grep  "*$2*"
+	systemctl --all list-units --type=service  "*$2*"
+	exit $?
+elif [ "$1" = "logs" ] || [ "$1" = "log" ] ; then
+	sudo journalctl -u $SERVICE_NAME
+	exit $?
+#else
+#	echo "$(basename $0): unsupported command: $CMD" >&2
+#	exit 1
+fi
+
+command -p service $SERVICE_NAME $CMD
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+sudo systemctl $CMD $SERVICE_NAME
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+if [ "$1" = "--status-all" ]; then
+	for s in /etc/init.d/* ; do
+		$s status
+	done
+	exit 0
+fi
+
+#if [ -z "$CMD" ]; then
+#	echo "usage: $(basename $0) name start|stop|restart|status|--status-all"
+#	exit 0
+#fi
+
+# service command is being deprecated in Ubuntu in favour of the stop, start and restart commands
+if [ "$CMD" = "start" ] || [ "$CMD" = "stop" ] || [ "$CMD" = "restart" ]; then
+	sudo $CMD $SERVICE_NAME
+	_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+fi
+
+sudo "/etc/init.d/$SERVICE_NAME" $CMD
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+sudo "/etc/init.d/$SERVICE_NAME-daemon" $CMD
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+sudo "/etc/init.d/$SERVICE_NAME-server" $CMD
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+docker $CMD $SERVICE_NAME
+_ES=$? ; [ $_ES -eq 0 ] && exit 0
+
+# else try some aliases
+case $SERVICE_NAME in
+	mysql* )  $0 mariadb $CMD  ;;
+	#*vnc )
+esac
+
+#else
+exit 127

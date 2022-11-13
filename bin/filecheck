@@ -1,1 +1,281 @@
-../../../bin/filecheck
+#!/bin/sh
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUT_FILE"
+	echo
+	exit 0
+elif [ -z "$1" ] || [ "$1" = "-" ]; then
+	echo "$(basename $0) warn: reading input file from stdin" >&2
+	INPUTFILE="$TMPDIR/$$.tmp"
+	cat > $INPUTFILE
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+elif [ ! -z "$2" ]; then
+	# iterate over passed args and recursive call
+	for CURR_FILE in "$@"
+	do
+		echo -n "$(basename $0): checking $CURR_FILE... " >&2
+		$0 "$CURR_FILE"
+		[ $? -eq 0 ] && echo "OK"
+	done
+	exit $?
+fi
+
+# TODO: if [ ! -z "$2" ]; then
+# invoke "$0" recursively
+#fi
+
+INPUTFILE="$1"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+
+# try to detect the input file type using file
+INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
+
+# try to detect the input file type according on its extension (useful if file is missing or buggy)
+case $INPUTFILEEXT in
+	jpg|gif|png|tiff|tif|bmp|xpm|pbm|pgm|ppm|tga|ico|dng|crw ) INPUTFILETYPE=image/$INPUTFILEEXT ;;
+	avi|mkv|ogm|mpg|mpeg|mp4|mp3|mp2|ogg|flac|aac|ac3|a52|dts|asf|rm|wav ) INPUTFILETYPE=video/$INPUTFILEEXT ;;
+	xml ) INPUTFILETYPE=application/xml ;;
+	json ) INPUTFILETYPE=application/json ;;
+	html|htm ) INPUTFILETYPE=text/html ;;
+	c|cpp|h|hpp ) INPUTFILETYPE=text/x-c ;;
+	java ) INPUTFILETYPE=text/x-java ;;
+	php ) INPUTFILETYPE=text/x-php ;;
+	py ) INPUTFILETYPE=text/x-python ;;
+	js ) INPUTFILETYPE=application/javascript ;;
+	xml ) INPUTFILETYPE=application/xml ;;
+	txt ) INPUTFILETYPE=text/plain ;;
+	so ) INPUTFILETYPE=application/x-sharedlib ;;
+	sh ) INPUTFILETYPE=text/x-shellscript ;;
+esac
+
+# TODO: check if filename contains "[+]"
+# check crc32 sum embedded in the filename
+#rhash --check-embedded "$INPUTFILE"
+echo
+
+# look for a specific tool in the system (e.g. mp3check)
+CUSTOMTOOLPATH=$( findcommand ${INPUTFILEEXT}check | head -n1 )
+[ -z "$CUSTOMTOOLPATH" ] && CUSTOMTOOLPATH=$( findcommand ${INPUTFILEEXT}lint | head -n1 )
+if [ ! -z "$CUSTOMTOOLPATH" ]; then
+	$CUSTOMTOOLPATH "$INPUTFILE"
+fi
+
+# switch by input file extension
+case "$INPUTFILEEXT" in
+
+	#mid|midi|kar|mod|xm|s3m|stm|it )
+		#	timidity -Ol "$INPUTFILE"
+		#	exit $?
+	
+	#rtf|odt|odp|odg|ods|doc|xls|mdb|docx|pptx|xlsx|csv|tsv|dbf|txt ) # office
+	#	soffice --norestore ...
+
+	rar )
+		unrar t "$INPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		#;&  # else fallthru
+		;;
+
+	zip|rar|7z|arj|bz2|cab|cpio|gz|lha|lzh|tar|tgz|tbz|wim|iso|img|ima|vhd|vmdk|vdi|ext2|apk )
+		7z t -bb1 -slt "$INPUTFILE"
+		exit $?
+		;;
+
+	qcow|qcow2|vdi|qed )
+		qemu-img check  --output=human "$INPUTFILE"
+		exit $?
+		;;
+
+	par2 ) 
+		par2 v "$INPUTFILE"
+		exit $?
+		;;
+	
+	smc|sfc|fig|gb|gbc|gba|nds|n64|z64|smd|gen|md|32x|pce|nes|fds|sms|gg|ws|wsc|jag|ngp|ngc|vb )
+		ucon64 "$INPUTFILE"
+		exit $?
+		;;
+		
+	crc|crc32|sfv|md5|ed2k|emulecollection|hash )
+		rhash -c "$INPUTFILE"
+		exit $?
+		;;
+	
+	pgp|sig|asc|sign ) # signature files
+		gpg --verbose --verify "$INPUTFILE" 2>& 1 | grep --color=always -e "^" -e '.*signature from.*'
+		# ALTERNATIVE: openssl (req. certificate path?)
+		exit $?
+		;;
+	
+	key | pem )  # rsa public/private keys
+		openssl rsa -in "$INPUTFILE" check
+		exit $?
+		;;
+	
+	p7m )
+		openssl smime -verify -in "$INPUTFILE" -inform der -CAfile $SSL_CERT_FILE  # -signer $SSL_CERT_FILE 
+		# TODO: fix
+		exit $?
+		;;
+		
+	csv|tsv|isv )  # comma-separated-value (not detected correctly by file?)
+		csvclean -n "$INPUTFILE"
+		csvtool check "$INPUTFILE"
+		exit $?
+		;;
+
+	db ) # BSD dbm
+		db_verify "$INPUTFILE"
+		exit $?
+		;;
+		
+	mp3 )
+		mp3val "$INPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		;;
+		
+	flac )
+		flac --test "$INPUTFILE"  # --silent 
+		#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		
+		WAVETMPFILE=/tmp/fakeflac_$$.wav
+		ffmpeg -v quiet -i "$INPUTFILE" -acodec pcm_s16le -f wav $WAVETMPFILE
+		auCDtect $WAVETMPFILE
+		#BUGGY: ffmpeg -v quiet -i "$INPUTFILE" -acodec pcm_s16le -f wav pipe:1 | auCDtect --
+		#fakeflac "$INPUTFILE"
+		rm $WAVETMPFILE
+		exit $?
+		;;
+
+	# TODO: custom xml documents formats: sgml|xsd|xsl|opml|kml|poi|wis|nzb )
+	
+	ps2 )
+		mymcplus "$INPUTFILE" check
+		exit $?
+		;;
+esac
+
+
+# switch by input file mime type
+case "$INPUTFILETYPE" in
+	image* )
+		echo "$(basename $0) info: check if upscaled..."
+		# using resdet  https://github.com/0x09/resdet
+		resdet "$INPUTFILE"
+		echo "$(basename $0) info: if no error is shown then probably the file is fine" >&2
+		identify -verbose -regard-warnings "$INPUTFILE" > /dev/null
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		imconvert "$INPUTFILE" /dev/null
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		ffmpeg -hide_banner -v error -i "$INPUTFILE" -f null -
+		exit $?
+		;;
+	
+	video*|audio* )
+		echo "$(basename $0) info: if no error is shown then probably the file is fine" >&2
+		ffmpeg -hide_banner -v error -i "$INPUTFILE" -f null -
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		mplayer -ao null -vo null -fps 9999999 -msglevel all=1 "$INPUTFILE"
+		exit $?
+		;;
+	
+	application/pdf )
+		qpdf --check  "$INPUTFILE"
+		# TODO: alternative from poppler-utils https://superuser.com/questions/580887/check-if-pdf-files-are-corrupted-using-command-line-on-linux
+		# check pdf signatures via poppler-utils
+		pdfsig "$INPUTFILE"
+		exit $?
+		;;
+
+	text/x-shellscript )
+		checkbashisms "$INPUTFILE"
+		shellcheck "$INPUTFILE"
+		export POSIXLY_CORRECT=1
+		sh -n "$INPUTFILE"
+		exit 0
+		;;
+
+	text/x-c* ) # c-like source code
+		lint "$INPUTFILE"
+		#splint "$INPUTFILE"
+		cppcheck "$INPUTFILE"
+		#oclint "$INPUTFILE"
+		#rats "$INPUTFILE"
+		clang-tidy "$INPUTFILE"
+		gcc -Wall -Wextra -pedantic -Wundef -Wshadow -Winit-self -o NUL -c "$INPUTFILE" > /dev/null
+		exit $?
+		;;
+	
+	text/x-java )
+		jlint "$INPUTFILE"
+		checkstyle "$INPUTFILE"
+		# not working with jdk 1.8? http://stackoverflow.com/questions/20689204/is-there-any-way-to-run-javac-turning-off-code-generation
+		javac -proc:only "$INPUTFILE"
+		javac -d /dev/null "$INPUTFILE"
+		exit $?
+		;;
+	
+	text/x-php )
+		php -l "$INPUTFILE"
+		exit $?
+		;;
+
+	text/x-python | text/python )  # python source code
+		pep8 "$INPUTFILE"
+		pyflakes "$INPUTFILE"
+		pylint --errors-only "$INPUTFILE"
+		flake8 "$INPUTFILE"
+		#python -m "$INPUTFILE"
+		python -d "$INPUTFILE"  # shorter output
+		exit $?
+		;;
+	
+	application/json )
+		# jsonlint from python-demjson
+		jsonlint "$INPUTFILE"
+		#echo "$(basename $0) info: if no error is shown then probably the file is fine" >&2
+		python -m json.tool "$INPUTFILE"  > /dev/null
+		#exit $?
+		;;
+		#;&  # fallthru
+
+	application/javascript | text/javascript )  # javascript source code
+		jslint "$INPUTFILE"
+		jshint "$INPUTFILE"
+		node -c "$INPUTFILE"
+		exit $?
+		;;
+
+	text/html )
+		tidy -e "$INPUTFILE"
+		xmllint --html --noout "$INPUTFILE" > /dev/null
+		# TODO: alternative using python  http://stackoverflow.com/questions/11001996/python-parse-html-files-in-a-directory-and-check-if-they-are-badly-formed
+		exit $?
+		;;
+		
+	application/xml )
+		xmllint --noout "$INPUTFILE"
+		xml val --net -e "$INPUTFILE"
+		xmlstarlet val --net -e "$INPUTFILE"
+		# TODO: alternative using python http://stackoverflow.com/questions/13742538/how-to-validate-xml-using-python-without-third-party-libs
+		exit $?
+		;;
+		
+	text/plain )  # plaintext: check mispelled words
+		echo "$(basename $0) info: mispelled words found:" >&2
+		hunspell -l -d en_US,en-US,it-IT "$INPUTFILE"  # -l -L -w 
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		aspell list < "$INPUTFILE"   # --data-dir=$DICPATH --ignore=3 --dont-backup --ignore-case --dont-ignore-case --lang=en
+		#MORE ALTERNATIVES: ispell
+		# TODO: alternative: split text by words and search them in an external dict from /p/Documents/db/dict/*.dic.gz
+		# TODO: check newlines and encoding inconsistencies
+		exit $?
+		;;
+esac
+
+echo "$(basename $0): extension \"$INPUTFILEEXT\" not supported" >&2
+exit 1

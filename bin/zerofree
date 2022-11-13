@@ -1,1 +1,26 @@
-../../../bin/zerofree
+#!/bin/sh
+
+# using sfill from secure-delete
+command -p sfill -llz "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+zerofree "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# alternative using dd (1 pass)
+if [ ! -d "$1" ]; then
+	echo "$(basename $0) error: dir does not exist: $1" >&2
+	exit 1
+fi
+
+# ask interactive confirmation
+echo "$(basename $0): about to zerofill freespace on \"$1\""
+echo "$(basename $0): press Enter to continue or Ctrl-C to abort... "
+read
+
+#dd if=/dev/zero of="$1/filler" bs=10M
+dd if=/dev/zero of="$1/filler" bs=10485760
+dd if=/dev/zero of="$1/filler1" bs=1
+
+rm $1/filler
+rm $1/filler1

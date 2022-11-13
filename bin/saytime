@@ -1,1 +1,3 @@
-../../../bin/saytime
+#!/bin/sh
+
+say "It is $(printf %d $(date "+%H")),  $(if [ $(date +%M) != "00" ]; then printf %d $(date "+%M"); else echo -n "oh clock "; fi)" # ,  $(date +%p)"

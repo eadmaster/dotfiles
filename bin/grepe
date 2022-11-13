@@ -1,1 +1,10 @@
-../../../bin/grepe
+
+
+# open all the matches in a text editor
+
+[ -z "$VISUAL" ] && export VISUAL=geany
+
+grep -HonI "$@" | cut -d: -f1-2 | while read match
+do
+	$VISUAL $match
+done

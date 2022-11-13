@@ -1,1 +1,24 @@
-../../../bin/cleansys
+#!/bin/sh
+
+#rm -r $HOME/.thumbnails
+#rm -r $HOME/Trash
+#rm -r $HOME/.python-eggs
+#rm -r $HOME/.kchmviewer/*.kchmviewer
+
+#rm -r $XDG_CACHE_HOME
+[ -z "$XDG_CACHE_HOME" ] && export XDG_CACHE_HOME=$HOME/.cache
+rm -r "$XDG_CACHE_HOME/moonchild productions"
+rm -r "$XDG_CACHE_HOME/mozilla"
+
+#rm -r $XDG_CONFIG_HOME/tmp
+
+sudo apt-get clean
+#sudo rm /var/lib/apt/lists/*
+
+# gnome bug  http://askubuntu.com/questions/151101/why-are-goutputstream-xxxxx-files-created-in-home-folder
+rm $HOME/.goutputstream-*
+
+# wine cleanup
+rm $HOME/.wine64/drive_c/users/$USER/Temp/*
+
+dockerclean

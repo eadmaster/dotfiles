@@ -1,1 +1,26 @@
-../../../bin/asm2hex
+
+
+# args checking
+if [ "$#" -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) arch opcode(s)"
+	echo
+	exit 0
+fi
+
+#echo "TIPS: more flags: "
+# -L list supported asms
+# -c [cpu] Select specific CPU (depends on arch)
+# -e Use big endian instead of little endian
+#-s [syntax]  Select syntax (intel, att)
+# -f [file]    Read data from file
+
+# via Rizin
+rz-asm -a "$@"
+[ $? -eq 0 ] && exit 0
+
+# via radare2
+rasm2 -a "$@"
+[ $? -eq 0 ] && exit 0
+
+# via Rizin from Cutter AppImage (must be mounted)
+#if [ -e /tmp/.mount_Cutter*/usr/bin/rz-asm ]; then

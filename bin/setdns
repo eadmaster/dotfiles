@@ -1,1 +1,32 @@
-../../../bin/setdns
+#!/bin/sh
+
+# https://wiki.archlinux.org/index.php/Resolv.conf
+
+if [ "$1" = "" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) dhcp|CUSTOM_IP|google|opendns"
+	exit 0
+fi
+
+if [ "$1" = "dynamic" ] || [ "$1" = "dhcp" ]; then
+	# resolvconf -u
+	sudo rm /etc/resolv.conf
+	sudo dhcpcd eth0
+elif [ "$1" = "google" ]; then
+	# TODO: parse addresses from https://developers.google.com/speed/public-dns/
+	sudo sh -c "echo '# Google DNS public servers' > /etc/resolv.conf"
+	sudo sh -c "echo 'nameserver 8.8.8.8' >> /etc/resolv.conf"
+	sudo sh -c "echo 'nameserver 8.8.4.4' >> /etc/resolv.conf"
+elif [ "$1" = "opendns" ]; then
+	# TODO: parse addresses from https://store.opendns.com/setup/
+	sudo sh -c "echo '# OpenDNS public servers' > /etc/resolv.conf"
+	sudo sh -c "echo 'nameserver 208.67.222.222' >> /etc/resolv.conf"
+	sudo sh -c "echo 'nameserver 208.67.220.220' >> /etc/resolv.conf"
+#elif [ "$1" = "tunlr" ]; then
+	# TODO: parse addresses from http://tunlr.net/get-started/
+else
+	sudo sh -c "echo 'nameserver $1' >> /etc/resolv.conf"
+	sudo sh -c "echo 'nameserver $1' >> /etc/resolv.conf"
+fi
+
+# /etc/init.d/nscd restart
+# service nscd restart

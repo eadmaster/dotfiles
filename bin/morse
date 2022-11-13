@@ -1,1 +1,95 @@
-../../../bin/morse
+#!/bin/bash
+
+INPUT="$@"
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+command -p morse "$INPUT"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+/usr/games/morse "$INPUT"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+morsegen "$INPUT"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# https://sourceforge.net/projects/cwtext/
+cwtext "$INPUT"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# https://github.com/dhondta/python-codext
+codext encode morse "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# alternative using sed
+INPUT="$1"
+[ -z "$1" ] && INPUT=$(cat)
+[ -f "$1" ] && INPUT=$(cat "$1")
+echo "$INPUT" | sed -e '
+# Convert to uppercase
+s/.*/\U&/
+# replace whitespaces with newlines (long pause)
+s/[ \t][ \t]*/\
+/g
+# encode in morse, add a single space after each char
+s/\!/---. /g
+s/\\/.-..-. /g
+s/\$/...-..- /g
+s/\//.----. /g
+s/(/-.--. /g
+s/)/-.--.- /g
+s/+/.-.-. /g
+s/,/--..-- /g
+s/-/-....- /g
+s/\./.-.-.- /g
+s/\//-..-. /g
+s/:/---... /g
+s/;/-.-.-. /g
+s/=/-...- /g
+s/?/..--.. /g
+s/@/.--.-. /g
+s/\[/-.--. /g
+s/\]/-.--.- /g
+s/_/..--.- /g
+s/0/----- /g
+s/1/.---- /g
+s/2/..--- /g
+s/3/...-- /g
+s/4/....- /g
+s/5/..... /g
+s/6/-.... /g
+s/7/--... /g
+s/8/---.. /g
+s/9/----. /g
+s/A/.- /g
+s/B/-... /g
+s/C/-.-. /g
+s/D/-.. /g
+s/E/. /g
+s/F/..-. /g
+s/G/--. /g
+s/H/.... /g
+s/I/.. /g
+s/J/.--- /g
+s/K/-.- /g
+s/L/.-.. /g
+s/M/-- /g
+s/N/-. /g
+s/O/--- /g
+s/P/.--. /g
+s/Q/--.- /g
+s/R/.-. /g
+s/S/... /g
+s/T/- /g
+s/U/..- /g
+s/V/...- /g
+s/W/.-- /g
+s/X/-..- /g
+s/Y/-.-- /g
+s/Z/--.. /g
+# ALTERNATIVE: use daw=- dit=. like in bsdgames
+#s/-/daw /g
+#s/\./dit /g
+#s/  /\
+#/g
+'

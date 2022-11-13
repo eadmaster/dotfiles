@@ -1,1 +1,53 @@
-../../../bin/cpuinfo
+
+cat /proc/cpuinfo
+# TODO: list 1st core only
+
+echo
+
+cpuid
+
+echo
+
+lscpu
+
+echo
+
+dmidecode --type processor
+
+echo
+
+acpi -V
+
+echo
+
+echo "$(basename $0): current cpu usage:"
+# http://stackoverflow.com/questions/9229333/how-to-get-overall-cpu-usage-e-g-57-on-linux
+grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage "%"}'
+
+echo
+
+echo "$(basename $0): current core freqs (MHz):"
+cat /proc/cpuinfo | grep MHz
+
+echo
+
+echo "$(basename $0): current governor:"
+cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+
+echo
+
+echo "$(basename $0): current max frequencies:"
+# http://www.pantz.org/software/cpufreq/usingcpufreqonlinux.html
+for f in /sys/devices/system/cpu/*/cpufreq/scaling_max_freq; do
+	#sudo sh -c "cat $f"
+	cat $f
+done
+
+echo
+
+cpupower frequency-info
+cpupower idle-info
+
+echo
+
+inxi -f

@@ -1,1 +1,26 @@
-../../../bin/swap
+#!/bin/sh
+ 
+command -p swap "$@"  2> /dev/null
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else alternative shell script
+# args checking
+if [ "$#" -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) FILE1 FILE2"
+	echo
+	exit 0
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+elif [ ! -f "$2" ]; then
+	echo "$(basename $0) error: file does not exist: $2" >&2
+	exit 1
+fi
+[ "$#" -gt 2 ] && echo "$(basename $0) warn: more than 2 args passed, skipping after the second" >&2
+
+echo "$(basename $0): \`$1' <-> \`$2'"
+
+TMPFILE="$(dirname "$1")/.$$.tmp"
+mv -n "$1" "$TMPFILE"
+mv -n "$2" "$1"
+mv -n "$TMPFILE" "$2"

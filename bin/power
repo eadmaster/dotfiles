@@ -1,1 +1,460 @@
-../../../bin/power
+#!/bin/sh
+
+# used for RGB LEDs
+DEFAULT_LED_COLOR=00FF00
+#  TODO: replace with device names  https://gitlab.com/CalcProgrammer1/OpenRGB/-/issues/2854
+OPEN_RGB_KEYBOARD_DEVICE_ID=0
+OPEN_RGB_MOUSE_DEVICE_ID=1
+#OPEN_RGB_MOUSE_ID=$(openrgb -l | grep ...)
+# used for razer keyboards
+OPENRAZER_BASE_PATH=/sys/bus/hid/drivers/razerkbd
+
+# Windows detection
+if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
+	cmd.exe /C power "$@"
+	exit $?
+fi
+
+# TODO: more android cmds: turn off/on wifi, monitor
+
+# check args
+if [ "$1" = "on" ] || [ "$1" = "up" ] || [ "$1" = "off" ] || [ "$1" = "down" ] || [ "$1" = "status" ] || [ "$1" = "check" ]; then
+	CMD=$1
+	TARGET=$2
+elif [ "$2" = "on" ] || [ "$2" = "up" ] || [ "$2" = "off" ] || [ "$2" = "down" ] || [ "$2" = "status" ] || [ "$2" = "check" ]; then
+	CMD=$2
+	TARGET=$1
+fi
+#else continue
+
+case "$CMD" in
+status|check )
+	case "$TARGET" in
+		""|all )
+			findnearby
+			exit 0
+			
+			#OLD:
+			[ -z "$IFACE" ] && IFACE=$( route | grep '^default' | grep -o '[^ ]*$' | head -n1 )
+			MYIP=$( ip -f inet -o addr show dev $IFACE | cut -d\  -f 7 | cut -d/ -f 1 | tail -n1 )
+			[ -z "$MYIP" ] && MYIP=$( ifconfig $IFACE | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}' )
+			
+			echo "$(basename $0): this computer IP is: $MYIP"
+			
+			# ping 10 IPs in (MYIP-5 ; MYIP+5 range)
+			BASEADDR=$( echo -n $MYIP | cut -d. -f 1-3 )
+			VARADDR=$( echo -n $MYIP | cut -d. -f 4 )
+			VARADDRMIN=$( expr $VARADDR - 5 )
+			VARADDRMAX=$( expr $VARADDR + 5 )
+			
+			#for var in $(seq $VARADDRMIN $VARADDRMAX); do
+			#	[ "$MYIP" = "$BASEADDR$var" ] && continue
+			#	
+			#	# ALTERNATIVEs: nmap -sn | nmap --script broadcast-ping
+			#	echo -n "$(basename $0): pinging $BASEADDR.$var... "
+			#	sudo ping -c 1 -W 2 $BASEADDR.$var >/dev/null
+			#	if [ $? -eq 0 ]; then
+			#		# host is online, do further scans
+			#		echo "PONG"
+			#		
+			#		# look for opened ports and try to identify the OS
+			#		#tput setaf 1  # set the red color
+			#		sudo nmap $BASEADDR.$var -F -O -oG - | grep OS
+			#		# http://nmap.org/book/man-host-discovery.html
+			#		#tput sgr0  # back to normal color
+			#		
+			#		# get the MAC address
+			#		#sudo nmap -sP -n $BASEADDR.$var | grep MAC
+			#	fi
+			#	echo
+			#done
+			#echo "$(basename $0): tip: for more infos use nmap -O IPADDR"
+			
+			echo
+			
+			# find DNS names using dig from the "dnsutils" package
+			#dig -t axfr 
+			# find DNS names using dig from the "bind9utils" package
+			# rndc dumpdb -zones
+			
+			echo "$(basename $0): zeroconf/mDNS/Bonjour names scan:"
+			avahi-browse -a --ignore-local --terminate #--parsable 
+			[ $? -ne 0 ] && mdns-scan
+			[ $? -ne 0 ] && nmap --script=broadcast-dns-service-discovery 192.168.1.*
+
+			echo
+			
+			# discover WebServices using https://pypi.org/project/WSDiscovery/
+			echo "$(basename $0): WS-Discovery scan:"
+			wsdiscover
+			
+			echo
+			
+			echo "$(basename $0): NetBIOS scan:"
+			sudo nbtscan -q ${BASEADDR}.1/16
+			[ $? -ne 0 ] && nmap --script smb-os-discovery -p 445 ${BASEADDR}.1.*  #-v
+			#nmblookup -A $BASEADDR*
+
+			echo
+						
+			echo "$(basename $0): ARP scan:"  # https://www.linux-magazine.com/Online/Features/Using-ARP-for-Network-Recon
+			# TIP: get sanitized IEEE OUI Data here https://linuxnet.ca/ieee/oui/
+			sudo arp-scan --localnet  # --quiet 
+			echo "arp:"
+			arp -i $IFACE  # no root req., best executed AFTER arp-scan? https://unix.stackexchange.com/questions/188367/get-names-of-devices-on-the-network
+			
+			#echo "$(basename $0): netdiscover scan:"  # 2FIX: slower than arp-scan?
+			#sudo netdiscover -f -P
+
+			echo
+			
+			echo "$(basename $0): quick nmap OS scan:" # https://serverfault.com/questions/522596/ping-only-os-detection-with-nmap
+			nmap -p 22,80,445,65123,56123 -T5 -A 192.168.1.* --open  # --host-timeout 1s
+			# NO? sudo nmap -sn -O 192.168.1.*  # -sn: Ping Scan - disable port scan
+			[ $? -ne 0 ] && 
+			[ $? -ne 0 ] && ip neigh #| grep REACHABLE | cut -d' ' -f1 | ...
+			
+			echo
+
+			exit 0
+		;;
+
+		powerline )
+			broadlink_cli $BROADLINK_SP2_PARAMS --check
+			echo -n "energy consumption from device (in W): "
+			broadlink_cli $BROADLINK_SP2_PARAMS --energy
+			exit $?
+		;;
+			
+		* ) # default case
+			TARGET=$2
+			ping -c 3 $TARGET
+			[ $? -eq 0 ] && exit 0
+			# try again with zeroconf
+			ping -c 3 $TARGET.local
+			exit $?
+		;;
+	esac
+;;
+
+off|down )  # OFF COMMANDS
+	case "$TARGET" in
+		""|this|me ) # empty string
+			echo "$(basename $0): about to power off this computer"
+			if [ ! -z "$ANDROID_ROOT" ]; then
+				svc power shutdown
+				exit $?
+			fi
+			# echo "Press [ENTER] to continue or ctrl-c to cancel"
+			# sudo poweroff
+			echo "$(basename $0): type 'ok' and press Enter to continue"
+			read REPLY ; [ "$REPLY" = "ok" ] && sudo poweroff
+			echo "$(basename $0): power off cancelled"
+			exit $?
+		;;
+		
+		monitor|screen )
+			echo "$(basename $0): about to power off the monitor"
+			#if [ "$(hostname)" = "BOSS2" ] || [ "$(hostname)" = "BOSS3" ]; then
+				#lgtv_serial poweroff
+				#irsend SEND_ONCE LG_AKB72915207 KEY_POWER
+				#sendir lg_power
+			#fi
+			if [ ! -z "$ANDROID_ROOT" ]; then
+				# input keyevent 26
+				input keyevent KEYCODE_POWER
+				exit $?
+			fi
+			# using HDMI-CEC
+			echo "standby 0" | cec-client -s
+			# using the DDC/CI protocol (may need to change the dev address, check "sudo ddccontrol -p") https://superuser.com/questions/648805/is-it-possible-to-power-on-off-a-monitor-using-the-computer
+			sudo ddccontrol -r 0xe1 -w 0 dev:/dev/i2c-2
+			#ddcutil setvcp d6 5
+			xset dpms force off
+			exit $?
+		;;
+
+		lan|eth*|wifi|wlan* )
+			if [ ! -z "$ANDROID_ROOT" ]; then
+				termux-wifi-enable false
+				[ $? -eq 0 ] && exit 0
+				svc wifi disable
+				[ $? -eq 0 ] && exit 0
+				settings put global wifi_on 0
+				[ $? -eq 0 ] && exit 0
+			fi
+			IFACE=$2
+			[ "$2" = "lan" ] && IFACE=eth0
+			[ "$2" = "wifi" ] && IFACE=wlan0
+			[ "$2" = "wifi" ] && [ "$(hostname)" = "BOSS2" ] && IFACE=wlxc04a0011cfa4
+			# TODO: detect current active interface?
+			echo "$(basename $0): about to power off the network interface: $IFACE"
+			sudo ip link set dev $IFACE down
+			[ $? -eq 0 ] && exit 0
+			sudo ifdown $IFACE
+			[ $? -eq 0 ] && exit 0
+			sudo ifconfig $IFACE down
+			exit $?
+		;;
+
+		bluetooth|bt )
+			if [ ! -z "$ANDROID_ROOT" ]; then
+				svc bluetooth disable
+				settings put global bluetooth_on 0
+				settings put global bluetooth_disabled_profiles 0
+				exit $?
+			fi
+			rfkill block bluetooth
+			sudo hciconfig hci0 down
+			hciconfig
+			exit $?
+		;;
+
+		smartplug )
+			broadlink_cli $BROADLINK_SP2_PARAMS  --turnoff
+			exit $?
+		;;
+			
+		*sd*|*hd* )
+			[ -b "/dev/$2" ] && TARGET=/dev/$2
+			echo "$(basename $0): about to power off the storage device: $TARGET"
+			# using udisksctl
+			sudo udisksctl unmount -b $TARGET
+			sudo udisksctl power-off -b $TARGET
+			# using udisks  http://superuser.com/questions/430438/powering-down-external-hard-drive-flash-drive-etc-using-the-command-line-in-li
+			udisks --unmount $TARGET
+			udisks --detach $TARGET
+			# using hdparam 
+			#sudo hdparm -Y $TARGET
+			# using eject  http://stackoverflow.com/questions/13224509/linux-ubuntu-safely-remove-usb-flash-disk-via-command-line
+			#eject $TARGET
+			[ $? -eq 0 ] && exit 0
+			exit $?
+		;;
+				
+		usb* )
+			echo "$(basename $0): about to power off the USB port: $TARGET"
+			sudo uhubctl -a off -p $TARGET -r 2 -w 2000  # of PICCIOTTO3: -l 2-6
+			exit $?
+		;;
+			
+		keyboard* )
+			openrgb --device "$OPEN_RGB_KEYBOARD_DEVICE_ID" --mode off
+			#OLD: [ -e "$OPENRAZER_BASE_PATH" ] && echo -n "1" > $OPENRAZER_BASE_PATH/matrix_effect_none
+			[ -e "$OPENRAZER_BASE_PATH" ] && razer-cli -e none
+			exit $?
+		;;
+			
+		mouse* )
+			openrgb --device "$OPEN_RGB_MOUSE_DEVICE_ID" --mode static --color 000000
+			exit $?
+		;;
+		
+		* ) # default case
+			# power off a device via an IR blaster (must be configured separately)
+			echo "$(basename $0): about to power off via IR blaster: $TARGET"
+			[ "$TARGET" = LG ] && TARGET=LG_AKB72915207
+			irsend SEND_ONCE $TARGET KEY_POWER
+			
+			#[ $? -eq 0 ] && exit 0
+			#TODO: use cec-client to control more devices?
+			
+			# else try to power off a remote machine (via the passed IP or network name)...
+			echo "$(basename $0): about to power off remote machine: $TARGET"
+			# some computer aliases with fixed IPs associated
+			[ "$2" = "boss3" ] && TARGET=192.168.42.79
+			# check if target machine is connectable
+			sudo ping -c 1 -W 2 $TARGET >/dev/null
+			if [ $? -ne 0 ]; then
+				# try names resolving with with mDNS
+				TARGET=$(nmblookup $TARGET | cut -d' ' -f1)
+				[ "$TARGET" = "name_query" ] && TARGET=$(avahi-resolve --name $TARGET)
+				if [ -z "$TARGET" ]; then
+					echo "$(basename $0): error: target is not connectable: $TARGET" >&2
+					exit 1
+				else
+					echo "$(basename $0): target IP address found: $TARGET" >&2
+				fi
+			fi
+			# ...running Windows
+			# using samba net command http://lifehacker.com/5275652/shut-down-your-windows-pc-remotely-from-linux
+			# TODO: ask username via user input?
+			net rpc shutdown -I $TARGET -U Administrator -f
+			[ $? -eq 0 ] && exit 0
+			# using winexe  https://sourceforge.net/projects/winexe/
+			winexe //$TARGET 'shutdown -s -f'
+			[ $? -eq 0 ] && exit 0
+			# TODO: more windows alternatives
+			# else try remote ssh host on linux
+			ssh -t $TARGET 'poweroff'
+			[ $? -eq 0 ] && exit 0
+			ssh -t $TARGET.local 'poweroff'
+			[ $? -eq 0 ] && exit 0
+			ssh -t TARGET 'shutdown -h now'
+			[ $? -eq 0 ] && exit 0
+			# remote ssh host on Windows
+			ssh $TARGET 'shutdown -s -f'
+			[ $? -eq 0 ] && exit 0
+			# try with Intel AMT tool
+			amttool $TARGET powerdown
+			[ $? -eq 0 ] && exit 0
+			# try with IPMI
+			ipmitool -H $TARGET -v -I lanplus -U ADMIN chassis power off
+			# else
+			echo "$(basename $0): error: no tool found to power off $TARGET" >&2
+			exit 127
+		;;
+	esac
+;;
+
+on|up ) # ON COMMANDS
+	case "$TARGET" in
+		"" ) # empty string
+			echo "$(basename $0) error: no target specified" >&2
+			exit 1
+		;;
+		
+		monitor|screen|lcd )
+			echo "$(basename $0): about to power on the monitor"
+			if [ "$(hostname)" = "BOSS2" ] || [ "$(hostname)" = "BOSS3" ]; then
+				lgtv_serial poweron
+				irsend SEND_ONCE LG_AKB72915207 KEY_POWER
+				sendir lg_power
+			fi
+			if [ ! -z "$ANDROID_ROOT" ]; then
+				input keyevent KEYCODE_WAKEUP
+				exit $?
+			fi
+			# try using HDMI-CEC
+			echo "on 0" | cec-client -s
+			# try using the DDC/CI protocol (may need to change the dev address, check "sudo ddccontrol -p")  https://superuser.com/questions/648805/is-it-possible-to-power-on-off-a-monitor-using-the-computer
+			sudo ddccontrol -r 0xe1 -w 1 dev:/dev/i2c-2
+			#ddcutil setvcp d6 1
+			xset dpms force on
+			exit $?
+		;;
+
+		lan|wifi|eth*|wlan* )
+			if [ ! -z "$ANDROID_ROOT" ]; then
+				termux-wifi-enable true
+				[ $? -eq 0 ] && exit 0
+				svc wifi enable
+				[ $? -eq 0 ] && exit 0
+				settings put global wifi_on 1
+				exit $?
+			fi
+			IFACE=$2
+			[ "$2" = "lan" ] && IFACE=eth0
+			[ "$2" = "wifi" ] && IFACE=wlan0
+			[ "$2" = "wifi" ] && [ "$(hostname)" = "BOSS2" ] && IFACE=wlxc04a0011cfa4
+			# TODO: detect current active interface?
+			echo "$(basename $0): about to power on the network interface: $IFACE"
+			sudo ip link set dev $IFACE up
+			[ $? -eq 0 ] && exit 0
+			sudo ifup $IFACE
+			[ $? -eq 0 ] && exit 0
+			sudo ifconfig $IFACE up
+			[ $? -eq 0 ] && exit 0
+			# TOFIX: wifi may need to be reinitialized with wpa_supplicant?
+			exit $?
+		;;
+		
+		bluetooth|bt )
+			if [ ! -z "$ANDROID_ROOT" ]; then
+				svc bluetooth enable
+				settings put global bluetooth_on 1
+				settings put global bluetooth_disabled_profiles 1
+				exit $?
+			fi
+			service bluetooth start
+			systemctl start bluetooth
+			rfkill unblock bluetooth
+			# TODO: bt-device --set Powered 1
+			sudo hciconfig hci0 up
+			hciconfig
+			exit $?
+		;;
+		
+		smartplug )
+			broadlink_cli $BROADLINK_SP2_PARAMS  --turnon
+			exit $?
+		;;
+
+		usb* )
+			echo "$(basename $0): about to power on the USB port: $TARGET"
+			sudo uhubctl -a on -p $TARGET  # on PICCIOTTO3: -l 2-6
+			exit $?
+		;;
+		
+		razer*|keyboard )
+			openrgb --device "$OPEN_RGB_KEYBOARD_DEVICE_ID" --mode static --color $DEFAULT_LED_COLOR   # TODO: set brightness
+			if [ -e "$OPENRAZER_BASE_PATH" ]; then
+				#echo -n "1" > $OPENRAZER_BASE_PATH/matrix_effect_spectrum
+				#echo -n "20" >  $OPENRAZER_BASE_PATH/matrix_brightness
+				razer-cli -v --effect static  # effect
+				razer-cli -v --color $DEFAULT_LED_COLOR
+				razer-cli -v --brightness 10
+				razer-cli -v --sync  # sync lighting effects to all supported Razer products
+			fi
+			exit $?
+			;;
+
+		mouse* )
+			openrgb --device "$OPEN_RGB_MOUSE_DEVICE_ID" --mode static --color $DEFAULT_LED_COLOR  # TODO: set brightness
+			exit $?
+			;;
+
+		* ) # default case
+			# power on a device via an IR blaster (must be configured separately)
+			#echo "$(basename $0): about to power on via IR blaster: $TARGET"
+			#irsend SEND_ONCE $TARGET KEY_POWER
+			#[ $? -eq 0 ] && exit 0
+			#TODO: use cec-client to control more devices?
+
+			# else try to wake up a remote machine (via the passed IP or network name)
+			echo "$(basename $0): about to wake up remote machine: $TARGET"
+			# via wakeonlan perl script  
+			wakeonlan -i $TARGET
+			[ $? -eq 0 ] && exit 0
+			# search the target MAC address in a db file (should have at least 2 columns: MAC Address,hostname)
+			MAC_DB=$PENDRIVE/Documents/db/mynicmac.csv
+			[ -f $MAC_DB ] && TARGET_MAC=$(grep $TARGET, $MAC_DB | cut -f1 -d,)
+			# else target MAC addr must be passed as 2nd arg
+			[ ! -f $MAC_DB ] && TARGET_MAC=$2
+			powerwake $TARGET_MAC
+			[ $? -eq 0 ] && exit 0
+			etherwake $TARGET_MAC
+			[ $? -eq 0 ] && exit 0
+			wol $TARGET_MAC
+			[ $? -eq 0 ] && exit 0
+			# python oneliner from https://www.mythtv.org/wiki/Wake-on-LAN
+			echo "$(basename $0): broadcasting magic packet targeting $TARGET_MAC..."
+			#python2 -c "print('broadcasting magic packet to ' + r'\x'+\"$TARGET_MAC\".replace(':',r'\x') + '...' );"
+			python -c "import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1); s.sendto('\xff'*6+(r'\x'+\"$TARGET_MAC\".replace(':',r'\x'))*16, ('<broadcast>', 7));"
+			[ $? -eq 0 ] && exit 0
+			# try with Intel AMT tool
+			amttool $TARGET powerup
+			[ $? -eq 0 ] && exit 0
+			# try with IPMI
+			ipmitool -H $TARGET -v -I lanplus -U ADMIN chassis power on
+			# else
+			echo "$(basename $0): error: no tool found to power on $TARGET" >&2
+			exit 127
+		;;
+	esac
+;;
+esac
+
+# else
+echo "usage: $(basename $0) on|off|status [monitor|hostname|all|mac_addr|lirc_remote|device]"
+echo "examples:"
+echo "  power off monitor"
+echo "  power off wifi"
+echo "  power off /dev/sdb"
+echo "  power off 192.168.0.3"
+echo "  power status 192.168.0.3"
+echo "  power status all"
+echo "  power on 00:41:F5:A1:3A:8D"
+echo "  power on HIFI"
+echo
+exit 0

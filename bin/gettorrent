@@ -1,1 +1,37 @@
-../../../bin/gettorrent
+#!/bin/sh
+
+HASH=$(echo "$1" | tr '[a-z]' '[A-Z]')
+
+case "$1" in
+	magnet:* )
+		HASH=$(echo \"$1\" | cut -d'&' -f1 | cut -d':' -f4)
+		TITLE="$(echo \"$1\" | cut -d'&' -f2  )"
+esac
+
+#aria2c --bt-metadata-only=true --bt-save-metadate=true 
+aria2c --bt-metadata-only --bt-save-metadata "$@"
+[ $? -eq 0 ] && exit 0
+
+# try HTTP mirrors (less reliable)
+
+wget --max-redirect 0 "https://itorrents.org/torrent/$HASH.torrent"
+[ $? -eq 0 ] && exit 0
+
+wget --max-redirect 0 -O "$HASH.torrent" "http://torrage.info/torrent.php?h=$HASH"
+[ $? -eq 0 ] && exit 0
+
+#wget --max-redirect 0 "http://thetorrent.org/$HASH.torrent"
+#[ $? -eq 0 ] && exit 0
+
+wget --max-redirect 0 "http://torcache.to/download/$HASH.torrent"
+[ $? -eq 0 ] && exit 0
+
+wget --max-redirect 0 "http://btcache.me/torrent/$HASH"
+[ $? -eq 0 ] && exit 0
+# TODO: check if html output
+
+# offline: 
+# "http://torrage.info/torrent.php?h=$HASH"
+# "http://torrent.cd/$HASH.torrent"
+
+

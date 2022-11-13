@@ -1,1 +1,43 @@
-../../../bin/hexgrep
+#!/bin/sh
+
+# args checking
+if [ "$#" -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ ! -f "$2" ]; then
+	echo "usage: $(basename $0) HEX_STRING BINARY_FILE"
+	exit 0
+fi
+
+# http://stahlworks.com/dev/?tool=hexfind
+export SFK_COLORS=theme:black  # enable colors
+sfk hexfind "$2" -bin "/$1/"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+bgrep "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# http://ucon64.sourceforge.net/ucon64/readme.html
+# MEMO: must separate bytes with spaces (eg. "04 06" not "0406")
+ucon64 --hfind="$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# MEMO: must separate bytes with escapes (eg. "\x00\x01\x02\x03\x04")
+#binwalk -R "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# via radare2
+#rafind2 -x "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# via rizin
+#rz-find -x "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# last chance
+cat "$2" | hexdump -C | grep "$1"
+exit $?
+
+# ALTERNATIVES:
+# bgrep.c  https://github.com/tmbinc/bgrep
+# bgrep.py  https://github.com/sleepydragonsw/bgrep
+# http://sourceforge.net/projects/bbe-/
+# perl .... http://stackoverflow.com/questions/4180081/binary-grep-on-linux
+# binwalk ... https://github.com/devttys0/binwalk/

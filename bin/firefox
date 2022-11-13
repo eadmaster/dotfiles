@@ -1,1 +1,56 @@
-../../../bin/firefox
+#!/bin/bash
+
+# Windows detection
+if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
+	cmd.exe /C firefox "$@"
+	exit $?
+fi
+
+# Android detection
+if [ ! -z "$ANDROID_ROOT" ]; then
+	am start -a android.intent.action.VIEW -n org.mozilla.firefox/.App -d "$@"
+	exit $?
+fi
+
+## Puppy-linux dection
+#if grep -q -i puppy /etc/DISTRO_SPECS; then
+#	extractrun firefox "$@"
+#	[ $? -ne 127 ] && exit $?
+#fi
+
+$HOME/opt/waterfox-classic/waterfox "$@" 2> /dev/null
+[ $? -ne 127 ] && exit $?
+
+waterfox-classic "$@" 2> /dev/null
+[ $? -ne 127 ] && exit $?
+
+enable -n command
+command -p firefox "$@" 2> /dev/null
+[ $? -ne 127 ] && exit $?
+
+iceweasel "$@" 2> /dev/null
+[ $? -ne 127 ] && exit $?
+
+seamonkey "$@" 2> /dev/null
+[ $? -ne 127 ] && exit $?
+
+# waterfox fix for broken native dialogs:
+export GTK_USE_PORTAL=0
+
+waterfox-classic "$@" 2> /dev/null
+[ $? -ne 127 ] && exit $?
+
+waterfox "$@" 2> /dev/null
+[ $? -ne 127 ] && exit $?
+
+/opt/waterfox/waterfox "$@" 2> /dev/null
+[ $? -ne 127 ] && exit $?
+
+basilisk "$@" 2> /dev/null
+[ $? -ne 127 ] && exit $?
+
+palemoon "$@" 2> /dev/null
+[ $? -ne 127 ] && exit $?
+
+#else
+exit 127

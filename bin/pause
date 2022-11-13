@@ -1,1 +1,23 @@
-../../../bin/pause
+#!/bin/sh
+
+if [ -z "$1" ]; then
+	# assume command to media player
+	if [ ! -z "$ANDROID_ROOT" ]; then
+		input keyevent 85  # play_pause
+		#termux-media-player pause
+		exit $?
+	fi
+	playerctl -a pause
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+	omnipause pause
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+	xdotool key XF86AudioPause
+	exit $?
+fi
+
+command -p pause "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+echo -n "Press any key to continue... "
+read -s -n 1
+echo

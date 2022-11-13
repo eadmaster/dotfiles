@@ -1,1 +1,100 @@
-../../../bin/translate
+#!/bin/sh
+
+command -p translate "$@"  2> /dev/null
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using google translate one-liner from http://pastebin.com/SVs62qPH
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) [-f lang] [-t lang] SENTENCE|FILE_TO_TRANSLATE"
+	echo " from and to langs defaults to auto"
+	echo
+	exit 0
+fi
+
+# you may change the default langs here
+FROM=auto
+TO=auto
+
+# iterate over args
+for ARG in "$@"
+do
+	case $ARG in
+		-f ) FROM=$2 ;;
+		-t ) TO=$2 ;;
+		* ) continue ;;
+	esac
+	shift
+	shift
+done
+
+#echo "$(basename $0): translating $@ from $FROM to $TO..." >&2
+
+if [ -f "$1" ]; then
+	INPUTFILE="$1"
+	INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+	INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+	INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
+	case $INPUTFILETYPE in
+		image/* )
+			# using ztranslate service  https://ztranslate.net/docs/service
+			#MY_ZTRANSLATE_API_KEY="..." -> moved in .profile
+			URL="https://ztranslate.net/service?target_lang=En&source_lang=Ja&mode=Fast&output=png,wav&api_key=$MY_ZTRANSLATE_API_KEY"
+			#curl -X POST -H "Content-Type: application/json" -d '{"image" : "'"$( base64 "$INPUTFILE")"'"}' "$URL"
+			# TODO: fix 500 error
+			;;
+		text/plain )
+			# nothing to convert
+			;;
+		#TODO: video/* | audio/* )
+		* )
+			#echo "$(basename $0): err: unsupported filetype: " >&2 ; exit 1 ;;
+			# try to convert to plaintext
+			INPUTFILE="$TMPDIR/$$_fileconvert.txt"
+			file2txt "$1" > "$TMPDIR/$$_fileconvert.txt"
+			[ $? -ne 0 ] && exit 1
+			;;
+	esac
+	
+	if [ "$INPUTFILEEXT" != "txt" ]; then
+		# force txt as input file extension (workaround for Google Translate mimetype detection bug)
+		INPUTFILENAME="`basename \"$INPUTFILE\" | rev | cut -d'.' -f2- | rev`"
+		INPUTFILE="$TMPDIR/$INPUTFILENAME.txt"
+		cp "$1" "$INPUTFILE"
+	fi
+	
+elif [ -z "$1" ]; then
+	# read from stdin
+	INPUTFILE="$TMPDIR/$$_stdin.txt"
+	cat > "$TMPDIR/$$_stdin.txt"
+	#dos2unix > "$TMPDIR/$$_stdin.txt"
+	
+else # $1 is not a file and is not empty
+	INPUTFILE="$TMPDIR/$$_args.txt"
+	echo "$@" > "$TMPDIR/$$_args.txt"
+fi
+
+# direct Goole translate HTTP POST (buggy)
+curl -s -F file=@"$INPUTFILE" --user-agent "Mozilla/5.0 (X11; Linux i686) AppleWebKit/534.34 (KHTML, like Gecko) QupZilla/1afari/534.34" "http://translate.googleusercontent.com/translate_f?hl=en&sl=${FROM}&tl=${TO}&ie=UTF-8&prev=_m" | sed -e 's/^.*<pre>//' -e 's!</pre>.*!!'|grep -v "^<meta"|sed -e 's/&quot;/\"/g' -e "s/&#39/\'/g"
+#[ $? -eq 127 ] && wget -q --post-file="$INPUTFILE" -O - -U "Mozilla/5.0 (X11; Linux i686) AppleWebKit/534.34 (KHTML, like Gecko) QupZilla/1.3.1 Safari/534.34" "http://translate.googleusercontent.com/translate_f?hl=en&sl=${FROM}&tl=${TO}&ie=UTF-8&prev=_m" | sed -e 's/^.*<pre>//' -e 's!</pre>.*!!'|grep -v "^<meta"|sed -e 's/&quot;/\"/g' -e "s/&#39/\'/g"
+exit $?
+
+# via Argos Translate https://github.com/argosopentech/argos-translate/
+# WIP: auto-detect input language, no japanese support
+argos-translate-cli --from-lang it --to-lang en "$(cat $INPUTFILE)"
+[ $? -eq 0 ] && exit 0
+
+# via LibreTranslate (based on Argos Translate)  https://github.com/uav4geo/LibreTranslate
+# WIP: auto-detect input language, no japanese support
+curl -XPOST -H "Content-Type: application/json"  -H "Authorization: JWT $TOKEN" -d "{\"q\" : \"$(cat $INPUTFILE)\", \"source\": \"it\", \"target\": \"en\"}" "https://libretranslate.com/translate"
+[ $? -eq 0 ] && exit 0
+
+# TODO: detect "The page you have attempted to translate is already in English."
+
+# MORE ALTERNATIVES:
+#   NO? translate-bin from libtranslate-bin (using webservices)
+#   (NO JAP SUPPORT)? apertium  http://wiki.apertium.org/wiki/List_of_language_pairs
+#   NO(NOT AUTOMATIC)? omegat  https://sourceforge.net/projects/omegat/
+#   NO? Translate Shell bash script https://github.com/soimort/translate-shell -> missing multiple lines/POST support  https://github.com/soimort/translate-shell/issues/72
+#  ... https://en.wikipedia.org/wiki/Comparison_of_machine_translation_applications
+

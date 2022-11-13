@@ -1,1 +1,20 @@
-../../../bin/dircmp
+
+diff -qr "$@" 
+exit $?
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# rsync dry-run mode
+rsync -avn --size-only "$@" 
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# sfk  http://stahlworks.com/dev/index.php?tool=sincedir
+sfk list -sincedir %1 %2
+sfk list -sincedir %2 %1
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# rclone  https://rclone.org/commands/rclone_check/
+rclone check "$@" 
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else
+exit 127

@@ -1,1 +1,18 @@
-../../../bin/lsblk
+
+
+#command -p lsblk "$@"
+#[ $? -ne 127 ] && exit $?
+
+blkid
+#[ $? -ne 127 ] && exit $?
+
+camcontrol devlist
+#[ $? -ne 127 ] && exit $?
+
+lshw -class tape -class disk -class storage -short
+#[ $? -ne 127 ] && exit $?
+
+fdisk -l
+#[ $? -ne 127 ] && exit $?
+
+cat /proc/partitions

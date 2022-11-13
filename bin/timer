@@ -1,1 +1,29 @@
-../../../bin/timer
+#!/bin/bash
+
+if [ $# -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) TIMEOUT [MESSAGE]"
+	echo " TIMEOUT can use s, m, and h postfixes (eg \"1h 2m 10s\")"
+	echo
+	exit 0
+fi
+
+TIMESTR="$1"
+TIMESTR="${TIMESTR/ / + }"
+TIMESTR="${TIMESTR/s/ }"
+TIMESTR="${TIMESTR/m/ \\* 60 + }"
+TIMESTR="${TIMESTR/h/ \\* 60 \\* 60 + }"
+#echo "$TIMESTR"
+
+SECONDS=$(expr "$TIMESTR")
+
+echo "$(basename $0): running timer for $SECONDS seconds..." >&2
+
+for i in $(seq 1 $SECONDS); do
+    sleep 1
+    #printf "  \r $i"
+    echo "1"
+done
+
+echo
+
+[ ! -z "$2" ] && notify "$2"

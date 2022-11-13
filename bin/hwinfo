@@ -1,1 +1,48 @@
-../../../bin/hwinfo
+
+cpuinfo
+
+echo
+
+gpuinfo
+
+vpuinfo
+
+echo
+
+#dmidecode -t baseboard | grep -i 'Product'
+dmidecode
+
+echo
+
+
+# ... http://www.binarytides.com/linux-get-gpu-information/
+
+echo
+
+lspci
+
+echo
+
+lsusb -t
+
+echo
+
+lsblk
+
+echo
+
+sensors
+
+echo
+
+hdinfo
+
+echo
+
+inxi -F
+#inxi -MCGANDPs
+
+echo
+
+command -p hwinfo "$@"
+# /usr/sbin/hwinfo

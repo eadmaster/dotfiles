@@ -1,1 +1,16 @@
-../../../bin/yaml2json
+#!/bin/sh
+
+INPUT="$1"
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+echo "$INPUT" | python -c 'import sys, yaml, json; json.dump(yaml.load(sys.stdin), sys.stdout, indent=4)'
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+echo "$INPUT" | sttr yaml-json
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+echo "$INPUT" | catmandu convert YAML to JSON
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+ 
+# MORE ALTERNATIVES: https://www.commandlinefu.com/commands/view/12218/convert-yaml-to-json

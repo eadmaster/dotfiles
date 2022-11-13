@@ -1,1 +1,58 @@
-../../../bin/websearch
+#!/bin/sh
+
+# query firefox search engines from the cmdline 
+# req. lz4jsoncat from lz4json package
+
+#DEBUG=1
+[ -z "$FIREFOX_PROFILE_PATH" ] && FIREFOX_PROFILE_PATH="$HOME/.mozilla/firefox/$(`cat "$HOME/.mozilla/firefox/profiles.ini" | sed -n -e 's/^.*Path=//p' | head -n 1`)"
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ -z "$1" ]; then
+	echo "usage: $(basename $0) "QUERY_STRING" [SEARCH_ENGINE]"
+	echo
+	echo
+	exit 0
+fi
+
+QUERY_STRING="$1"
+ESCAPED_QUERY_STRING=$(urlencode -m "$QUERY_STRING")
+#ESCAPED_QUERY_STRING=$(echo "$QUERY_STRING" | sed "s/ /+/g")
+SEARCH_ENGINE="google"
+
+# check 2nd arg
+[ ! -z "$2" ] && SEARCH_ENGINE="$2"
+# check search engine aliases
+[ "$2" = "hg101" ] && SEARCH_ENGINE="hardcoregaming101.net"
+[ "$2" = "ebay" ] && SEARCH_ENGINE="ebay.it"
+[ "$2" = "steam" ] && SEARCH_ENGINE="store.steampowered.com"
+# ...
+if [ "$SEARCH_ENGINE" = "google" ]; then
+	google "$QUERY_STRING"
+	exit $?
+fi
+
+# query via "__searchForm" field
+SEARCH_ENGINE_BASE_URL=$(lz4jsoncat "$FIREFOX_PROFILE_PATH/search.json.mozlz4" | jq -r ".engines[] | select(.__searchForm | tostring | contains(\"$SEARCH_ENGINE\")) | ._urls[].template" | grep -m1 'searchTerms' )
+
+# query via "_shortName" field
+lz4jsoncat "$FIREFOX_PROFILE_PATH/search.json.mozlz4" | jq -r ".engines[] | select(._shortName == \"$SEARCH_ENGINE\") | ._urls[0].template" | grep -m1 'searchTerms'
+[ -z "$SEARCH_ENGINE_BASE_URL" ] && SEARCH_ENGINE_BASE_URL=$(lz4jsoncat "$FIREFOX_PROFILE_PATH/search.json.mozlz4" | jq -r ".engines[] | select(._shortName == \"$SEARCH_ENGINE\") | ._urls[0].template" | grep -m1 'searchTerms' )
+
+# filter without jd (less realiable)
+[ -z "$SEARCH_ENGINE_BASE_URL" ] && SEARCH_ENGINE_BASE_URL=$(lz4jsoncat "$FIREFOX_PROFILE_PATH/search.json.mozlz4" | python -m json.tool | grep "template" | grep "$SEARCH_ENGINE" | grep -v ".xml" | cut -d\" -f4 | grep -m1 'searchTerms' )
+
+if [ ! -z "$SEARCH_ENGINE_BASE_URL" ]; then
+	echo "$0 info: found search engine base url in search.json.mozlz4: $SEARCH_ENGINE_BASE_URL"
+else
+	# try with surfraw
+	surfraw opensearch $SEARCH_ENGINE $QUERY_STRING
+	[ $? -eq 0 ] && exit 0
+
+	# else google custom site search
+	echo "$(basename $0) warn: no search engine found, using google site search" >&2
+	SEARCH_ENGINE_BASE_URL="https://www.google.com/search?q={searchTerms}&as_sitesearch=$SEARCH_ENGINE"
+fi
+
+SEARCH_URL=$(echo $SEARCH_ENGINE_BASE_URL | sed "s/{searchTerms}/$ESCAPED_QUERY_STRING/g")
+
+[ $DEBUG ] && echo "$0 debug: opening generated url: $SEARCH_URL"
+xdg-open $SEARCH_URL

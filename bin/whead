@@ -1,1 +1,35 @@
-../../../bin/whead
+#!/bin/sh
+
+HEAD_OPTIONS=""
+
+# args checking
+for arg in "$@"
+do
+	if echo "$arg" | grep -Eq '^http'; then
+		URL="$arg"
+	else
+		# append to head options
+		HEAD_OPTIONS="$HEAD_OPTIONS $arg"
+	fi
+done
+if [ -z "$1" ] || [ -z "$URL" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) [head options] INPUTURL"
+	echo
+	exit 0
+fi
+
+MAXBYTES=1024
+#[ ! -z "$2" ] && MAXBYTES=$2
+
+echo "$HEAD_OPTIONS"
+echo "$URL"
+
+curl -m5 --range 0-$MAXBYTES -s -L -A "Firefox" "$URL" | head $HEAD_OPTIONS
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# not working? https://stackoverflow.com/questions/20317945/limit-size-wget-can-download
+#(ulimit -f 1024 ; wget -q -U Firefox -O - "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

@@ -1,1 +1,115 @@
-../../../bin/filecmp
+#!/bin/sh
+
+# compare 2 files, ignoring tags and (lossless) compression
+
+# args checking
+if [ "$#" -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) FILE1 FILE2"
+	echo "returns: 0 if FILE1 and FILE2 have the same contents, 1 if they differ, 2 on errors."
+	exit 0
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+elif [ ! -f "$2" ]; then
+	echo "$(basename $0) error: file does not exist: $2" >&2
+	exit 1
+fi
+
+INPUTFILE="$1"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
+
+INPUTFILE2="$2"
+INPUTFILE2EXT=$( echo -n "$INPUTFILE2" | rev | cut -d'.' -f1 | rev )
+INPUTFILE2EXT=$( echo -n $INPUTFILEEXT2 | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+INPUTFILE2TYPE=$( file -b -i "$INPUTFILE2" | cut -d';' -f1 )
+
+#if [ "$INPUTFILETYPE" != "$INPUTFILE2TYPE" ]; then
+#	echo "$(basename $0) error: cannot compare files of different types: $INPUTFILETYPE and $INPUTFILE2TYPE" >&2
+#	exit 1
+#fi
+
+case $INPUTFILETYPE in
+	image/* )
+		DIFF_PIXELS=$( compare -metric AE "$INPUTFILE" "$INPUTFILE2" null: )
+		if [ -z "$DIFF_PIXELS" ]; then
+			echo "$(basename $0) error: imagemagick not found" >&2
+			exit 2
+		elif [ "$DIFF_PIXELS" -eq "0" ]; then
+			echo "$(basename $0): $INPUTFILE and $INPUTFILE2 have the same contents"  >&2
+			exit 0
+		else
+			echo "$(basename $0): $INPUTFILE and $INPUTFILE2 differ: $DIFF_PIXELS different pixels"
+			exit 1
+		fi
+		;;
+	
+	audio/x-flac )
+		HASH1=$(metaflac --show-md5sum "$INPUTFILE")
+		# MEMO: if metaflac is not found HASH1 will remain empty
+		HASH2=$(metaflac --show-md5sum "$INPUTFILE2")
+		;;  # MEMO: intentional fall-through
+	
+	#TODO: audio/mpeg ) extract crc-16 from "LAME Tag"
+	#
+	
+	audio/* )
+		HASH1=$(shntool md5 "$INPUTFILE")
+		HASH2=$(shntool md5 "$INPUTFILE2")
+		# ALTERNATIVE: sndfile-cmp
+		;; # MEMO: intentional fall-through
+
+	video/* )
+		HASH1=$(ffmpeg -i "$INPUTFILE" -f crc - 2>/dev/null | grep CRC)
+		HASH2=$(ffmpeg -i "$INPUTFILE2" -f crc - 2>/dev/null | grep CRC)
+		;;
+
+	#text/* )
+	#	diff -qs "$INPUTFILE" "$INPUTFILE2"
+	#	exit $?
+	#	;;
+esac
+
+case $INPUTFILEEXT in
+	gz|xz|bz2|lz ) # untested
+		zcmp "$INPUTFILE" "$INPUTFILE2"
+		continue
+		;;
+	zip ) # untested
+		zipcmp "$INPUTFILE" "$INPUTFILE2"
+		continue
+		;;
+	#TODO: zip|rar|7z )
+	#	# HASH1="$(7z l -slt "$INPUTFILE")"
+	#	# HASH2="$(7z l -slt "$INPUTFILE2")"
+	#   # MEMO: need alphabetic sorting
+	#	#continue
+	#	;;
+	pem ) 
+		HASH1=$(openssl x509 -noout -modulus -in "$INPUTFILE")
+		HASH2=$(openssl x509 -noout -modulus -in "$INPUTFILE2")
+esac
+
+if [ -z "$HASH1" ]; then
+	echo "$(basename $0) error: unable to hash: $INPUTFILE" >&2
+	exit 2
+fi
+if [ -z "$HASH2" ]; then
+	echo "$(basename $0) error: unable to hash: $INPUTFILE2" >&2
+	exit 2
+fi
+
+# compare the hashes
+if [ "$HASH1" = "$HASH2" ]; then
+	echo "$(basename $0): $INPUTFILE and $INPUTFILE2 have the same contents"  >&2
+	exit 0
+else
+	echo "$(basename $0): $INPUTFILE and $INPUTFILE2 differ:" >&2
+	echo "$HASH1"  >&2
+	echo "$HASH2"  >&2
+	exit 1
+fi
+
+#echo "$(basename $0) error: filetype unsupported ($INPUTFILETYPE): $INPUTFILE"  >&2
+#exit 1

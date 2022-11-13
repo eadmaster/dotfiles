@@ -1,1 +1,38 @@
-../../../bin/getmacaddr
+#!/bin/sh
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) [REMOTE_IP]"
+	exit 0
+fi
+
+if [ "$1" = "" ]; then
+	ethtool -P eth0 -P $IFACE
+	[ $? -eq 0 ] && exit 0
+	
+	sudo ifconfig $IFACE | grep HWaddr
+	[ $? -eq 0 ] && exit 0
+	exit 127
+fi
+# else
+
+sudo nmap -sP -n $1 | grep MAC
+[ $? -eq 0 ] && exit 0
+
+echo
+
+ping -c1 $1  > /dev/null 
+arp -a | grep -v incomplete | grep $1
+[ $? -eq 0 ] && exit 0
+
+echo
+
+sudo arp-scan $1
+[ $? -eq 0 ] && exit 0
+
+echo
+
+[ -z "$IFACE" ] && IFACE=$( route | grep '^default' | grep -o '[^ ]*$' | head -n1 )
+arping -c 1 $1 -I $IFACE
+[ $? -eq 0 ] && exit 0
+
+# MORE ALTERNATIVES: https://superuser.com/questions/188799/how-to-find-the-mac-address-of-a-remote-computer

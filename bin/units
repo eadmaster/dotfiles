@@ -1,1 +1,118 @@
-../../../bin/units
+#!/bin/sh
+
+# uppercase currencies
+# TODO: define aliases instead? https://www.gnu.org/software/units/manual/html_node/Defining-Unit-List-Aliases.html
+INPUT="$@"
+INPUT=$(echo "$INPUT" | sed 's/usd/USD/')
+INPUT=$(echo "$INPUT" | sed 's/eur/EUR/')
+INPUT=$(echo "$INPUT" | sed 's/gbp/GBP/')
+
+command -p units --history '' -v -1  "$INPUT"  # --compact
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+qalc "$1 to $2"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# MORE ALTERNATIVEs: convertall, gonvert, units.pl
+
+# pure shell-script alternative follow
+if [ "$#" -lt 2 ] || [ "$#" -gt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) QUANTITYfrom to"
+	echo
+	exit 0
+fi
+
+UNIT="" # global variable used as function return value
+get_unit_simbol() {
+	# handle some unit aliases
+	# TODO: try parsing units.dat for more aliases
+	UNIT=$1
+	case $1 in
+		in) UNIT="inch" ;;
+		inches) UNIT="inch" ;;
+		oz) UNIT="oz" ;;
+		ounces) UNIT="oz" ;;
+		gr) UNIT="g" ;;
+		grams) UNIT="g" ;;
+		lbs) UNIT="pound" ;;
+		lb) UNIT="pound" ;;
+		km) UNIT="km" ; return ;;
+		km) UNIT="km" ; return ;;
+		kg) UNIT="kg" ; return ;;
+		foot) UNIT="ft" ;;
+		yard) UNIT="yd" ;;
+		USD) UNIT="usd" ;;
+		$) UNIT="usd" ;;
+		EUR) UNIT="eur" ;;
+		euro) UNIT="eur" ;;
+		€) UNIT="eur" ;;
+		£) UNIT="gbp" ;;
+		g) UNIT="gram" ;;
+		# TODO: more aliases
+	esac
+}
+
+INPUT_VALUE="$( echo -n $1 | egrep -o '^[0-9.]+' )"
+INPUT_UNIT="$( echo -n $1 | sed -e s/^$INPUT_VALUE//g  )"
+
+get_unit_simbol $INPUT_UNIT
+INPUT_UNIT=$UNIT
+
+get_unit_simbol $2
+TARGET_UNIT=$UNIT
+
+# using python+SymPy  http://stackoverflow.com/questions/1025145/units-conversion-in-python
+RESULT=$(python -c "from sympy.physics import units; print('%g' % (float($INPUT_VALUE) * units.$INPUT_UNIT / units.$TARGET_UNIT) )")
+
+# TODO: SciPy alternative
+
+if [ $? -ne 0 ]; then
+	#else builtin units converter using awk
+	# TODO: better submutiples handling by detecting SI units   http://stackoverflow.com/questions/32091117/simple-unit-converter-in-python
+	[ "$INPUT_UNIT" = "cm" ] && [ "$TARGET_UNIT" = "inch" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE / 2.54 }")
+	[ "$INPUT_UNIT" = "inch" ] && [ "$TARGET_UNIT" = "cm" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE * 2.54 }")
+	[ "$INPUT_UNIT" = "inch" ] && [ "$TARGET_UNIT" = "mm" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE * 25.4 }")
+	[ "$INPUT_UNIT" = "oz" ] && [ "$TARGET_UNIT" = "g" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE * 28.349523125 }")
+	[ "$INPUT_UNIT" = "oz" ] && [ "$TARGET_UNIT" = "kg" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE * 28.349523125 / 1000 }")
+	[ "$INPUT_UNIT" = "g" ] && [ "$TARGET_UNIT" = "oz" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE / 28.349523125 }")
+	[ "$INPUT_UNIT" = "kg" ] && [ "$TARGET_UNIT" = "oz" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE * 1000 / 28.349523125 }")
+	[ "$INPUT_UNIT" = "pound" ] && [ "$TARGET_UNIT" = "g" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE * 453.59237 }")
+	[ "$INPUT_UNIT" = "pound" ] && [ "$TARGET_UNIT" = "kg" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE * 0.4535924 }")
+	[ "$INPUT_UNIT" = "kg" ] && [ "$TARGET_UNIT" = "pound" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE / 0.4535924 }")
+	[ "$INPUT_UNIT" = "mile" ] && [ "$TARGET_UNIT" = "km" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE * 1.609347 }")
+	[ "$INPUT_UNIT" = "km" ] && [ "$TARGET_UNIT" = "mile" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE / 1.609347 }")
+	[ "$INPUT_UNIT" = "ft" ] && [ "$TARGET_UNIT" = "cm" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE * 30.48 }")
+	[ "$INPUT_UNIT" = "ft" ] && [ "$TARGET_UNIT" = "m" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE * 0.3048 }")
+	[ "$INPUT_UNIT" = "cm" ] && [ "$TARGET_UNIT" = "ft" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE / 30.48 }")
+	[ "$INPUT_UNIT" = "yd" ] && [ "$TARGET_UNIT" = "m" ] && RESULT=$(awk "BEGIN { printf \"%g\", $INPUT_VALUE * 0.9144 }")
+	# ...  http://www.wsdot.wa.gov/Reference/metrics/factors.htm
+	# TODO: gal->l
+	# TODO: awg->mm (awg is missing in sympy?)
+	# TODO: kelvin<->celsius
+	# TODO: cal<->Joule (cal is missing in sympy?)
+	# TODO: Pa<->bar
+	# TODO: knot (nodo) -> 1kn = 1M/h = 1.852km/h
+	# ... (see also: units.dat)
+fi
+
+# money rates -> convert using google
+case $INPUT_UNIT in
+	usd|eur|gbp|$|USD|EUR|GBP )
+	wget -q -O - "https://www.google.com/finance/converter?a=$INPUT_VALUE&from=$INPUT_UNIT&to=$TARGET_UNIT" | sed -e 's/<[^>]*>//g; /^[ \t]*$/d' | tail -n1
+	echo
+	exit 0
+	;;
+esac
+
+# TODO: alternatives using REST APIs
+# https://www.boxcontrol.net/write-simple-currency-converter-in-python.html
+
+if [ -z "$RESULT" ]; then
+	# TODO: try google online conversion
+	echo "$(basename $0): unsupported conversion unit(s): $*" >&2
+	exit 1
+fi
+
+echo " $INPUT_VALUE $INPUT_UNIT = $RESULT $TARGET_UNIT"
+echo
+exit 0

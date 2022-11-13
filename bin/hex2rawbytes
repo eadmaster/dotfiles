@@ -1,1 +1,17 @@
-../../../bin/hex2rawbytes
+#!/bin/sh
+
+# convert an hex string into raw bytes, for piping
+
+INPUT=$1
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $? 
+
+# via rizin (no quoting req.)
+rz-ax -s "$INPUT"
+[ $? -eq 0 ] && exit $?
+
+# via xxd (quoting req.)
+echo "$INPUT" | xxd -r -p
+
+#TODO: via echo -ne (supported even in busybox) https://unix.stackexchange.com/questions/82561/convert-a-hex-string-to-binary-and-send-with-netcat
+#echo -ne "$(echo "$INPUT" | sed -e 's/../\\x&/g')"

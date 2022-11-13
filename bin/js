@@ -1,1 +1,58 @@
-../../../bin/js
+#!/bin/sh
+
+command -p js "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# check the $JS environment variable
+if [ -f "$JS" ] && [ "$JS" != "$0" ]; then
+	$JS "$@"
+	exit $?
+fi
+
+nodejs "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+node "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+v8-shell "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# from Java 1.6 and 1.7, based on Rhino
+# TODO: enable readline support
+jrunscript "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# from Java 1.8, based on Nashorn
+jjs "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+rhino "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#java org.mozilla.javascript.tools.shell.Main "$@"
+#[ $? -ne 1 ] && exit $?
+
+# from the libmozjs-24-bin package
+js24 "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+jsc "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+phantomjs "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#wine cscript.exe "$@"
+#[ $? -eq 0 ] && exit $?
+#[ $? -ne 1 ] && exit $?
+
+# TODO: from firefox:
+#firefox -no-remote -P "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#TODO: from chrome ... "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

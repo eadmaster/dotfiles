@@ -1,1 +1,80 @@
-../../../bin/setvolume
+#!/bin/sh
+
+if [ "$1" = "" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) 0-100 [app]"
+	echo " 100=max, 0=mute"
+	echo 
+	exit 0
+fi
+
+# Windows detection
+if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
+	cmd.exe /C setvolume "$@"
+	# TODO: powershell.exe -Command "...(\"$@\");"
+	exit $?
+fi
+
+# Android detection
+if [ ! -z "$ANDROID_ROOT" ]; then
+	# using the Termux:API add-on
+	# normalize range 0-15
+	NEWVOL=$(awk "BEGIN{printf \"%d\", 15/100*$1}")
+	termux-volume system $NEWVOL
+	termux-volume music $NEWVOL
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+	
+	# TODO: alternative:
+	# service call audio 3 i32 3 i32 0 i32 
+	exit 127
+fi
+
+if [ ! -z "$2" ]; then
+	# per-app volume https://unix.stackexchange.com/questions/208784/command-line-per-application-volume-maybe-amixer-or-pactl
+	app_name=$2
+	current_sink_num=''
+	sink_num_check=''
+	app_name_check=''
+	pactl list sink-inputs |while read line; do \
+		sink_num_check=$(echo "$line" |sed -rn 's/^Sink Input #(.*)/\1/p')
+		if [ "$sink_num_check" != "" ]; then
+			current_sink_num="$sink_num_check"
+		else
+			app_name_check=$(echo "$line" \
+				|sed -rn 's/application.name = "([^"]*)"/\1/p')
+			if [ "$app_name_check" = "$app_name" ]; then
+				echo "$current_sink_num" "$app_name_check"
+				#pactl set-sink-input-mute "$current_sink_num" toggle
+				pactl set-sink-volume "$current_sink_num" -- $1%
+			fi
+		fi
+	done
+	exit $?
+fi
+
+
+# NO? PCM always 100%  # Master has no effect on HDMI audio
+# amixer set PCM 100% unmute
+
+amixer sset PCM $1% unmute
+amixer sset Master $1% unmute
+[ $? -eq 0 ] && exit 0
+
+amixer -c 0 sset PCM playback $1% unmute
+amixer -c 0 sset Master playback $1% unmute
+[ $? -eq 0 ] && exit 0
+
+amixer -D pulse sset PCM $1%
+amixer -D pulse sset Master $1%
+[ $? -eq 0 ] && exit 0
+
+pactl set-sink-volume 0 $1%
+[ $? -eq 0 ] && exit 0
+
+pamixer --set-volume $1%
+[ $? -eq 0 ] && exit 0
+
+setvol 0 $1
+[ $? -eq 0 ] && exit 0
+
+#else
+exit 127

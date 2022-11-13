@@ -1,1 +1,17 @@
-../../../bin/truncate
+
+#command -p truncate "$@"
+/usr/bin/truncate "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+extractrun truncate "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+toybox truncate "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+busybox truncate "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else
+echo "$0: truncate not found, tip: use dd if=SRC of=DST bs=1 [count=BYTES_TO_COPY] [skip=INPUT_HEAD_TRIM] [seek=OUTPUT_HEAD_OFFSET]"
+exit 127

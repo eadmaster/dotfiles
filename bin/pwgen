@@ -1,1 +1,17 @@
-../../../bin/pwgen
+#!/bin/bash
+
+command -p pwgen "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+
+gpg --armor --gen-random 1 32
+
+echo
+
+openssl rand -base64 32
+
+echo
+
+dd if=/dev/random bs=8 count=1 status=none | base64 | sed 's/.$//'
+
+echo

@@ -1,1 +1,26 @@
-../../../bin/wifiscan
+
+power on wifi
+
+echo
+
+sudo wlanconfig wlan0 list scan
+#[ $? -eq 0 ] && exit 0
+
+echo
+
+sudo iwlist wlan0 scan 
+#[ $? -eq 0 ] && exit 0
+
+echo
+
+sudo iw dev wlan0 scan
+#[ $? -eq 0 ] && exit 0
+
+echo
+
+#nmcli dev wifi list
+nmcli -f ALL dev wifi
+#[ $? -eq 0 ] && exit 0
+
+# else
+exit 127

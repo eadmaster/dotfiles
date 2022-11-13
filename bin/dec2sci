@@ -1,1 +1,19 @@
-../../../bin/dec2sci
+#!/bin/sh
+
+INPUT=$1
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+# not working?
+#printf "%e\n" $INPUT
+#_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+busybox printf "%e\n" $INPUT
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+echo "$INPUT" | awk '{ printf("%e", $1) }'
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# NO? not supported by bc: https://stackoverflow.com/questions/12882611/how-to-get-bc-to-handle-numbers-in-scientific-aka-exponential-notation
+
+exit 127

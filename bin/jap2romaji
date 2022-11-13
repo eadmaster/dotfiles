@@ -1,1 +1,16 @@
-../../../bin/jap2romaji
+#!/bin/sh
+
+INPUT="$1"
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+echo "$INPUT" | { mecab --node-format="%f[5] " --eos-format= --unk-format=%m || jakaroma  2> /dev/null  || cat ; } | { uconv -x 'Any-Latin;Latin-ASCII' || cat ; }
+
+# ALTERNATIVES for Kanji transliteration:
+# INACCURATE:  kakasi -iutf8 -outf8 -Ha -Ka -Ea -ka -Ja -s
+# TODO: jumanpp (no output mode)  https://github.com/ku-nlp/jumanpp/issues/122
+# OK? mecab --node-format="%f[5] " --eos-format= --unk-format=%m  "$@" | uconv -x 'Any-Latin;Latin-ASCII'
+#   python -c "from unidecode import unidecode; print unidecode(u\"$@\")"  https://pypi.python.org/pypi/Unidecode
+#   python -c "from transliterate import translit; print translit(u\"$@\")"  https://pypi.python.org/pypi/transliterate
+#   python -c "from icu import ..."  https://pypi.python.org/pypi/PyICU/
+#   kana2romaji, kanji2kana (my sed filters, still incomplete)

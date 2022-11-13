@@ -1,1 +1,23 @@
-../../../bin/stop
+#!/bin/sh
+
+if [ -z "$1" ]; then
+	# assume command to media player
+	if [ ! -z "$ANDROID_ROOT" ]; then
+		termux-media-player stop
+		input keyevent 86
+		exit $?
+	fi
+	playerctl -a stop
+	omnipause stop
+	xdotool key XF86AudioStop
+	exit $?
+fi
+
+# new Ubuntu service starter from the upstart package
+command -p stop "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+service $1 stop
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+exit 1

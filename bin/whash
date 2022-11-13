@@ -1,1 +1,34 @@
-../../../bin/whash
+#!/bin/sh
+
+# try to get hashes of a remote file server
+
+# args checking
+if [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) REMOTE_FILE"
+	exit 0
+elif [ -f "$1" ]; then
+	hash "$1"
+	exit 1
+fi
+# else
+TARGET_PATH="$1"
+TARGET_PATH_BASENAME="`basename \"$TARGET_PATH\"`"
+TARGET_PATH_NOEXT="`echo \"$TARGET_PATH\" | rev | cut -d'.' -f2- | rev`"
+TARGET_PATH_DIR="`dirname \"$TARGET_PATH\"`"
+
+# check http, ftp headers
+curl -s --head "$TARGET_PATH" | grep -e "ETag" -e "Content-Digest" -e "MD5" -e "CRC" -e "HASH" -e "SHA"
+
+# check hash files on the server
+# TODO: disable redirections -> remove " | head -n2"
+wget -q -O- "$TARGET_PATH.md5" | head -n2  2>/dev/null
+wget -q -O- "$TARGET_PATH_NOEXT.md5"  | head -n2  2>/dev/null
+wget -q -O- "$TARGET_PATH.sfv"  | head -n2  2>/dev/null
+wget -q -O- "$TARGET_PATH_NOEXT.sfv" | head -n2  2>/dev/null
+wget -q -O- "$TARGET_PATH.metalink" | head -n2  2>/dev/null  #| grep md5
+wget -q -O- "$TARGET_PATH_NOEXT.metalink"  | head -n2  2>/dev/null  #| grep md5
+wget -q -O- "$TARGET_PATH.jigdo"  | head -n2  2>/dev/null  #| grep MD5Sum
+wget -q -O- "$TARGET_PATH_NOEXT.jigdo" | head -n2  2>/dev/null  #| grep MD5Sum
+
+wget -q -O- "$TARGET_PATH_DIR/md5sums.txt" | grep "$TARGET_PATH_BASENAME"
+

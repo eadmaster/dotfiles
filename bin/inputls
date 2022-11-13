@@ -1,1 +1,14 @@
-../../../bin/inputls
+
+lsinput "$@"
+
+if [ -f /proc/bus/input/devices ]; then
+	cat /proc/bus/input/devices
+fi
+
+#lsusb "$@"  # TODO: filter input devices
+
+xinput list
+
+#else
+exit 127
+ 

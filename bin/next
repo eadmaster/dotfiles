@@ -1,1 +1,17 @@
-../../../bin/next
+
+
+# send the command to any media player
+
+if [ ! -z "$ANDROID_ROOT" ]; then
+	#termux-media-player next
+	input keyevent 87
+	exit $?
+fi
+
+playerctl next
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+omnipause next
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+xdotool key XF86AudioNext

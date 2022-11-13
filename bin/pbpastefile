@@ -1,1 +1,9 @@
-../../../bin/pbpastefile
+
+
+# TODO: multiple files support
+
+FILEINCLIPBOARD="$( xclip -selection clipboard -o | cut -d/ -f3- )"
+
+echo "$(basename $0): pasting file from clipboard: $FILEINCLIPBOARD" >&2
+
+cp "$FILEINCLIPBOARD" .

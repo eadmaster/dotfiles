@@ -1,1 +1,21 @@
-../../../bin/wcat
+#!/bin/sh
+
+# args checking
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUTURL"
+	echo
+	exit 0
+elif [ -f "$1" ]; then
+	# if input it is a local file just prints it
+	cat "$1"
+	exit
+fi
+
+curl -m5 -s -L -A "Firefox" "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+wget -q -U Firefox -O - "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

@@ -1,1 +1,31 @@
-../../../bin/setmac
+#!/bin/sh
+
+# http://xmodulo.com/spoof-mac-address-network-interface-linux.html
+# http://www.aboutlinux.info/2005/09/how-to-change-mac-address-of-your.html
+
+[ ! -z "$ANDROID_ROOT" ] && IFACE=eth0 # Android always defaults to eth0?
+[ -z "$IFACE" ] && IFACE=$(busybox route | grep '^default' | grep -o '[^ ]*$' | head -n1)
+
+DEFAULT_MAC_ADDR=$(sudo ethtool -P $IFACE | cut -d" " -f3)
+
+if [ "$1" = "" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) auto|default|CUSTOM_MAC_ADDR"
+	echo
+	echo " the network interface is read from the environment variable IFACE (or eth0 if not set)"
+	echo "current MAC address for $IFACE: $DEFAULT_MAC_ADDR"
+	exit 0
+fi
+
+sudo ifconfig $IFACE down
+[ $? -eq 1 ] && sudo ip link set dev $IFACE down
+
+if [ "$1" = "default" ] || [ "$1" = "auto" ]; then
+	sudo ifconfig $IFACE hw ether $DEFAULT_MAC_ADDR
+	[ $? -eq 1 ] && sudo ip link set dev $IFACE address $DEFAULT_MAC_ADDR
+else
+	sudo ifconfig $IFACE hw ether $1
+	[ $? -eq 1 ] && sudo ip link set dev $IFACE address $1
+fi
+
+sudo ifconfig $IFACE up
+[ $? -eq 1 ] && sudo ip link set dev $IFACE up

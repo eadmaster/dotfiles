@@ -1,1 +1,45 @@
-../../../bin/penv
+#!/bin/sh
+
+# args checking
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) [-s FOO=bar] PPID|PATTERN"
+	echo " with the -s switch alter the environment"
+	exit 0
+elif [ "$1" = "-s" ] && [ "$#" -ne 3 ] ; then
+	echo "$(basename $0) error: invalid syntax" >&2
+	exit 1
+elif [ "$1" = "-s" ] && [ "$#" -eq 3 ] ; then
+	PATTERN=$3
+else
+	PATTERN=$1
+fi
+
+#pid=$(ps ax | grep $PATTERN | grep -v grep | cut -f2 -d " ")
+# safer alternative using pgrep (in busybox)
+if [ -d "/proc/$PATTERN" ]; then
+	pid=$PATTERN
+else
+	pid="$(pgrep $PATTERN)"
+fi
+if [ $( echo "$pid" | wc -w ) -gt 1 ]; then
+	#pid=$( echo -n $pid | head -n1 )
+	pid=$(echo -n $pid | awk '{print $1}' )
+	echo "$(basename $0) warn: more then one PID found matching $PATTERN, using the first: $pid" >&2
+	exit 0
+elif [ -z "$pid" ] || [ ! -d "/proc/$pid" ]; then
+	echo "$(basename $0) error: process not found: $1" >&2
+	exit 1
+fi
+
+if [ "$1" = "-s" ] ; then
+	# code from http://stackoverflow.com/questions/205064/is-there-a-way-to-change-another-processs-environment-variables https://gist.github.com/coderofsalvation/e1376e4d2b29607431df
+	echo "$(basename $0) warn: adding $2 in $PATTERN environment..." >&2
+	#sudo 
+	gdb -q -batch -ex "attach $PID" -ex "call putenv(\"$2\")" -ex 'detach' 
+	 # -batch-silent
+	exit $?
+fi
+#else
+# parse "/proc/$PID/environ"
+#  http://stackoverflow.com/questions/3569784/using-sed-to-get-an-env-var-from-proc-environ-weirdness-with-x00
+xargs -n 1 -0 < "/proc/$PID/environ"

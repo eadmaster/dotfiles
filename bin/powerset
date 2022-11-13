@@ -1,1 +1,10 @@
-../../../bin/powerset
+#!/bin/sh
+
+INPUT="$(echo $@ | tr ' ' '\n')"  # replace spaces with newlines
+[ -z "$1" ] && INPUT="$(cat)"
+[ -f "$1" ] && INPUT="$(cat $1)"
+
+echo "$INPUT" | python -c "import sys, itertools; s=set(sys.stdin.read().splitlines()) ; print('\n'.join(map(str, list(itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1))))))"
+# TODO: remove quoting
+
+# TODO: more alternatives

@@ -1,1 +1,24 @@
-../../../bin/av
+#!/bin/sh
+
+if [ ! -f "$@" ]; then
+	echo "$(basename $0): does not exist: $@" >&2
+	echo
+	exit 1
+fi
+
+if [ ! -d "$@" ]; then
+	# input is a single file
+	FILEHASH=$( sha256sum "$@" | cut -d" " -f1 )
+	[ -z "$FILEHASH" ] && FILEHASH=$( openssl dgst -sha256 "$@" | cut -d" " -f2 )
+	#[ -z "$FILEHASH" ] && exit 1
+
+	TARGET_URL="https://www.virustotal.com/en/file/$FILEHASH/analysis/"
+	echo "$(basename $0): trying to open this URL in your default browser: $TARGET_URL"
+	xdg-open "$TARGET_URL"
+fi
+
+# else recursive scan
+
+antivir "$@"
+
+clamscan "$@"

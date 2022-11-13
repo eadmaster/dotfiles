@@ -1,1 +1,29 @@
-../../../bin/bc
+#!/bin/sh
+
+command -p bc "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+busybox bc "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else replacement using awk (available in busybox)
+echo "$(basename $0) warn: using awk as bc replacement" >&2
+_PRINTFMT="%d"  # default for vanilla bc
+#_PRINTFMT="%g"  # good alternative, but may break some scripts
+[ $1 = "-l" ] && _PRINTFMT="%.20f"
+[ $1 = "-h" ] && exit 0
+while read LINE
+do
+	case "$LINE" in
+		\#*) continue ;; # comment
+		exit) break ;;
+		quit) break ;;
+		*\;*) echo "$(basename $0): multiple statements not yet supported (line skipped): $LINE" >&2 ;;
+		obase=8) _PRINTFMT="%o" ;;
+		obase=16) _PRINTFMT="%x" ;;
+		scale*) _PRINTFMT="%.$( echo $LINE | cut -d= -f2 )f" ;;
+		print*) echo "${LINE/print /}" ;;
+		*=*) echo "$(basename $0): assignments not yet supported (line skipped): $LINE" >&2 ;;
+		*) awk "BEGIN { printf \"$_PRINTFMT\n\", $LINE }" ;;
+	esac
+done

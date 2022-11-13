@@ -1,1 +1,53 @@
-../../../bin/chrome
+#!/bin/sh
+
+export CHROMIUM_FLAGS="--disk-cache-dir=/dev/null --disk-cache-size=1 --disable-gpu-shader-disk-cache"
+
+#export GOOGLE_API_KEY=AIzazUdJiNwlR6zYtNd
+#export GOOGLE_DEFAULT_CLIENT_ID=83728372837-wn4AKjPv02YM1x4gv.apps.googleusercontent.com
+#export GOOGLE_DEFAULT_CLIENT_SECRET=EERRN-JtEoGYoqL7xGZ6hhIxbM
+#export GOOGLE_API_KEY export GOOGLE_DEFAULT_CLIENT_ID export GOOGLE_DEFAULT_CLIENT_SECRET
+
+# Windows detection
+if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
+	cmd.exe /C chrome "$@"
+	exit $?
+fi
+
+# Android detection
+if [ ! -z "$ANDROID_ROOT" ]; then
+	am start -a android.intent.action.VIEW -n com.android.chrome/.App -d "$@"
+	exit $?
+fi
+
+extractrun chrome $CHROMIUM_FLAGS "$@"
+[ $? -ne 127 ] && exit $?
+
+command -p chrome $CHROMIUM_FLAGS "$@"
+[ $? -ne 127 ] && exit $?
+
+chromium-browser $CHROMIUM_FLAGS "$@"
+[ $? -ne 127 ] && exit $?
+
+chromium $CHROMIUM_FLAGS "$@"
+[ $? -ne 127 ] && exit $?
+
+google-chrome $CHROMIUM_FLAGS "$@"
+[ $? -ne 127 ] && exit $?
+
+opera "$@"
+[ $? -ne 127 ] && exit $?
+
+vivaldi "$@"
+[ $? -ne 127 ] && exit $?
+
+#midori "$@"
+#[ $? -ne 127 ] && exit $?
+
+#qupzilla "$@"
+#[ $? -ne 127 ] && exit $?
+
+#rekonq "$@"
+#[ $? -ne 127 ] && exit $?
+
+#else
+exit 127

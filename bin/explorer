@@ -1,1 +1,10 @@
-../../../bin/explorer
+#!/bin/sh
+
+setsid defaultfilemanager "$@" &
+[ $? -ne 2 ] && exit $?
+
+#wine explorer "$@"
+#[ $? -ne 2 ] && exit $?
+
+#else
+exit 127

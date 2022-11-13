@@ -1,1 +1,18 @@
-../../../bin/mathplot
+#!/bin/sh
+
+command -p plot "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+gnuplot -persistent -e "plot $@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#TODO: octave --silent --persist --eval "plot($@);"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#TODO: maxima --very-quiet -r  ...
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# MORE ALTERNATIVES: paw, python+matplotlib, ...
+
+#else
+exit 127

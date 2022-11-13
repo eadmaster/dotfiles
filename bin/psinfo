@@ -1,1 +1,63 @@
-../../../bin/psinfo
+#!/bin/sh
+
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) PPID|PATTERN"
+	echo
+	exit 0
+fi
+
+PATTERN="$1"
+
+#pid=$(ps ax | grep $PATTERN | grep -v grep | cut -f2 -d " ")
+# safer alternative using pgrep (in busybox)
+if [ -d "/proc/$PATTERN" ]; then
+	pid=$PATTERN
+else
+	pid="$(pgrep $PATTERN)"
+fi
+if [ $( echo "$pid" | wc -w ) -gt 1 ]; then
+	#pid=$( echo -n $pid | head -n1 )
+	pid=$(echo -n $pid | awk '{print $1}' )
+	echo "$(basename $0) warn: more then one PID found matching $PATTERN, using the first: $pid" >&2
+elif [ -z "$pid" ] || [ ! -d "/proc/$pid" ]; then
+	echo "$(basename $0) error: process not found: $1" >&2
+	exit 1
+fi
+
+#PS_FORMAT=pid,command,args
+
+echo
+
+pstree -p $pid
+
+echo
+
+# MEMO: /proc/$pid/maps shows memory regions + loaded shared libs
+echo "$(basename $0): loaded shared libs:"
+cat /proc/$pid/maps | grep lib | cut -d/ -f2- | uniq
+
+echo
+
+echo "$(basename $0): process status infos: "
+# MEMO: extracted from /proc/$pid/stat
+echo_ps_stat() {
+	ps -A -o pid,$1 | grep $pid | cut -d" "  -f2-
+}
+echo -n "user: "  ; echo_ps_stat user
+echo -n "group: "  ; echo_ps_stat group
+echo -n "PPID: "  ; echo_ps_stat ppid
+echo -n "cmdline args: "  ; echo_ps_stat args
+echo -n "elapsed time: "  ; echo_ps_stat etime
+echo -n "status: "  ; echo_ps_stat stat
+echo -n "virtual memory size (in KiB): "  ; echo_ps_stat vsz
+echo -n "resident set size (non-swapped phys memory used): "  ; echo_ps_stat rss
+echo -n "tty: "  ; echo_ps_stat tty
+
+echo
+
+# start a realtime monitor, shows io trasfer status:
+# showspeed in perl https://github.com/jnweiger/showspeed
+#showspeed $1
+#  https://github.com/dspinellis/pmonitor
+#pmonitor -p $pid
+top -b | grep $pid

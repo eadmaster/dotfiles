@@ -1,1 +1,31 @@
-../../../bin/filegrep
+#!/bin/sh
+
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ -f "$1" ]; then
+	echo "usage: $(basename $0) PATTERN FILE [FILE]..."
+	echo
+	exit 0
+fi
+
+RECURSIVE_MODE=off
+
+# iterate over args
+for ARG in "$@"
+do
+	if [ -d "$ARG" ] && [ $RECURSIVE_MODE = on ] ; then
+		# recursive call
+		$0 $GREP_ARGS $ARG/*
+		# alternative recursive call using find
+		#find "$ARG" -type f -exec $0 $GREP_ARGS {} \;
+	elif [ -f "$ARG" ]; then
+		# MEMO "-" is necessary to force grep reading stdin, otherwise will look in current dir if the "-r" switch is passed
+		fileinfo "$ARG" | grep $GREP_ARGS - | sed "s#^#$ARG: #"
+		[ $? -ne 1 ] && continue
+		file2txt "$ARG" | grep $GREP_ARGS - | sed "s#^#$ARG: #"
+		continue
+	else
+		[ "$ARG" = "-r" ] && RECURSIVE_MODE=on
+		# TODO: add "--exclude=GLOB" switch
+		# append to the current grep args
+		GREP_ARGS="$GREP_ARGS $ARG"
+	fi
+done

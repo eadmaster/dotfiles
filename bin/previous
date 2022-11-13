@@ -1,1 +1,17 @@
-../../../bin/previous
+
+
+# send the command to any media player
+
+if [ ! -z "$ANDROID_ROOT" ]; then
+	#termux-media-player previous
+	input keyevent 88
+	exit $?
+fi
+
+playerctl previous
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+omnipause previous
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+xdotool key XF86AudioPrev

@@ -1,1 +1,32 @@
-../../../bin/lrctransliterate
+#!/bin/sh
+
+# add transliteration next to every lrc line
+
+# force unicode
+export LC_ALL=C.UTF-8
+
+[ -z "$1" ] && exit
+#[ ! -z ] OUTFILE="$2"
+
+echo "[by:eadmaster (automatic transliteration, may contain errors)]\r"
+
+
+while read LINE          
+do
+	LINE="$( echo -n "$LINE" | sed -e 's/$/\r/' )"   # force windows newlines
+	# skip lines ending with "]"
+	#echo -n "$LINE" | grep -q '\]$'
+	#[ $? -eq 0 ] && continue
+	# remove the parentesis
+	LINE="$( echo -n "$LINE" | sed 's/([^)]*)//g' )"
+
+	TIMETAG="$( echo -n "$LINE" | rev | cut -d] -f2- | rev )"
+	LRCLINE="$( echo -n "$LINE" | rev | cut -d] -f1 | rev )"
+	TRANSLINE="$( jap2romaji "$LRCLINE" )"
+	#TRANSLINE="$( echo -n "$LRCLINE" | jakaroma 2> /dev/null | kanji2kana | kana2romaji | uconv -x 'Any-Latin;Latin-ASCII' | tr -d '\n' )"
+	if [ -z "$TIMETAG" ]; then
+		echo ""
+	else
+		echo "${TIMETAG}]$TRANSLINE"  #>> $OUTFILE
+	fi
+done  <"$1"

@@ -1,1 +1,34 @@
-../../../bin/wscat
+#!/bin/sh
+
+websocat "$@"
+[ $? -ne 127 ] && exit $?
+
+command -p wscat -c "$@"
+[ $? -ne 127 ] && exit $?
+
+$(npm root -g)/../../bin/wscat "$@"
+[ $? -ne 127 ] && exit $?
+
+wscat2 "$@"
+[ $? -ne 127 ] && exit $?
+
+iocat "$@"
+[ $? -ne 127 ] && exit $?
+
+uwsc "$@"
+[ $? -ne 127 ] && exit $?
+
+#wsdump "$@"
+#[ $? -ne 127 ] && exit $?
+
+# else alternative using curl
+# source: https://gist.github.com/htp/fbce19069187ec1cc486b594104f01d0
+curl --include \
+     --no-buffer \
+     --header "Connection: Upgrade" \
+     --header "Upgrade: websocket" \
+     --header "Host: example.com:80" \
+     --header "Origin: http://example.com:80" \
+     --header "Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==" \
+     --header "Sec-WebSocket-Version: 13" \
+     "$@"

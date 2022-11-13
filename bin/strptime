@@ -1,1 +1,9 @@
-../../../bin/strptime
+#!/bin/bash
+
+command -p strptime "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+ 
+dateutils.strptime "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# TODO: qalc alternative

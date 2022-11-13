@@ -1,1 +1,22 @@
-../../../bin/bin2hex
+#!/bin/sh
+
+INPUT=$1
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+echo "obase=16;ibase=2; $INPUT" | bc
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+printf '%x\n' "$((2#$INPUT))"
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+# from radare2
+rax2 -L "$INPUT"
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+# from rizin
+rz-ax -L $INPUT
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+# python alternative
+python -c "print(hex(int(\"$INPUT\", base=2))[2:]);"

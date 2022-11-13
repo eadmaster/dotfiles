@@ -1,1 +1,18 @@
-../../../bin/ldd
+
+/usr/bin/ldd "$@"
+#command -p ldd "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else alternative using readelf/strings
+if [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) FILE"
+	echo
+	exit 0
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+fi
+
+readelf -d "$1" | grep -F ".so"
+
+strings "$1" | grep -F ".so"

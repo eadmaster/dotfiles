@@ -1,1 +1,45 @@
-../../../bin/findcolor
+
+
+if [ "$#" -ne 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) COLOR_NAME"
+	echo
+	exit 0
+fi
+
+COLOR_QUERY=$1
+
+finddb $COLOR_QUERY $PENDRIVE/Documents/db/palette
+
+# TODO: seach "rgb.txt" and "colors.xml" in /usr and /etc
+grep -i $COLOR_QUERY "$PYTHONHOME/examples/pynche/*colors.txt"  2> /dev/null
+grep -i $COLOR_QUERY "$PYTHONHOME/examples/pynche/X/rgb.txt"  2> /dev/null
+grep -i $COLOR_QUERY "/usr/share/doc/python*.*/examples/Tools/pynche/X/rgb.txt" 2>  /dev/null
+grep -i $COLOR_QUERY "$MAGICK_HOME/www/source/colors.xml" 2> /dev/null
+grep -i $COLOR_QUERY "/usr/share/inkscape/extensions/colors.xml"  2> /dev/null
+grep -i $COLOR_QUERY "/etc/ImageMagick/colors.xml"  2> /dev/null
+grep -i $COLOR_QUERY "/usr/ImageMagick-?.?.?/config/colors.xml"  2> /dev/null
+grep -i $COLOR_QUERY "/usr/share/ImageMagick-?.?.?/config/colors.xml"   2> /dev/null
+grep -i $COLOR_QUERY "/usr/share/xbmc/system/colors.xml"  2> /dev/null
+grep -i $COLOR_QUERY "/etc/X11/rgb.txt"  2> /dev/null
+grep -i $COLOR_QUERY "/usr/share/X11/rgb.txt"  2> /dev/null
+grep -i $COLOR_QUERY "/usr/share/pixmap/rgb.txt"  2> /dev/null
+grep -i $COLOR_QUERY "/usr/share/vim/vim*/rgb.txt"  2> /dev/null
+grep -i $COLOR_QUERY "/usr/share/gimp/?.?/palettes/Named_Colors.gpl"  2> /dev/null
+
+# using python
+echo
+echo "$0: info: matplotlib: " >&2 
+python -c "import matplotlib ; print(matplotlib.colors.cnames[\"$COLOR_QUERY\"])"
+
+echo
+
+# TODO? preview the color in console
+# R=
+# G=
+# B=
+# echo|printf "\x1b[38;2;$R;$G;$Bm $COLOR_QUERY \x1b[0m\n"
+# source: https://unix.stackexchange.com/questions/482755/is-there-a-command-to-display-colors-when-giving-hex-value-in-terminal
+#printf '\e]4;1;%s\a\e[0;41m    \n    \n\e[m' $COLOR_QUERY
+
+# hex2rgb  https://github.com/abhimanyu003/sttr
+sttr hex-rgb $COLOR_QUERY

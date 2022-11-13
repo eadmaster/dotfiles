@@ -1,1 +1,28 @@
-../../../bin/xmldecode
+#!/bin/bash
+
+command -p xmldecode "$INPUT"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+INPUT="$@"
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+python3 -c "from html import unescape; print(unescape(\"$INPUT\"))"
+#python -c "from html import unescape; print(unescape(\"$INPUT\".decode("xmlcharrefreplace", "ascii")));"
+# TODO: replace html entities like "&egrave;"  https://stackoverflow.com/questions/50279749/python-3-5-replace-accented-character-by-html-entity
+[ $? -eq 0 ] && exit 0
+
+xmlstarlet unesc "$INPUT"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+recode html..ascii "$INPUT"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+php -r "print(html_entity_decode(\"$INPUT\") . \"\n\");"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+perl -MHTML::Entities -pe 'decode_entities($_);'
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127
