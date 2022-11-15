@@ -1,34 +1,43 @@
 #!/bin/sh
 
+INPUT="$@"
+
 if [ "$#" -ge 1 ]; then
 
-	echo "$0 example usages:"
-	echo "  units conversion syntax: calc '15in to cm'"
-	echo "  currency conversion syntax: calc '15usd to eur'"
-	echo "  time math syntax: calc '17:10:27h - 14:24:26h' ; calc '13:56:12h - 1:25h to s'"  #  https://github.com/Qalculate/libqalculate/issues/5
-	echo "    10:31 + 8:30 to time, now to utc, today − 5 days, 020-05-20 + 523d "
-	echo "  percent calculation: 500€ − 20% "
-	echo "  current calculation: 50ohm * 2A "
-	echo "  bytes calculation: (5000 × byte) × 10 to MB"
-	# more examples: https://github.com/Qalculate/libqalculate
+	if which qalc >/dev/null 2>&1 ; then
+		echo "$0 example usages:" >&2
+		echo "  units conversion syntax: calc '15in to cm'" >&2
+		echo "  currency conversion syntax: calc '15usd to eur'" >&2
+		echo "  time math syntax: calc '17:10:27h - 14:24:26h' ; calc '13:56:12h - 1:25h to s'"  >&2 #  https://github.com/Qalculate/libqalculate/issues/5
+		echo "    10:31 + 8:30 to time, now to utc, today − 5 days, 020-05-20 + 523d " >&2
+		echo "  percent calculation: 500€ − 20% " >&2
+		echo "  current calculation: 50ohm * 2A " >&2
+		echo "  bytes calculation: (5000 × byte) × 10 to MB" >&2
+		echo "  ---" >&2
+		# more examples: https://github.com/Qalculate/libqalculate
+	fi
 
-	qalc -s "exp mode 0" "$@"  # most user-friendly, also provides units normalization (but supports less units than GNU units)
+	# via qalc -> most user-friendly, also provides units normalization (but supports less units than GNU units)
+	qalc -s "exp mode 0" "$INPUT"  
 	[ $? -ne 127 ] && exit $?
 	# TODO: disable checks for updating rates
-
-	command -p units --history '' -v -1 "$@"  # --compact  # exponential notation by default, also provides units normalization (e.g. "12cm+1in")
+	
+	# via units -> exponential notation by default, also provides units normalization (e.g. "12cm+1in") 
+	units --history '' -v  "$INPUT"  # --compact -1  
 	[ $? -ne 127 ] && exit $?
 
-	command -p calc "$@"
+	# via calc -> c-style https://github.com/lcn2/calc
+	command -p calc "$INPUT"
 	[ $? -ne 127 ] && exit $?
 
-	awk "BEGIN { printf \"%g\n\", $@ }"  # exponential notation by default
+	# via awk -> in busybox, exponential notation by default
+	awk "BEGIN { printf \"%g\n\", $INPUT }"
 	[ $? -ne 127 ] && exit $?
 	
-	echo "$@" | bc -l
+	# via bc -> in busybox
+	echo "$INPUT" | bc -l
 	[ $? -ne 127 ] && exit $?
-	
-	echo "$@" | busybox bc -l
+	echo "$INPUT" | busybox bc -l
 	[ $? -ne 127 ] && exit $?
 
 	# TODO: more alternatives: python, ... https://unix.stackexchange.com/questions/480121/simple-command-line-calculator

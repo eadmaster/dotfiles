@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # uppercase currencies
 # TODO: define aliases instead? https://www.gnu.org/software/units/manual/html_node/Defining-Unit-List-Aliases.html
@@ -7,7 +7,7 @@ INPUT=$(echo "$INPUT" | sed 's/usd/USD/')
 INPUT=$(echo "$INPUT" | sed 's/eur/EUR/')
 INPUT=$(echo "$INPUT" | sed 's/gbp/GBP/')
 
-command -p units --history '' -v -1  "$INPUT"  # --compact
+command -p units "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 qalc "$1 to $2"

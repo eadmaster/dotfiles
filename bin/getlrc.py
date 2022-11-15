@@ -34,6 +34,92 @@ import logging
 logging.getLogger().setLevel(logging.INFO)
 
 
+def fuzzy_match_old(query, artist_title):  # query from tags/filename, header from html page
+	sep_ind = artist_title.find("-")
+	artist = "" if sep_ind < 0 else artist_title[0:sep_ind].strip()
+	title = artist_title if sep_ind < 0 else artist_title[sep_ind + 1:].strip()	
+	query_lower = query.lower()
+	
+	if not artist or not title:
+		return False
+	
+	#if query_lower.find(title.lower()) < 0 or (sep_ind >= 0 and query_lower.find(artist.lower()) < 0):
+	if ( query_lower.find(title.lower()) < 0 or query_lower.find(artist.lower()) < 0):
+		# not found
+		return False
+	else:
+		return True
+	
+	
+def fuzzy_match(s1, s2):  # query from tags/filename, header from html page
+	# remove tags (e.g. "(Album version)")
+	import re
+	s1 = re.sub("\(.*?\)|\[.*?\]","", s1)
+	s2 = re.sub("\(.*?\)|\[.*?\]","", s2)
+	
+	# convert to lowercase
+	s1 = s1.lower()
+	s2 = s2.lower()
+	
+	# remove some words
+	s1 = s1.replace(" op - ", " - ")
+	s1 = s1.replace(" ed - ", " - ")
+	s1 = s1.replace(" opening - ", " - ")
+	s1 = s1.replace(" ending - ", " - ")
+	s1 = s1.replace("the ", " ")
+	s1 = s1.replace("a ", " ")
+	
+	# TODO: skip lyrics with non-latin text
+	
+	#print(s2)
+		
+	# check tags separators
+	if len(s1.split("-"))>=3:
+		s1 = "-".join(s1.split("-")[0:2])  # take only the 1st and 2nd
+		# TODO: try all the combinations
+	if len(s2.split("-"))>=3:
+		s2 = "-".join(s2.split("-")[0:2])  # take only the 1st and 2nd
+		# TODO: try all the combinations
+	
+	# remove whitespaces and punctuation chars
+	import string
+	s1 = s1.translate(str.maketrans('', '', string.whitespace))
+	s1 = s1.translate(str.maketrans('', '', string.punctuation))
+	s2 = s2.translate(str.maketrans('', '', string.whitespace))
+	s2 = s2.translate(str.maketrans('', '', string.punctuation))
+
+	if s1 == s2:
+		return True
+				
+	# string distance with SequenceMatcher  https://stackoverflow.com/a/46125447/791229
+	# https://github.com/seatgeek/fuzzywuzzy/issues/128
+	from difflib import SequenceMatcher
+	s = SequenceMatcher(None, s1, s2)
+	ss_ratio = s.ratio()
+	if (ss_ratio > 0.80):
+		return True
+
+	# else
+	return False
+
+
+def cleanup_tagged_lyrics_str(lyrics_str):
+
+	# fix some special chars
+	lyrics_str.replace("\'\'", "\"")  # '' -> "
+	
+	# TODO: enforce consistent line endings
+	lyrics_str = lyrics_str.replace("\n\r\n", "\n")
+	
+	# TODO: cleanup lines repeating the title and author
+	# TODO: cleanup spam lines if any(["MSN", "irc" in line])
+	
+	# iterate over lines
+	#for line in lyrics_str.splitlines():
+	
+	return lyrics_str
+
+
 def lyricsify_find_song_lyrics(query):
 	"""
 	Return song lyrics from Lyricsify.com for the first song found using the provided search string.
@@ -65,28 +151,8 @@ def lyricsify_find_song_lyrics(query):
 		if fuzzy_match(query, artist_title):
 			lyrics_text="".join(song_html.find("div", id="entry").strings)
 			matching_lyrics_list.append(lyrics_text)
-		
-		# old:
-		continue
-		
-		sep_ind = artist_title.find("-")
-		artist = "" if sep_ind < 0 else artist_title[0:sep_ind].strip()
-		title = artist_title if sep_ind < 0 else artist_title[sep_ind + 1:].strip()	
-		query_lower = query.lower()
-		
-
-		if not artist or not title:
-			continue
-		
-		#if query_lower.find(title.lower()) < 0 or (sep_ind >= 0 and query_lower.find(artist.lower()) < 0):
-		if ( query_lower.find(title.lower()) < 0 or query_lower.find(artist.lower()) < 0):
-			# not found
-			continue
-		else:
-			# Return the lyrics text
-			lyrics_text="".join(song_html.find("div", id="entry").strings)
-			matching_lyrics_list.append(lyrics_text)
 	# end for
+	
 	return matching_lyrics_list
 # end of lyricsify_find_song_lyrics
 
@@ -137,69 +203,6 @@ def genius_find_song_lyrics(query, access_token):
         else:
             final_lyrics.append(lyric)
     return [ "[ti:" + song["title_with_featured"] + "]\n[ar:" + song["primary_artist"]["name"] + "]\n" + "\n".join(final_lyrics) ]
-
-
-def fuzzy_match(s1, s2):  # query from tags/filename, header from html page
-	# remove tags (e.g. "(Album version)")
-	import re
-	s1 = re.sub("\(.*?\)|\[.*?\]","", s1)
-	s2 = re.sub("\(.*?\)|\[.*?\]","", s2)
-	
-	# remove some words
-	s1 = s1.replace(" OP - ", " - ")
-	s1 = s1.replace(" ED - ", " - ")
-	s1 = s1.replace(" opening - ", " - ")
-	s1 = s1.replace(" ending - ", " - ")
-	
-	# TODO: skip lyrics with non-latin text
-	
-	#print(s2)
-		
-	# check tags separators
-	if len(s1.split("-"))>=3:
-		s1 = "-".join(s1.split("-")[0:2])  # take only the 1st and 2nd
-		# TODO: try all the combinations
-	if len(s2.split("-"))>=3:
-		s2 = "-".join(s2.split("-")[0:2])  # take only the 1st and 2nd
-		# TODO: try all the combinations
-	
-	# remove whitespaces and punctuation chars
-	import string
-	s1 = s1.translate(str.maketrans('', '', string.whitespace))
-	s1 = s1.translate(str.maketrans('', '', string.punctuation))
-	s2 = s2.translate(str.maketrans('', '', string.whitespace))
-	s2 = s2.translate(str.maketrans('', '', string.punctuation))
-
-	# convert to lowercase
-	s1 = s1.lower()
-	s2 = s2.lower()
-	
-	#print(s2)
-
-	# test inclusion instead? 
-	if s1 == s2:
-		return True
-	else:
-		return False
-	
-	
-	
-def cleanup_tagged_lyrics_str(lyrics_str):
-
-	# fix some special chars
-	lyrics_str.replace("\'\'", "\"")  # '' -> "
-	
-	# TODO: enforce consistent line endings
-	lyrics_str = lyrics_str.replace("\n\r\n", "\n")
-	
-	# TODO: cleanup lines repeating the title and author
-	# TODO: cleanup spam lines
-	
-	# iterate over lines
-	#for line in lyrics_str.splitlines():
-	
-	return lyrics_str
-
 
 
 if __name__ == '__main__':

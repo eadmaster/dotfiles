@@ -379,7 +379,7 @@ alias mountiso="sudo mount -o loop" #alternative: fuseiso, cdemu load 0 FILE.IMG
 
 # dosbox aliases
 if which dosbox >/dev/null 2>&1 ; then
-    boot-dosbox() { dosbox -c "boot \"$1\"" ; }  # MEMO: works with both FD and HD images
+    boot_dosbox() { dosbox -c "boot \"$1\"" ; }  # MEMO: works with both FD and HD images
     alias dosbox086="dosbox -c 'CONFIG -set cpu cputype=8086'"
     alias dosbox186="dosbox -c 'CONFIG -set cpu cputype=80186'"
     alias dosbox286="dosbox -c 'CONFIG -set cpu cputype=286'"
@@ -832,42 +832,44 @@ alias appendnote=mynoteappend
 alias np=mynoteappend
 #alias na=mynoteappend
 
-finddump() { finddb "$1" $PENDRIVE/Documents/db/datfile ; }  #  $retroarch_base_path\database\dat, metadata?
-alias finddat=finddump
-findhave() { finddb "$1" $PENDRIVE/Documents/db/list/have ; }
-finddisc() { finddb "$1" $PENDRIVE/Documents/db/list/have/discs ; }
-havelist() { find $PENDRIVE/Documents/db/list/have/discs -iname "$1Have.txt" | xargs xdg-open ; }
-alias havelists=havelist
-alias findbackup=findhave
-#alias finddoc=findhave
-alias whereis=findhave
-#alias locate=findhave  # conflicts
+if [ -d $PENDRIVE/Documents/db ]; then
+	finddump() { finddb "$1" $PENDRIVE/Documents/db/datfile ; }  #  $retroarch_base_path\database\dat, metadata?
+	alias finddat=finddump
+	findhave() { finddb "$1" $PENDRIVE/Documents/db/list/have ; }
+	finddisc() { finddb "$1" $PENDRIVE/Documents/db/list/have/discs ; }
+	havelist() { find $PENDRIVE/Documents/db/list/have/discs -iname "$1Have.txt" | xargs xdg-open ; }
+	alias havelists=havelist
+	alias findbackup=findhave
+	#alias finddoc=findhave
+	alias whereis=findhave
+	#alias locate=findhave  # conflicts
 
-finddump() { finddb "$1" $PENDRIVE/Documents/db/datfile ; }
-alias findump=finddump
-alias findrom=finddump
-#findvg() { finddb "$@" $PENDRIVE/Documents/db/vg ; }  # MOVED in a script
-alias findgame=findvg
-goodfind() { finddb "$@" "$PENDRIVE/Documents/db/datfile/GoodTools" ; }
-nointrofind() { ugrep -z "$@" "$PENDRIVE/Documents/db/datfile/No Intro*.zip" ; }
-scenefind() { finddb "$@" $PENDRIVE/Documents/db/datfile/scene ; }
-#alias mamefaq=mameinfo
-mamefind() { mame $1 -listxml | awk -v 'IGNORECASE=1' -v RS="<software" '/'"$1"'/ { print $0 }' ; }
-messfind() { mame -listsoftware $2 | awk -v 'IGNORECASE=1' -v RS="<software" '/'"$1"'/ { print $0 }' ; }
-alias mamedebug="mame -debug -v"
+	finddump() { finddb "$1" $PENDRIVE/Documents/db/datfile ; }
+	alias findump=finddump
+	alias findrom=finddump
+	#findvg() { finddb "$@" $PENDRIVE/Documents/db/vg ; }  # MOVED in a script
+	alias findgame=findvg
+	goodfind() { finddb "$@" "$PENDRIVE/Documents/db/datfile/GoodTools" ; }
+	nointrofind() { ugrep -z "$@" "$PENDRIVE/Documents/db/datfile/No Intro*.zip" ; }
+	scenefind() { finddb "$@" $PENDRIVE/Documents/db/datfile/scene ; }
+	#alias mamefaq=mameinfo
+	mamefind() { mame $1 -listxml | awk -v 'IGNORECASE=1' -v RS="<software" '/'"$1"'/ { print $0 }' ; }
+	messfind() { mame -listsoftware $2 | awk -v 'IGNORECASE=1' -v RS="<software" '/'"$1"'/ { print $0 }' ; }
+	alias mamedebug="mame -debug -v"
 
-psxfind() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps1/sonyindex_PSone*.txt ; }
-alias ps1find=psxfind
-ps2find() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps2/sonyindex_PS2*.txt ; }
-pspfind() { grep -i "$1" $PENDRIVE/Documents/db/vg/psp/sonyindex_PSP*.txt ; }
-ps3find() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps3/ps3tdb.txt ; }
-wiifind() { grep -i "$1" $PENDRIVE/Documents/db/vg/wii/wiitdb_titles.txt ; }
-alias ngcfind=wiifind
-wiiufind() { grep -i "$1" $PENDRIVE/Documents/db/vg/wiiu/wiiutdb_titles.txt ; }
-xboxfind() { grep -i "$1" $PENDRIVE/Documents/db/vg/xbox/xbox_titleids.tsv ; }
-xb360find() { grep -i "$1" $PENDRIVE/Documents/db/vg/xb360/gamesdatabase_*.tsv ; }
-3dsfind() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/3ds/list_*.json ; }
-# MEMO: do not quote escaped paths!
+	psxfind() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps1/sonyindex_PSone*.txt ; }
+	alias ps1find=psxfind
+	ps2find() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps2/sonyindex_PS2*.txt ; }
+	pspfind() { grep -i "$1" $PENDRIVE/Documents/db/vg/psp/sonyindex_PSP*.txt ; }
+	ps3find() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps3/ps3tdb.txt ; }
+	wiifind() { grep -i "$1" $PENDRIVE/Documents/db/vg/wii/wiitdb_titles.txt ; }
+	alias ngcfind=wiifind
+	wiiufind() { grep -i "$1" $PENDRIVE/Documents/db/vg/wiiu/wiiutdb_titles.txt ; }
+	xboxfind() { grep -i "$1" $PENDRIVE/Documents/db/vg/xbox/xbox_titleids.tsv ; }
+	xb360find() { grep -i "$1" $PENDRIVE/Documents/db/vg/xb360/gamesdatabase_*.tsv ; }
+	3dsfind() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/3ds/list_*.json ; }
+	# MEMO: do not quote escaped paths!
+fi
 
 findindex() { finddb "$1" $PENDRIVE/Documents/db/index ; }
 alias findmag=findindex
@@ -1550,7 +1552,7 @@ if which adb >/dev/null 2>&1 ; then
     alias androidturnonscreen=androidswitchscreen
     alias androidmute="adb shell input keyevent 164"
     androidtype() { adb shell input text $(echo "$@" | sed 's/ /%s/g') ; }
-    alias androidlsapps="adb shell pm list packages"  # TODO: list app names
+    alias androidappsls="adb shell pm list packages"  # TODO: list app names
     alias androidappinfo="adb shell pm dump"
     androidrun() { APPNAME=$(adb shell pm list packages | grep -i -m1 "$1" | cut -d: -f2 | tr -d '\r') ; echo "$0: launching $APPNAME..." ; adb shell monkey -p "$APPNAME" 1 ; }  # https://stackoverflow.com/questions/4567904/how-to-start-an-application-using-android-adb-tools
     #NO? androidopen() { adb shell am start -d "file://$1" -a android.intent.action.VIEW ; }
@@ -1559,17 +1561,14 @@ if which adb >/dev/null 2>&1 ; then
     #2FIX: androidrecordscreen() { TARGET="$1"; [ -z "$1" ] && TARGET="/sdcard/Movies/`date +%Y%m%S%d%H%M`.mp4" ; adb shell screenrecord $TARGET & ; PID=$! ; read -p "$0: press ENTER to stop recording..." ; kill $PID ; sleep 3 ; adb pull $TARGET ; adb shell rm $TARGET ; }  #TODO: via piping -- source: https://adventuresinqa.com/2015/02/04/android-screen-recording-using-adb/
     alias androidnotify="androidtermuxshell termux-notification --sound --vibrate 500 -c"  # https://wiki.termux.com/wiki/Termux-notification
     alias androidsay="androidtermuxshell termux-tts-speak"  # https://wiki.termux.com/wiki/Termux-notification
-    #alias androidlsservices="adb shell service list"
-    alias androidlssensors="adb shell getevent -il ; adb shell dumpsys sensorservice"  # TODO: reduce output verbosity
+    #alias androidservicesls="adb shell service list"
+    alias androidsensorsls="adb shell getevent -il ; adb shell dumpsys sensorservice"  # TODO: reduce output verbosity
     alias androidbatterystatus="adb shell dumpsys batterymanager"
     #NO? androidcamera="adb shell am start -a android.media.action.IMAGE_CAPTURE ; adb shell "input keyevent KEYCODE_CAMERA""  https://stackoverflow.com/questions/24747665/android-command-line-photo
-    alias androidlscontacts=androidcontactsls
     alias androidaddressbook=androidcontactsls
-    alias androidlscalls=androidcallog
-    alias androidlssms=androidsmsls
     androidcall() { adb shell am start -a android.intent.action.CALL -d tel:$1 ; }  # TODO: autoenable hands-free mode and call
     alias androidlogs="adb logcat -t1000"
-    alias androidlssettings="(adb shell settings list secure ; adb shell settings list system ; adb shell settings list global) 2>& 1"  # ALTERNATIVE: adb shell content query --uri content://settings/system
+    alias androidsettingsls="(adb shell settings list secure ; adb shell settings list system ; adb shell settings list global) 2>& 1"  # ALTERNATIVE: adb shell content query --uri content://settings/system
     #alias androidsetairplanemode="adb shell settings put global airplane_mode_on 1"
     #alias androidturnonwifi="adb shell settings put global wifi_on 1"
     alias androidturnoffwifi="adb shell settings put global wifi_on 0"
@@ -1589,16 +1588,17 @@ if which adb >/dev/null 2>&1 ; then
     # ... http://adbcommand.com/awesome-adb
     alias androidip="adb shell ifconfig"
     androidforwardport() { adb forward tcp:$1 tcp:$1 ; }
-    # TODO: androididle
+    # TODO: androididle, printidle
     alias androidinfo="adb shell getprop"
     alias androidcpuinfo="adb shell cat /proc/cpuinfo ; adb shell getprop | grep -i cpu"
     #alias androidsetsilent="adb shell settings put global mode_ringer 0"  # set RINGER MODE=SILENT TODO: https://android.stackexchange.com/questions/186925/android-phone-shell-command-silent-mode
-    alias androidlsnotifications="adb shell dumpsys notification | grep tickerText"
-    alias androidlsalerts=androidlsnotifications
+    alias androidnotificationsls="adb shell dumpsys notification | grep ticker | cut -d= -f2"
+    alias androidalertsla=androidnotificationsls
     alias androidunlock=myandroidunlock
     alias androidremotecontrol="scrcpy &"
     alias androidphotostransfer="androidget sdcard/DCIM"  # "storage/sdcard1/DCIM/Camera" if using SD card
     alias androidremountsystemrw="adb root ; adb remount"  # TODO: reconnect before the 2nd command if necessary...  https://android.stackexchange.com/questions/60446/cant-remount-system-in-rw
+    #TODO: alias androidassistantquery="adb shell am start-activity com.google.android.apps.googleassistant/.AssistantActivity"
 fi
 
 alias androidmount="mkdir /tmp/adb ; sudo umount /tmp/adb ; adbfs /tmp/adb -o hard_remove,umask=000" # from fuse-adbfs | https://github.com/spion/adbfs-rootless
@@ -1856,11 +1856,18 @@ alias mp3gainall="mp3gain -r -T -c"
 
 alias audiohash=mediahash
 
-alias facerec=face_recognition
-alias speechrec=speech_recognition
-alias voicerec=speech_recognition
 alias langdet="polyglot detect"
 alias langrec=langdet
+
+alias facerec=camera2facerec.py
+alias motiondetect=camera2facerec.py
+
+alias speechrec=mic2speechrec.py
+alias voicerec=mic2speechrec.py
+alias voice2text=mic2speechrec.py
+alias mic2text=mic2speechrec.py
+alias speech2text=mic2speechrec.py
+alias voice2command=mic2command.py
 
 alias aifacedet=facerec
 alias aifacerec=face_recognition
@@ -2034,7 +2041,23 @@ alias usage=quickcmdref
 alias examples=quickcmdref
 
 alias findbrokensymlinks="find . -xtype l"
-
 #TODO: symlink2hardlink=find -type l -exec bash -c 'ln -f "$(readlink -m "$0")" "$0"' {} \;
+#  https://stackoverflow.com/questions/8377312/how-to-convert-symlink-to-regular-file
+
+# kindle-specific aliases
+if [ ! -z "$KINDLE_TZ" ]; then
+	alias remountrw="mntroot rw"
+	alias remountro="mntroot ro"
+	alias kindlesettingsls="lipc-probe -a"
+	#TODO: alias kindleset...
+	# ...
+fi
+
+if which avahi-publish >/dev/null 2>&1 ; then
+	#upnp_publish_port() { avahi-publish -s "$(hostname):$PORT" _myservic._tcp $PORT }
+	upnp_publish_localhost() { avahi-publish -a -R $(hostname).local $(getip) ;  }
+	#upnp_publish_host() { avahi-publish -a -R $2.local $1 ;  }
+	# https://pi3g.com/2019/04/10/avahi-how-to-assign-several-local-names-to-same-ip/
+fi
 
 unset THIS_SCRIPT_DIR

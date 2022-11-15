@@ -12,3 +12,5 @@ tre-agrep --best-match --max-errors=1 --ignore-case "$@"
 #_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 #TODO: agrep "$@"
+
+#TODO: python alternative using difflib.SequenceMatcher

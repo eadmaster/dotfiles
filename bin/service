@@ -19,8 +19,9 @@ case $SERVICE_NAME in
 	*ssh )  export SERVICE_NAME=ssh  ;;
 	internet|network|net )  export SERVICE_NAME=networking  ;;
 	bt )  export SERVICE_NAME=bluetooth  ;;
-	fluid*|midi )  export SERVICE_NAME=timidity  ;;   # fluidsynth
-	#*shell )  export SERVICE_NAME=shellinabox  ;;
+	fluid*|midi )  export SERVICE_NAME=fluidsynth  ;;   #  TODO: also try timidity
+	nzb*|nbz )  export SERVICE_NAME=nzbget  ;;
+	*shell|shellin*|httpsh* ) export SERVICE_NAME=shellinabox  ;;  # TODO: also try gotty -w bash -p 4201 
 esac
 
 # check if running on Android
@@ -131,7 +132,7 @@ elif [ "$SERVICE_NAME" = "gdrive" ]; then
 	#else
 	echo "$(basename $0) err: unsupported command: $CMD" >&2
 	exit 1
-elif [ "$SERVICE_NAME" = "nzbget" ] || [ "$SERVICE_NAME" = "nzb" ] || [ "$SERVICE_NAME" = "nbz" ]; then
+elif [ "$SERVICE_NAME" = "nzbget" ]; then
 	if [ "$CMD" = "start" ]; then
 		nzbget -D
 		exit $?
@@ -156,6 +157,16 @@ elif [ "$SERVICE_NAME" = "vnc" ]; then
 		exit $?
 	fi
 	# TODO: try more alternatives
+	exit 1
+elif [ "$SERVICE_NAME" = "php" ]; then
+	# php-enabled web server
+	if [ "$CMD" = "start" ]; then
+		php -S 0.0.0.0:8001 # -t $DIR_SERVED
+		exit $?
+	elif [ "$CMD" = "stop" ]; then
+		killall php
+		exit $?
+	fi
 	exit 1
 elif [ "$SERVICE_NAME" = "samba" ]; then
 	sudo service smbd $CMD

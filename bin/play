@@ -21,6 +21,7 @@ if [ -z "$1" ]; then
 	# assume command to media player
 	if [ ! -z "$ANDROID_ROOT" ]; then
 		input keyevent 85  # play_pause
+		# TODO: fix: not working in termux https://github.com/termux/termux-app/discussions/3093
 		#termux-media-player play
 		exit $?
 	fi

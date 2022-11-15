@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] | [ -z "$2" ]; then
+	echo "usage: $(basename $0) ROMSETNAME SYSTEM"
+	echo
+	exit 1
+fi
+
+wget -N "https://archive.org/download/mame-sl/mame-sl/$2.zip/$2/$1.zip"
+
+# OLD:
+#https://archive.org/download/MESS_0.149_Software_List_ROMs
+#wget -N "https://archive.org/download/MESS_0.151_Software_List_ROMs/$1.zip/MESS%200.151%20Software%20List%20ROMs/$1/$2.zip"
+
+echo "$0: usually run with: mame $2 -cart $1"
+#echo "$0: supported devices for this system: "
+#mame -listmedia $2

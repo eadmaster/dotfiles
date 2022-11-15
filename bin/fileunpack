@@ -74,7 +74,7 @@ case "$INPUTFILEEXT" in
 	
 	rpm )
 		# try using rpm2cpio
-		cd $OUTPUTDIR
+		cd "$OUTPUTDIR"
 		rpm2cpio "$INPUTFILEFULLPATH" | cpio -idvm
 		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 		
@@ -90,6 +90,13 @@ case "$INPUTFILEEXT" in
 		exit 0
 		;;
 
+	ipk )
+		tar -v -x -z -O -f "$INPUTFILE" ./data.tar.gz  | tar -zvx -C "$OUTPUTDIR"
+		#TODO: OLD packages used ar? https://stackoverflow.com/questions/17369127/extracting-and-creating-ipk-files
+		#ar -xv "$INPUTFILE" ... | ...
+		exit 0
+		;;
+	
 	gz )
 		gzip -dc < "$INPUTFILE" > "$OUTPUTDIR/$INPUTFILENAME"
 		exit $?
@@ -100,7 +107,7 @@ case "$INPUTFILEEXT" in
 		exit $?
 		;;
 	
-	tgz|tar.gz )
+	tgz|tar.gz|apk )
 		tar -v -x -z -C "$OUTPUTDIR" -f "$INPUTFILE"
 		exit $?
 		;;

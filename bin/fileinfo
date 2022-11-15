@@ -344,7 +344,20 @@ case $INPUTFILETYPE in
 		readelf -h -d -A -W "$INPUTFILE"
 		exit $?
 		;;
+	
+	#application/octet-stream )  # unknwon mime type
+	
 esac
+
+# if it is a small file (<1GB) compute the hashes, entropy, etc.
+if [ "$(stat -c'%s' "$INPUTFILE")" -lt 1000000000 ]; then
+	#rhash --bsd --all "$INPUTFILE"
+	#[ $? -eq 127 ] && md5sum "$INPUTFILE"
+	binwalk --entropy --fast --nplot "$INPUTFILE"
+	# try subfile searching
+	binwalk --signature "$INPUTFILE"
+	# foremost -v -w -o $TMPDIR/$RANDOM -i "$INPUTFILE"  # TODO: no output
+fi
 
 #echo "$(basename $0): extension \"$INPUTFILEEXT\" not supported, redirecting to file:" >&2
 file -i "$@"
@@ -353,16 +366,6 @@ file "$@"
 # also try with extract from libextractor
 extract "$INPUTFILE"
 #TODO: try with fq https://github.com/wader/fq/
-
-# if it is a small file (<1GB) compute the hashes, entropy, etc.
-if [ "$(stat -c'%s' "$INPUTFILE")" -lt 1000000000 ]; then
-	rhash --bsd --all "$INPUTFILE"
-	[ $? -eq 127 ] && md5sum "$INPUTFILE"
-	binwalk --entropy --fast --nplot "$INPUTFILE"
-	# try subfile searching
-	binwalk --signature "$INPUTFILE"
-	# foremost -v -w -o $TMPDIR/$RANDOM -i "$INPUTFILE"  # TODO: no output
-fi
 
 # try game archives via GameExtractor  http://www.watto.org/game_extractor.html
 # TODO: listing to stdout not supported https://github.com/wattostudios/GameExtractor/issues/7

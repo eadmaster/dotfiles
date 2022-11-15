@@ -60,6 +60,8 @@ fi
 # MEMO: these are used by Chrome
 case "$1" in
 	http:*|https:* )
+		[ ! -z "$BROWSER" ] && "$BROWSER" "$1" 2> /dev/null
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 		default_web_browser "$1" 2> /dev/null
 		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 		defaultbrowser "$1"  2> /dev/null

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] | [ -z "$2" ]; then
+	echo "usage: $(basename $0) ROMSETNAME"
+	echo
+	exit 1
+fi
+
+wget -N "https://archive.org/download/mame-merged/mame-merged/$1.zip" "$2" "$3" "$4"
+
+# OLD:
+#wget -N "http://archive.org/download/MAME_0.151_ROMs/MAME_0.151_ROMs.zip/MAME 0.151 ROMs/$1.zip" "$2" "$3" "$4"
+#wget -N "https://archive.org/download/MAME_0.209_ROMs_merged/MAME_0.209_ROMs_merged.zip/$1.zip" "$2" "$3" "$4"
+#wget -N "https://archive.org/download/mame-0.221-roms-merged/$1.zip"
+#wget -N "https://archive.org/download/mame-0.231-merged/$1.7z" "$2" "$3" "$4"
