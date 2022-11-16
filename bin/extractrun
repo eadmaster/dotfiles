@@ -42,9 +42,10 @@ fi
 #TODO: check if the archive is encrypted
 #command -p 7z l -slt -- "$ARCHIVENAME" | grep -Fq 'Encrypted = +'  
  
-# read password from kde wallet
-export ARCHIVEPASSWORD=$(kwallet-query -f Scripts -r extractrun kdewallet)
-[ -z "$ARCHIVEPASSWORD" ] && export PASSWORD=$(kwalletcli -f Scripts -e extractrun)
+# read password from the secret keyring
+export ARCHIVEPASSWORD=$(keyring get Scripts extractrun)
+#[ -z "$ARCHIVEPASSWORD" ] && export ARCHIVEPASSWORD=$()
+[ -z "$ARCHIVEPASSWORD" ] && export ARCHIVEPASSWORD=$(kwallet-query -f Scripts -r extractrun kdewallet)
 
 # else try to read from a file
 [ -z "$ARCHIVEPASSWORD" ] && [ -f $TMPDIR/r/password ] && export PASSWORD=$(cat $ARCHIVEPASSWORD_FILE)
@@ -59,12 +60,9 @@ if [ -z "$ARCHIVEPASSWORD" ]; then
 	# ALTERNATIVE: kdialog --password "Please enter your password: " > $ARCHIVEPASSWORD_FILE
 	# if [ ! $? -eq 0 ]; then ... # The user has pressed Cancel
 	
-	# save password into the KDE wallet
-	kwalletcli -f "Scripts" -e "extractrun" -p "$ARCHIVEPASSWORD"
+	# save password into the secret keyring
+	echo "$ARCHIVEPASSWORD" | keyring set Scripts test
 	[ $? -eq 127 ] && echo "$ARCHIVEPASSWORD" | kwallet-query -v -f "Scripts" -w "extractrun"  kdewallet  # not working?
-	
-	# alternative with qdbus  https://nowardev.wordpress.com/2017/01/17/accessing-the-kde-wallet-from-the-command-line-kde-5-version/
-	
 fi
 
 export APPBASEDIR="$TMPDIR/$fbname"

@@ -91,11 +91,12 @@ elif [ "$1" = "--distance" ]; then
 	lat_2="$3"
 	lon_2="$4"
 	
-	# TODO: using qacl  https://github.com/Qalculate/libqalculate/issues/254
+	# using qacl  https://github.com/Qalculate/libqalculate/issues/254
+	qalc -t "geodistance($lat_1, $lon_1, $lat_2, $lon_2)"
 	
 	# TODO: using python-geopy  https://github.com/geopy/geopy
-	echo 'python-geopy:'
-	python -c "from geopy.distance import geodesic; print(geodesic(($lat_1, $lon1), ($lat_2, $lon2)))"
+	#echo 'python-geopy:'
+	#python -c "from geopy.distance import geodesic; print(geodesic(($lat_1, $lon1), ($lat_2, $lon2)))"
 	#[ $? -eq 0 ] && exit 0
 	
 	# TODO: alternative using sklearn.metrics.pairwise.haversine_distances  https://stackoverflow.com/questions/29545704/fast-haversine-approximation-python-pandas#answer-41858332
@@ -103,7 +104,7 @@ elif [ "$1" = "--distance" ]; then
 	# TODO: OSM alternative  https://help.openstreetmap.org/questions/37861/distance-matrix-api
 	
 	# using Google Distance Matrix API  https://developers.google.com/maps/documentation/distance-matrix/start
-	wget -q -U Firefox -O- "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=$( urlencode -m "$SRCQUERY" )&destinations=$( urlencode -m "$DSTQUERY" )&key=GOOGLE_API_KEY"
+	#wget -q -U Firefox -O- "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=$( urlencode -m "$SRCQUERY" )&destinations=$( urlencode -m "$DSTQUERY" )&key=GOOGLE_API_KEY"
 	#[ $? -eq 0 ] && exit 0
 	
 	echo

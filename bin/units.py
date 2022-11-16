@@ -1,11 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import sys
-import logging
-import os
-
-PROGRAM_NAME = os.path.basename(sys.argv[0])
 
 def sympy_units_conversion(v_str, u1_str, u2_str):
 	# https://stackoverflow.com/questions/1025145/units-conversion-in-python
@@ -29,7 +24,12 @@ def scipy_units_conversion(v_str, u1_str, u2_str):
 
 	
 if __name__ == "__main__":
-	
+	import sys
+	import logging
+	import os
+
+	PROGRAM_NAME = os.path.basename(sys.argv[0])
+
 	if(len(sys.argv) < 3 or sys.argv[1] in ['-h', '--help']):
 		print("usage: " + PROGRAM_NAME + " val unit1 unit2")
 		sys.exit(1)

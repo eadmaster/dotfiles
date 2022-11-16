@@ -342,7 +342,7 @@ case $INPUTFILEEXT in
 		# TODO: more alternatives
 		exit $?
 		;;
-	icml|smi|smiles|can|cml|mrv|inchi|mol|mdl|mol2 # chemistry
+	icml|smi|smiles|can|cml|mrv|inchi|mol|mdl|mol2 )  # chemistry
 		obabel "$INPUTFILE" -O"$OUTPUTFILE"
 		# TODO: more alternatives
 		exit $?

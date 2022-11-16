@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
-import os
-
-PROGRAM_NAME = os.path.basename(sys.argv[0])
 
 def levenshtein_distance(str1, str2):
 	# source: https://rosettacode.org/wiki/Levenshtein_distance#Python
@@ -47,6 +43,10 @@ def gestalt_distance_ratio(str1, str2):
 		
 # main program
 if __name__ == "__main__":
+	
+	import sys
+	import os
+	PROGRAM_NAME = os.path.basename(sys.argv[0])
 	
 	if(len(sys.argv) < 3 or sys.argv[1] in ['-h', '--help']):
 		print("usage: " + PROGRAM_NAME + " STRING1 STRING2")

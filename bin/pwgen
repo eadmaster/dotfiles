@@ -3,7 +3,6 @@
 command -p pwgen "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
-
 gpg --armor --gen-random 1 32
 
 echo

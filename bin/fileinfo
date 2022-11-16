@@ -266,6 +266,11 @@ case $INPUTFILEEXT in
 	
 	#p7m )
 	#	
+
+	pickle )  # python serialized bins
+		python -m pickle "$INPUTFILE"
+		exit $?
+		;;
 esac
 
 # switch by input file mime type

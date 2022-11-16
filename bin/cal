@@ -1,0 +1,7 @@
+#!/bin/sh
+
+command -p cal "$@"  2> /dev/null
+[ $? -ne 127 ] && exit $?
+
+# via python
+python -m calendar "$@"

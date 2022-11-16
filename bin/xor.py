@@ -3,12 +3,9 @@
 
 # derived from https://en.wikipedia.org/wiki/XOR_cipher
 
-
-from os import urandom
-
-
 def genkey(length: int) -> bytes:
     """Generate key."""
+    from os import urandom
     return urandom(length)
 
 
@@ -31,14 +28,15 @@ if __name__ == "__main__":
 	if len(sys.argv) > 1:
 		message = open(sys.argv[1], "rb").read()
 	else:
-		print("reading msg to encrypt from stdin...")
+		sys.stderr.write("reading msg to encrypt from stdin...\n")
 		message = sys.stdin.read()
 		
 	key = genkey(len(message))
-	print('Generated random key:', key)
+	sys.stderr.write('Generated random key:' + str(key) + "\n")
 
 	cipherText = xor_strings(message, key)
-	print('cipherText:', cipherText)
+	sys.stderr.write('cipherText:\n')
+	print(cipherText)
 	
 	#print('decrypted:', xor_strings(cipherText, key))
 

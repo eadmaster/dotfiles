@@ -4,7 +4,7 @@
 import logging
 
 # set the default log level to DEBUG (default to WARNING, will skip INFO and DEBUG messages)
-logging.getLogger().setLevel(logging.DEBUG)
+#logging.getLogger().setLevel(logging.DEBUG)
 
 def say(message):
 	# using Speech Dispatcher (apt install python3-speechd) https://github.com/brailcom/speechd/blob/master/doc/speech-dispatcher.html#Python-API

@@ -127,8 +127,8 @@ alias keycodesget="showkey -a"  # ALT. xinput test 14  ... https://superuser.com
 #alias why="echo $?"
 #alias why="echo $ERRNO"
 #alias errno="echo $ERRNO"
-alias langget="locale ; localectl"
-alias locales=getlang
+alias locales="locale ; localectl ; python -m locale"
+alias langget=locales
 alias charmapsls="locale -m"
 
 # Solaris-like commands
@@ -1119,6 +1119,7 @@ alias mimeget="file -bi"  # FIX for symlinks: mimeget() { file -bi $(readlink -f
 alias getmime=mimeget
 #alias type=mimeget  # NO? conflicts with bash builtin
 alias encodingget=mimeget
+mime2ext() { python -m mimetypes -e "$1" ; }
 
 niceget() { ps -o nice -p $(pidof -s $1); }
 alias prioget=getnice
@@ -1170,7 +1171,6 @@ alias eng2japdict=dicteng2jap
 
 ### math utils
 #alias bc="bc -l"  # always prints decimal digits
-#alias bc=qalc  # more user-friendly than bc
 #alias bchex=hexcalc
 #alias bcbin=bincalc
 
@@ -1287,6 +1287,8 @@ if which qalc >/dev/null 2>&1 ; then
     # geometry
     circlearea() { qalc "circle($1)" ; }
     spherevolume() { qalc "sphere(5)" ; }
+    #trianglearea() { qalc "triangle($1, $2)" ; }
+    #rectarea() { qalc "rect($1, $2)" ; }
     #rad2fract()
     
     # comb
@@ -1342,7 +1344,7 @@ if which qalc >/dev/null 2>&1 ; then
     gpsdec2sexa() { qalc "$1 to sexa3" ; }
     alias sexa2dec=qalc
     alias gpssexa2dec=qalc
-    # TODO: gpsdistance, more ... https://github.com/Qalculate/libqalculate/issues/254
+    # TODO: more ... https://github.com/Qalculate/libqalculate/issues/254
     
     # chemistry
     #TODO: chemelementls() { qalc "atom($1, info)" ; } https://github.com/Qalculate/libqalculate/issues/327
@@ -1841,8 +1843,9 @@ if ! which rg >/dev/null 2>&1 ; then
     #rg() { grep -r -I -n -H  --exclude \*.min.js --color=always "$@" | cut -c 1-400 ; }
     alias rg="grep -r -I -n -H  --exclude \*.min.js --color=always"
 else
-    #NO? alias rg="rg --glob '!*.min.*'"  # exclude minified code
-    alias rg="rg --max-columns 1000 --no-binary --hidden"  # exclude minified code    
+    alias rg="rg --max-columns 1000 --no-binary --hidden"
+    # --glob '!*.min.*'"  # exclude minified code
+    # ... https://github.com/BurntSushi/ripgrep/
 fi
 alias rga="rga --rga-no-cache"
 alias ack=rg

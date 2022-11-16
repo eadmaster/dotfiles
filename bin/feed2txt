@@ -6,27 +6,8 @@
 faq '.rss.channel.item[] | "\(.creator[0:30])\t\(.pubDate[0:11])\t\(.title[0:60])...\t\(.link)"' -r -o json "$@" | column -ts $'\t'
 # atom:
 #faq '.feed.entry[] | "\(.author.email[0:30])\t\(.issued[0:11])\t\(.title[0:60])..."' -r -o json "$@" | column -ts $'\t'
-[ $? -ne 127 ] && exit 0
+#[ $? -ne 127 ] && exit 0
 
 # TODO: alternative using xmlstarlet
 #xmlstarlet sel -t -m "//rec" -v "@id" 
 #[ $? -ne 127 ] && exit 0
-
-# alternative using python
-python - "$@" <<EOF
-import sys
-import datetime
-
-import feedparser
-# TODO: include all the source instead of importing https://github.com/kurtmckee/feedparser/issues/274
-
-# TODO: read from stdin if no args
-feed = feedparser.parse(open(sys.argv[1])) # TODO: better handle decoding errors (create a custom JSONDecoder?)
-
-for entry in feed['entries']:
-	#local_date_published_datetime = datetime.datetime.strptime( entry.published, "%Y-%m-%dT%H:%M:%S" )
-	local_date_published = entry.published
-	print(entry.authors[0].email + "  " + local_date_published + "  " + entry.title + "  " + entry.link)
-	# TODO: cut long strings
-	print
-EOF

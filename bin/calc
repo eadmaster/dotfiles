@@ -6,13 +6,12 @@ if [ "$#" -ge 1 ]; then
 
 	if which qalc >/dev/null 2>&1 ; then
 		echo "$0 example usages:" >&2
-		echo "  units conversion syntax: calc '15in to cm'" >&2
-		echo "  currency conversion syntax: calc '15usd to eur'" >&2
-		echo "  time math syntax: calc '17:10:27h - 14:24:26h' ; calc '13:56:12h - 1:25h to s'"  >&2 #  https://github.com/Qalculate/libqalculate/issues/5
-		echo "    10:31 + 8:30 to time, now to utc, today − 5 days, 020-05-20 + 523d " >&2
-		echo "  percent calculation: 500€ − 20% " >&2
-		echo "  current calculation: 50ohm * 2A " >&2
-		echo "  bytes calculation: (5000 × byte) × 10 to MB" >&2
+		echo "  units conversion syntax: qalc 15in to cm" >&2
+		echo "  currency conversion syntax: qalc 15usd to eur" >&2
+		echo "  time math syntax: qalc 13:56:12h - 1:25h to s, 10:31 + 8:30 to time, now to utc, timestamp(today - 5 days), 2020-05-20 + 523d"  >&2 #  https://github.com/Qalculate/libqalculate/issues/5
+		echo "  percent calculation: qalc 500 - 20% " >&2
+		echo "  current calculation: qalc \"50ohm * 2A\" " >&2
+		echo "  bytes calculation: qalc 5000 byte to MB" >&2
 		echo "  ---" >&2
 		# more examples: https://github.com/Qalculate/libqalculate
 	fi

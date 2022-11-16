@@ -88,6 +88,10 @@ hostnamectl
 
 echo
 
+python -m platform
+
+echo
+
 inxi -S
 
 echo

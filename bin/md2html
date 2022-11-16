@@ -1,6 +1,0 @@
-
-
-pandoc "$@"
-_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-
-sttr markdown-html "$@"

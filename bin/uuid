@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# https://serverfault.com/questions/103359/how-to-create-a-uuid-in-bash
+
+command -p uuid "$@"  2> /dev/null
+[ $? -ne 127 ] && exit $?
+
+# via python
+python -c 'import uuid; print(uuid.uuid4())'
+[ $? -ne 127 ] && exit $?
+
+# from e2fsprogs 
+uuidgen --random
+[ $? -ne 127 ] && exit $?
+
+# from linux kernel
+[ -e /proc/sys/kernel/random/uuid ] && cat /proc/sys/kernel/random/uuid
+[ $? -eq 0 ] && exit $?
+[ -e /compat/linux/proc/sys/kernel/random/uuid ] && cat /compat/linux/proc/sys/kernel/random/uuid
+[ $? -eq 0 ] && exit $?
+
+dbus-uuidgen
+[ $? -ne 127 ] && exit $?
