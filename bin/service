@@ -13,7 +13,7 @@ case $SERVICE_NAME in
 	redis )  export SERVICE_NAME=redis-server  ;;
 	bobli* )  export SERVICE_NAME=boblight  ;;
 	amule|emule )  export SERVICE_NAME=amule-daemon  ;;
-	#softap|ap )  export SERVICE_NAME=hostapd  ;;   # https://wiki.archlinux.org/index.php/software_access_point
+	softap|ap )  export SERVICE_NAME=create_ap  ;;  # TODO: also try hostapd  https://wiki.archlinux.org/index.php/software_access_point
 	#apache* )  export SERVICE_NAME=apache2  ;;
 	#tomcat* )  export SERVICE_NAME=tomcat5.5  ;;
 	*ssh )  export SERVICE_NAME=ssh  ;;
@@ -21,7 +21,7 @@ case $SERVICE_NAME in
 	bt )  export SERVICE_NAME=bluetooth  ;;
 	fluid*|midi )  export SERVICE_NAME=fluidsynth  ;;   #  TODO: also try timidity
 	nzb*|nbz )  export SERVICE_NAME=nzbget  ;;
-	*shell|shellin*|httpsh* ) export SERVICE_NAME=shellinabox  ;;  # TODO: also try gotty -w bash -p 4201 
+	*shell|shellin*|httpsh* ) export SERVICE_NAME=ttyd  ;;  # alt. shellinabox
 esac
 
 # check if running on Android
@@ -273,12 +273,13 @@ elif [ "$1" = "logs" ] || [ "$1" = "log" ] ; then
 #	exit 1
 fi
 
+export SYSTEMD_LOG_LEVEL=debug  # https://stackoverflow.com/questions/49396098/output-from-systemctl-start-restart-stop
+systemctl $CMD $SERVICE_NAME
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
 command -p service $SERVICE_NAME $CMD
 _ES=$? ; [ $_ES -eq 0 ] && exit $_ES
 #_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-
-sudo systemctl $CMD $SERVICE_NAME
-_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
 
 if [ "$1" = "--status-all" ]; then
 	for s in /etc/init.d/* ; do

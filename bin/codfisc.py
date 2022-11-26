@@ -10,6 +10,20 @@ import datetime
 from codicefiscale import codicefiscale
 
 if __name__ == '__main__':
+	# WIP argparse
+	#import argparse, sys
+	#parser = argparse.ArgumentParser()
+	#subparsers = parser.add_subparsers()
+	#encode_parser = subparsers.add_parser('encode')
+	#encode_parser.add_argument("surname")
+	#encode_parser.add_argument("name")
+	#encode_parser.add_argument("sex")
+	#encode_parser.add_argument("birthdate")
+	#encode_parser.add_argument("birthplace")
+	#decode_parser = subparsers.add_parser('decode')
+	#decode_parser.add_argument("code")
+	#args = parser.parse_args()
+	
 	if(len(sys.argv)==6):
 		# encode mode
 		try:

@@ -17,6 +17,11 @@ if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
 	exit $?
 fi
 
+# devices without audio card
+if [ -f "/etc/openwrt_release" ] || [ ! -z "$KINDLE_TZ" ]; then
+	exit 1
+fi
+
 # MEMO: MacOSX has builtin "say" command
 command -p say "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES

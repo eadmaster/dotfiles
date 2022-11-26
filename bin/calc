@@ -39,6 +39,10 @@ if [ "$#" -ge 1 ]; then
 	echo "$INPUT" | busybox bc -l
 	[ $? -ne 127 ] && exit $?
 
+	# via python sympy
+	isympy <<< "$INPUT"
+	[ $? -ne 127 ] && exit $?
+	
 	# TODO: more alternatives: python, ... https://unix.stackexchange.com/questions/480121/simple-command-line-calculator
 
 	exit $?

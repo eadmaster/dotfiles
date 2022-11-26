@@ -51,6 +51,11 @@ case "$1" in
 			exit 1
 		fi
 
+		if [ -f "/etc/openwrt_release" ]; then
+			opkg install "$PACKAGE_NAME"
+			exit $?
+		fi
+		
 		# TODO: always ask confirmation
 		
 		#apt --no-install-recommends? install "$PACKAGE_NAME"
@@ -150,6 +155,11 @@ case "$1" in
 			pkgutil --unlink --forget "$PACKAGE_NAME"
 			exit $?
 		fi
+		
+		if [ -f "/etc/openwrt_release" ]; then
+			opkg remove "$PACKAGE_NAME"
+			exit $?
+		fi
 
 		sudo apt remove "$PACKAGE_NAME"
 		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
@@ -215,6 +225,11 @@ case "$1" in
 	update|upgrade )
 		export PACKAGE_NAME=$2
 		[ -z "$PACKAGE_NAME" ] && echo "$(basename $0): missing package name" >&2 && exit 1
+		
+		if [ -f "/etc/openwrt_release" ]; then
+			opkg upgrade "$PACKAGE_NAME"
+			exit $?
+		fi
 		
 		sudo apt-get install --only-upgrade "$PACKAGE_NAME"
 		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
@@ -284,6 +299,12 @@ case "$1" in
 
 		if [ "$(uname)" = "Darwin" ]; then
 			pkgutil --pkg-info "$PACKAGE_NAME"
+			exit $?
+		fi
+
+		if [ -f "/etc/openwrt_release" ]; then
+			opkg info "$PACKAGE_NAME"
+			opkg files "$PACKAGE_NAME"
 			exit $?
 		fi
 

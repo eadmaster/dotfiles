@@ -35,20 +35,28 @@ logging.getLogger().setLevel(logging.INFO)
 
 
 def fuzzy_match_old(query, artist_title):  # query from tags/filename, header from html page
+	
 	sep_ind = artist_title.find("-")
 	artist = "" if sep_ind < 0 else artist_title[0:sep_ind].strip()
 	title = artist_title if sep_ind < 0 else artist_title[sep_ind + 1:].strip()	
-	query_lower = query.lower()
+
 	
 	if not artist or not title:
 		return False
-	
-	#if query_lower.find(title.lower()) < 0 or (sep_ind >= 0 and query_lower.find(artist.lower()) < 0):
-	if ( query_lower.find(title.lower()) < 0 or query_lower.find(artist.lower()) < 0):
+
+	query = query.lower()
+	title = title.lower()
+	artist = artist.lower()
+
+	if ( query.find(title) > 0 and query.find(artist) > 0):
 		# not found
-		return False
-	else:
 		return True
+
+	if ( title.find(query) > 0 and artist.find(query) > 0):
+		# not found
+		return True
+	
+	return False
 	
 	
 def fuzzy_match(s1, s2):  # query from tags/filename, header from html page
@@ -109,7 +117,10 @@ def cleanup_tagged_lyrics_str(lyrics_str):
 	lyrics_str.replace("\'\'", "\"")  # '' -> "
 	
 	# TODO: enforce consistent line endings
+	lyrics_str = lyrics_str.replace("\n\n\r", "\n")
+	lyrics_str = lyrics_str.replace("\r\r\n", "\n")
 	lyrics_str = lyrics_str.replace("\n\r\n", "\n")
+	lyrics_str = lyrics_str.replace("\r\n", "\n")
 	
 	# TODO: cleanup lines repeating the title and author
 	# TODO: cleanup spam lines if any(["MSN", "irc" in line])
@@ -126,6 +137,7 @@ def lyricsify_find_song_lyrics(query):
 	If not found, return None.
 	"""
 	matching_lyrics_list = []
+	first_match = ""
 	
 	links = BeautifulSoup(
 		requests.get(url="https://www.lyricsify.com/search?q=" +
@@ -148,10 +160,18 @@ def lyricsify_find_song_lyrics(query):
 			"html.parser")
 		# If the artist or song name does not exist in the query, return None
 		artist_title = song_html.find("h1").string[:-7]
+		lyrics_text="".join(song_html.find("div", id="entry").strings)
 		if fuzzy_match(query, artist_title):
-			lyrics_text="".join(song_html.find("div", id="entry").strings)
 			matching_lyrics_list.append(lyrics_text)
+		if fuzzy_match_old(query, artist_title):
+			matching_lyrics_list.append(lyrics_text)
+		if not first_match:
+			first_match = lyrics_text
 	# end for
+	
+	if len(matching_lyrics_list)==0:
+		# get the 1st match in any case
+		matching_lyrics_list.append(first_match)
 	
 	return matching_lyrics_list
 # end of lyricsify_find_song_lyrics
@@ -230,7 +250,7 @@ if __name__ == '__main__':
 		audio_file_tag_title = ""
 		
 		if audio_file is None:
-			print(str(i+1) + "\tof " + str(len(files)) + " : Failed  : Unsupported file format              : " + file[0] + file[1])
+			#print(str(i+1) + "\tof " + str(len(files)) + " : Failed  : Unsupported file format              : " + file[0] + file[1])
 			continue
 		if not audio_file.keys():  
 			# has no tags, guess from filename
@@ -264,9 +284,6 @@ if __name__ == '__main__':
 			continue
 			
 		# check existing lyrics
-		if os.path.exists(lrc_file_path):
-			logging.error("lyrics file already exists (skipped): " + lrc_file_path)
-			continue
 		if "lyrics" in audio_file:
 			logging.warning("file already has lyrics in tags: " + audio_file_path)
 					
@@ -286,16 +303,24 @@ if __name__ == '__main__':
 			except Exception as e:
 				print("Error getting Lyricsify lyrics for: " + audio_file_path)
 				raise e
-		
+
+		# avoid overwriting existing lrc
+		lrc_exists=0
+		if os.path.exists(lrc_file_path):
+			logging.error("lyrics file already exists (skipped): " + lrc_file_path)
+			lrc_exists=1
+			#continue
+
 		for i, lyrics in enumerate(lyrics_list):
 			#audio_file.tag.lyrics.set(lyrics)
 			#audio_file.tag.save()
 			#print(lyrics)
+			i = i + lrc_exists
 			
 			lyrics = cleanup_tagged_lyrics_str(lyrics)
 			
 			lrc_filename = file[0] + (str(i) if i >= 1 else "") +".lrc"
-			
+
 			open(lrc_filename, "w").write(lyrics)
 			
 			print(str(i+1) + "\tof " + str(len(files)) + " : Success : Lyrics from " + site_used + " saved to       : " + lrc_file_path)

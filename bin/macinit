@@ -826,11 +826,11 @@ alias dnsget="cat /etc/resolv.conf ; nmcli dev show | grep DNS"
 alias dnscachestats="systemd-resolve --statistics"
 alias dnscachereset="systemd-resolve --flush-cache | sudo systemctl restart nscd"  # https://www.maketecheasier.com/flush-dns-cache-linux/
 
-alias routes="sudo route"
+#alias routes="sudo route"
 
-alias appendnote=mynoteappend
-alias np=mynoteappend
-#alias na=mynoteappend
+#alias appendnotes=mynotesappend
+alias np=mynotesappend
+#alias na=mynotesappend
 
 if [ -d $PENDRIVE/Documents/db ]; then
 	finddump() { finddb "$1" $PENDRIVE/Documents/db/datfile ; }  #  $retroarch_base_path\database\dat, metadata?
@@ -929,7 +929,9 @@ xmlgrep() { xml2paths "$2" | grep "$1" ; }
 alias ndjsonsplit="jq --compact-output"
 alias json2ndjson=ndjsonsplit
 #alias json2csv="jq -r '. | @csv'"   #  https://stackoverflow.com/questions/32960857/how-to-convert-arbitrary-simple-json-to-csv-using-jq
-alias xml2csv="oq -i xml -r '. | @csv'"  # https://github.com/Blacksmoke16/oq
+#alias xml2csv="oq -i xml -r '. | @csv'"  # https://github.com/Blacksmoke16/oq
+alias feed2json=xml2json.py
+alias rss2json=xml2json.py
 
 alias alert=notify
 #alias alert=dialog
@@ -1670,7 +1672,7 @@ alias neighboursls="ip neigh"
 alias subdomainsls="nmap -v --script dns-brute"
 #alias wls="nmap -v script http-sitemap-generator "
 alias upnpinfo="nmap --script upnp-info.nse -p 1900"
-alias upnpscan="gssdp-discover -i $IFACE --timeout=3 || upnpinfo 192.168.1.*"  # TODO: filter localhost?
+alias upnpscan="avahi-browse -a --ignore-local --terminate ; mdns-scan"
 
 # docker-only aliases
 if which docker >/dev/null 2>&1 ; then

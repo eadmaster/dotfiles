@@ -21,26 +21,30 @@ def xor_strings(s, t) -> bytes:
 
 # main program
 if __name__ == "__main__":
-	# TODO: add decrypt mode via "-d" switch
+
+	import argparse, sys
+	parser = argparse.ArgumentParser()
+	parser.add_argument('infile', nargs='?', type=argparse.FileType('rb'), default=sys.stdin, help="input file, default to stdin if unspecified")
+	parser.add_argument('outfile', nargs='?', type=argparse.FileType('wb'), default=sys.stdout, help="output file, default to stdout if unspecified")
+	#TODO: parser.add_argument("-d", "--decode", default=False, help="decode")
+	args = parser.parse_args()
+
+	if args.infile == sys.stdin:
+		sys.stderr.write("reading from stdin...\n")
 	
-	import sys
-	
-	if len(sys.argv) > 1:
-		message = open(sys.argv[1], "rb").read()
-	else:
-		sys.stderr.write("reading msg to encrypt from stdin...\n")
-		message = sys.stdin.read()
+	message = args.infile.read()
 		
 	key = genkey(len(message))
-	sys.stderr.write('Generated random key:' + str(key) + "\n")
+	#sys.stderr.write('Generated random key:' + str(key) + "\n")
 
 	cipherText = xor_strings(message, key)
-	sys.stderr.write('cipherText:\n')
-	print(cipherText)
+	if args.outfile == sys.stdout:
+		sys.stderr.write('cipherText:\n')
+		print(cipherText)
 	
 	#print('decrypted:', xor_strings(cipherText, key))
 
-	# Verify
+	# Decode/Verify
 	#if xor_strings(cipherText, key) == message:
 	#	print('Unit test passed')
 	#else:
