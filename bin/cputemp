@@ -21,6 +21,7 @@ sensors | grep CPUTIN
 
 echo
 
-#TurionPowerControl -temp
+echo "$(basename $0): temperature from cpu_freq (in millis):"
+cpu_freq 
 
-#echo
+echo

@@ -250,6 +250,13 @@ off|down )  # OFF COMMANDS
 			exit $?
 		;;
 		
+		router|openwrt )
+			# remote shutdown
+			#curl http://friendlywrt.local:7681/?arg=/sbin/poweroff
+			curl 'https://friendlywrt.local/cgi-bin/poweroff'
+			exit $?
+		;;
+		
 		* ) # default case
 			# power off a device via an IR blaster (must be configured separately)
 			echo "$(basename $0): about to power off via IR blaster: $TARGET"

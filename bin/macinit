@@ -408,7 +408,7 @@ alias netinfo="sudo lshw -class network"
 alias nm-tool=nmcli
 alias cpuload='ps -A -o pcpu | tail -n+2 | paste -sd+ | bc'  # https://stackoverflow.com/questions/9229333/how-to-get-overall-cpu-usage-e-g-57-on-linux
 #alias gfxinfo=gpuinfo
-#alias cputemp="cat /proc/acpi/thermal_zone/THRM/temperature" -> MOVED IN cputemp
+#alias cputemp=... -> MOVED IN cputemp
 #alias hdinfo="sudo smartctl -s on -i /dev/sda ; hdparm -i /dev/sda" -> MOVED IN hdinfo
 alias hddinfo=hdinfo
 alias hdtest="sudo smartctl -s on -C -t short /dev/sda"
@@ -661,9 +661,10 @@ alias screenshot=shot
 #alias screencap=shot
 
 #alias mynote=mynotes
-alias note=mynotes
+#alias note=mynotes
 #alias notes=mynotes
-alias memo=mynotes
+#alias memo=mynotes
+complete -W "$(ls $HOME/pendrive/Documents/note | grep -v / | rev | cut -f 2- -d "." | rev)" mynotes  # quick setup autocompletion
 
 alias notefind=findnote
 
@@ -769,7 +770,7 @@ alias loffice=libreoffice
 #alias ii=identify
 alias mi=mediainfo
 #alias rn=rename
-alias rn=mv
+#alias rn=mv
 
 #alias df="df -Tmh" # prints Free Disk space in Human-readable mode
 #alias du="du -hcx"
@@ -826,7 +827,11 @@ alias dnsget="cat /etc/resolv.conf ; nmcli dev show | grep DNS"
 alias dnscachestats="systemd-resolve --statistics"
 alias dnscachereset="systemd-resolve --flush-cache | sudo systemctl restart nscd"  # https://www.maketecheasier.com/flush-dns-cache-linux/
 
-#alias routes="sudo route"
+if [ ! $UID = 0 ] ; then
+	# sudo wrappers for non-root
+	alias routes="sudo route"
+	alias dmesg="sudo dmesg"
+fi
 
 #alias appendnotes=mynotesappend
 alias np=mynotesappend
@@ -911,6 +916,8 @@ alias findelem=findchem
 alias rfscan=sdrscan
 alias radioscan=sdrscan
 
+alias rtl4332mqtt="rtl_433 -F json -M utc | mosquitto_pub -t home/rtl_433 -l"  # https://github.com/merbanan/rtl_433/blob/master/examples/mqtt_rtl_433_test_client.py
+
 alias rfc=findspecs
 #alias docs=specs
 alias standard=findspecs
@@ -921,7 +928,7 @@ alias xmlpprint="xml fo"  #  || xmllint --format
 #alias xml2xpaths=""
 #alias xml2paths=fileinfo
 #alias xml2paths=xml2  # MOVED in a script
-xmlgrep() { xml2paths "$2" | grep "$1" ; }
+#xmlgrep() { xml2paths "$2" | grep "$1" ; }
 #alias json2paths=fileinfo
 #alias json2pointers=json2paths.py
 #alias jsongrep=jq
@@ -932,6 +939,7 @@ alias json2ndjson=ndjsonsplit
 #alias xml2csv="oq -i xml -r '. | @csv'"  # https://github.com/Blacksmoke16/oq
 alias feed2json=xml2json.py
 alias rss2json=xml2json.py
+alias any2json="fq . "  # https://github.com/wader/fq
 
 alias alert=notify
 #alias alert=dialog
@@ -943,9 +951,11 @@ alias install="package install"
 alias uninstall="package uninstall"
 alias unistall="package uninstall"
 #alias findpackage="package find"
-alias packagefind="package find"
+#alias packagefind="package find"
 #alias pkgsearch="package find"
-alias packageinfo="package info"
+#alias packageinfo="package info"
+complete -W "list install uninstall find info" package  # quick setup autocompletion
+
 alias undeb=fileunpack
 
 #whereisinrepos() { dpkg -S "\/$1" | grep "$1$" ; apt-file search --regex "/$1\$" ; }  # MOVED in package
@@ -1147,7 +1157,7 @@ alias cmpdir=dircmp
 alias dirdiff=dircmp
 
 alias ra=retroarch
-alias retroarch32=retroarch
+#alias retroarch32="extractrun retroarch"
 
 #alias testjoystick=jstest
 alias joysticksls="sdl2-jstest --list ; evdev-joystick --l ; dmesg | grep Joystick"  # TODO: print some infos  https://wiki.archlinux.org/index.php/Gamepad
@@ -1178,7 +1188,7 @@ alias eng2japdict=dicteng2jap
 
 alias solve=mathsolve
 #alias equation-solve=mathsolve
-alias symplify=mathsimplify
+#alias symplify=mathsimplify
 alias simplify=mathsimplify
 #alias compute=mathsimplify
 #alias math=mathsimplify
@@ -1625,11 +1635,9 @@ if which ideviceinfo >/dev/null 2>&1 ; then
     # WANTED: iphonepbpaste, pbcopy  https://github.com/libimobiledevice/libimobiledevice/issues/1143
     # WANTED: iphoneremotecontrol=...  # via teamviewer, joinme, VNC (req. jailbreak): https://thetechslugs.com/getting-started/remote-accessing-devices/remotely-access-an-ios-device-from-an-ubuntu-linux-computer-using-vnc/
 fi
-
 if which ifuse >/dev/null 2>&1 ; then
     alias iphonemount="mkdir /tmp/iphone ; ifuse /tmp/iphone ; echo 'MEMO: confirm trusting this PC on the phone...'"
 fi
-
 if which ideviceinstaller >/dev/null 2>&1 ; then
     alias iphonelsapps="ideviceinstaller -l ; ideviceinstaller -L"
     alias iphoneinstall="ideviceinstaller -i"
@@ -1673,6 +1681,7 @@ alias subdomainsls="nmap -v --script dns-brute"
 #alias wls="nmap -v script http-sitemap-generator "
 alias upnpinfo="nmap --script upnp-info.nse -p 1900"
 alias upnpscan="avahi-browse -a --ignore-local --terminate ; mdns-scan"
+alias mdnsscan=upnpscan
 
 # docker-only aliases
 if which docker >/dev/null 2>&1 ; then
@@ -1694,7 +1703,7 @@ fi
 #alias expose=settunnel
 #alias export=settunnel
 
-#alias listen=plays
+#alias listen=play
 alias webradio="play radio"
 alias webtv="play tv"
 #alias radio=webradio
@@ -2059,10 +2068,17 @@ if [ ! -z "$KINDLE_TZ" ]; then
 fi
 
 if which avahi-publish >/dev/null 2>&1 ; then
-	#upnp_publish_port() { avahi-publish -s "$(hostname):$PORT" _myservic._tcp $PORT }
-	upnp_publish_localhost() { avahi-publish -a -R $(hostname).local $(getip) ;  }
-	#upnp_publish_host() { avahi-publish -a -R $2.local $1 ;  }
+	#mdns_publish_port() { avahi-publish -s "$(hostname):$PORT" _myservic._tcp $PORT }
+	mdns_publish_localhost() { avahi-publish -a -R $(hostname).local $(getip) ;  }
+	#mdns_publish_host() { avahi-publish -a -R $2.local $1 ;  }
 	# https://pi3g.com/2019/04/10/avahi-how-to-assign-several-local-names-to-same-ip/
+fi
+
+if which putty >/dev/null 2>&1 ; then
+	alias sshsavedsessions="ls $HOME/.putty/sessions/"  # MEMO: easily create more sessions via the putty GUI
+	alias sshlogin=plink
+	complete -W "$(ls $HOME/.putty/sessions/)" sshlogin  # quick setup autocompletion for plink
+	# TODO: more putty aliases 
 fi
 
 unset THIS_SCRIPT_DIR

@@ -157,7 +157,7 @@ case "$1" in
 		fi
 		
 		if [ -f "/etc/openwrt_release" ]; then
-			opkg remove "$PACKAGE_NAME"
+			opkg remove --autoremove "$PACKAGE_NAME"
 			exit $?
 		fi
 
@@ -371,6 +371,11 @@ case "$1" in
 			exit $?
 		fi
 
+		if [ -f "/etc/openwrt_release" ]; then
+			opkg find "$PACKAGE_NAME"
+			exit $?
+		fi
+		
 		echo "$0: apt:"
 		apt search "$PACKAGE_NAME"
 		[ $? -ne 0 ] && apt-cache search "$PACKAGE_NAME"
@@ -447,6 +452,11 @@ case "$1" in
 		export FILENAME=$2
 		[ -z "$FILENAME" ] && echo "$(basename $0): missing file name" >&2 && exit 1
 		
+		if [ -f "/etc/openwrt_release" ]; then
+			opkg search "$PACKAGE_NAME"
+			exit $?
+		fi
+		
 		dpkg -S "\/$FILENAME" | grep "$FILENAME$"
 		
 		apt-file search --regex "/$FILENAME\$" 
@@ -481,6 +491,11 @@ case "$1" in
 
 		if [ "$(uname)" = "Darwin" ]; then
 			pkgutil --pkgs
+			exit $?
+		fi
+		
+		if [ -f "/etc/openwrt_release" ]; then
+			opkg list-installed "$PACKAGE_NAME"
 			exit $?
 		fi
 		

@@ -2,3 +2,5 @@
 
 # source:  https://superuser.com/questions/1210661/pip-get-long-description-of-uninstalled-package/1309928
 curl -sH "accept: application/json" https://pypi.org/pypi/$1/json | jq -r '.info | keys[] as $key | "\($key): \(.[$key])"' 
+
+# TODO: more alternatives

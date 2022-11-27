@@ -21,4 +21,8 @@ rm $HOME/.goutputstream-*
 # wine cleanup
 rm $HOME/.wine64/drive_c/users/$USER/Temp/*
 
+#
+rm $HOME/.local/share/okular/docdata/*.*
+#ln -s /tmp $HOME/.local/share/okular/docdata
+
 dockerclean

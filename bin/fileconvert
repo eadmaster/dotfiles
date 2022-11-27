@@ -170,6 +170,10 @@ elif [ "$INPUTFILEEXT" = "pem" ] && [ "$OUTPUTFILEEXT" = "crt" ] || [ "$OUTPUTFI
 elif [ "$INPUTFILEEXT" = "pfx" ] || [ "$INPUTFILEEXT" = "p12" ] && [ "$OUTPUTFILEEXT" = "pem" ] ; then
 	openssl pkcs12 -in "$INPUTFILE" -out "$OUTPUTFILE" -nodes
 	exit $?
+elif [ "$OUTPUTFILEEXT" = "json" ]; then
+	# using fq (supports a lot of formats) https://github.com/wader/fq
+	fq --monochrome-output . "$INPUTFILE" > "$OUTPUTFILE"
+	exit $?
 elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "csv" ] || [ "$INPUTFILEEXT" = "yaml" ] ||  [ "$INPUTFILEEXT" = "xml" ]; then
 	# using oq (no csv support) https://github.com/jzelinskie/faq
 	oq -i  $INPUTFILEEXT

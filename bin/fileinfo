@@ -267,10 +267,12 @@ case $INPUTFILEEXT in
 	#p7m )
 	#	
 
-	pickle )  # python serialized bins
+	pickle|pycle )  # python serialized bins
 		python -m pickle "$INPUTFILE"
 		exit $?
 		;;
+	
+	# TODO: https://en.wikipedia.org/wiki/PHP_serialization_format
 esac
 
 # switch by input file mime type
