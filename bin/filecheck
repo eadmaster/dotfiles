@@ -228,7 +228,7 @@ case "$INPUTFILETYPE" in
 		pep8 "$INPUTFILE"
 		pyflakes "$INPUTFILE"
 		pylint --errors-only "$INPUTFILE"
-		flake8 "$INPUTFILE"
+		flake8 "$INPUTFILE"  # wrapper around PyFlakes, pycodestyle, and Ned's McCabe script
 		#python -m "$INPUTFILE"
 		python -d "$INPUTFILE"  # shorter output
 		exit $?

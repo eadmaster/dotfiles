@@ -148,8 +148,13 @@ off|down )  # OFF COMMANDS
 			# echo "Press [ENTER] to continue or ctrl-c to cancel"
 			# sudo poweroff
 			echo "$(basename $0): type 'ok' and press Enter to continue"
-			read REPLY ; [ "$REPLY" = "ok" ] && sudo poweroff
-			echo "$(basename $0): power off cancelled"
+			read REPLY
+			if [ "$REPLY" = "ok" ]; then
+				sudo poweroff
+				poweroff
+			else
+				echo "$(basename $0): power off cancelled"
+			fi
 			exit $?
 		;;
 		
@@ -250,18 +255,21 @@ off|down )  # OFF COMMANDS
 			exit $?
 		;;
 		
-		router|openwrt )
+		*router|*wrt|nanopi )
+			#TARGET=$(getip DietPi)
+			TARGET=192.168.1.138
 			# remote shutdown
-			#curl http://friendlywrt.local:7681/?arg=/sbin/poweroff
-			curl 'https://friendlywrt.local/cgi-bin/poweroff'
+			ssh root@$TARGET 'poweroff'
+			#curl "https://$TARGET/cgi-bin/poweroff"
+			#curl "http://$TARGET:7681/?arg=/sbin/poweroff"
 			exit $?
 		;;
 		
 		* ) # default case
 			# power off a device via an IR blaster (must be configured separately)
-			echo "$(basename $0): about to power off via IR blaster: $TARGET"
-			[ "$TARGET" = LG ] && TARGET=LG_AKB72915207
-			irsend SEND_ONCE $TARGET KEY_POWER
+			#echo "$(basename $0): about to power off via IR blaster: $TARGET"
+			#[ "$TARGET" = "LG" ] && TARGET=LG_AKB72915207
+			#irsend SEND_ONCE $TARGET KEY_POWER
 			
 			#[ $? -eq 0 ] && exit 0
 			#TODO: use cec-client to control more devices?
@@ -269,13 +277,15 @@ off|down )  # OFF COMMANDS
 			# else try to power off a remote machine (via the passed IP or network name)...
 			echo "$(basename $0): about to power off remote machine: $TARGET"
 			# some computer aliases with fixed IPs associated
-			[ "$2" = "boss3" ] && TARGET=192.168.42.79
+			#[ "$2" = "boss3" ] && TARGET=192.168....
 			# check if target machine is connectable
 			sudo ping -c 1 -W 2 $TARGET >/dev/null
 			if [ $? -ne 0 ]; then
 				# try names resolving with with mDNS
-				TARGET=$(nmblookup $TARGET | cut -d' ' -f1)
-				[ "$TARGET" = "name_query" ] && TARGET=$(avahi-resolve --name $TARGET)
+				#TARGET=$(getip $TARGET)
+				TARGET=$(getent hosts ${TARGET}.local | cut -f2)
+				[ -z "$TARGET" ] && TARGET=$(avahi-resolve --name ${TARGET}.local | cut -f2)
+				[ -z "$TARGET" ] && TARGET=$(nmblookup $TARGET | cut -d' ' -f1)
 				if [ -z "$TARGET" ]; then
 					echo "$(basename $0): error: target is not connectable: $TARGET" >&2
 					exit 1

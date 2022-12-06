@@ -1,3 +1,4 @@
+#!/bin/bash
 
 echo "macinit read"
 
@@ -630,7 +631,7 @@ alias ftplsrecursive="ftpfind.py"
 #wgrep() { wget -q -U Firefox -O - "$2" | grep "$1" ; }
 alias wget="wget --no-hsts --hsts-file $TMPDIR/wget-hsts"
 #alias wput="curl --upload-file "
-wsize() { curl --head --silent --location "$1" | grep -i "content-length:" |  cut -d' ' -f2 | bytescount2human ; }
+wsize() { curl --head --silent --location "$1" | grep -i "content-length:" |  cut -d' ' -f2 | bytes2human ; }
 
 alias curlstreaming="curl --no-buffer"
 alias curljson="curl -H \"Content-Type: application/json\""
@@ -664,7 +665,8 @@ alias screenshot=shot
 #alias note=mynotes
 #alias notes=mynotes
 #alias memo=mynotes
-complete -W "$(ls $HOME/pendrive/Documents/note | grep -v / | rev | cut -f 2- -d "." | rev)" mynotes  # quick setup autocompletion
+complete -W "$(ls $HOME/Documents/NEW | grep -v / | rev | cut -f 2- -d "." | rev)" mynotes  # quick setup autocompletion
+#complete -W "$(ls $HOME/pendrive/Documents/note | grep -v / | rev | cut -f 2- -d "." | rev)" mynotes  # quick setup autocompletion
 
 alias notefind=findnote
 
@@ -1086,7 +1088,7 @@ umaskdecode() { savmask=$(umask) || return 1 ; umask $(printf '%o' "$((0777 ^ 0$
 alias umask2human=umaskdecode
 alias octalpermdecode=umaskdecode
 
-alias byte2human=bytescount2human
+alias byte2human=bytes2human
 bits2range() { echo -n "0 .. " ; echo "2 ^ $1 - 1" | bc ; }  # TODO: divide by 2 for signed integers
 range2bits() { python -c "import math ; print(int(math.floor(math.log($1)/math.log(2)) + 1))" ; } # TODO: add an extra bit for the sign
 
@@ -1522,9 +1524,8 @@ if which rclone >/dev/null 2>&1 ; then
     #alias umountgdrive="fusermount -u /tmp/gdrive"
 fi
 
-#alias binpack=ssbp
 #alias ss=binpack.py
-#alias bbp=ssbp
+#alias subsetsum=binpack.py
 
 alias trimrom=autotrimrom.py
 alias romtrim=autotrimrom.py
@@ -1675,13 +1676,15 @@ alias servicescan="nmap --script http-enum"
 alias lanservicescan="servicescan 192.168.1.*"
 #alias lancamerascan="nmap --script rtsp-url-brute 192.168.1.*"  # TODO: more protocols
 #alias camerascan=onvif-audit  # moved in a script
-alias netbiosscan="nbtscan 192.168.1/16 || nmap --script smb-os-discovery -p 445 192.168.1.*"
-alias neighboursls="ip neigh"
+#alias netbiosscan="nbtscan 192.168.1/16 || nmap --script smb-os-discovery -p 445 192.168.1.*"
+#alias neighboursls="ip neigh | grep REACHABLE"
 alias subdomainsls="nmap -v --script dns-brute"
 #alias wls="nmap -v script http-sitemap-generator "
-alias upnpinfo="nmap --script upnp-info.nse -p 1900"
-alias upnpscan="avahi-browse -a --ignore-local --terminate ; mdns-scan"
-alias mdnsscan=upnpscan
+alias mdnsinfo="nmap --script upnp-info.nse -p 1900"
+alias mdnsscan="avahi-browse -a --ignore-local --terminate ; mdns-scan"
+alias mdnsresolve="avahi-resolve --name"
+alias resolve="getent hosts"  # generic system resolver
+
 
 # docker-only aliases
 if which docker >/dev/null 2>&1 ; then
@@ -2069,7 +2072,7 @@ fi
 
 if which avahi-publish >/dev/null 2>&1 ; then
 	#mdns_publish_port() { avahi-publish -s "$(hostname):$PORT" _myservic._tcp $PORT }
-	mdns_publish_localhost() { avahi-publish -a -R $(hostname).local $(getip) ;  }
+	mdns-announce() { avahi-publish -a -R $(hostname).local $(getip) ;  }
 	#mdns_publish_host() { avahi-publish -a -R $2.local $1 ;  }
 	# https://pi3g.com/2019/04/10/avahi-how-to-assign-several-local-names-to-same-ip/
 fi
@@ -2077,6 +2080,7 @@ fi
 if which putty >/dev/null 2>&1 ; then
 	alias sshsavedsessions="ls $HOME/.putty/sessions/"  # MEMO: easily create more sessions via the putty GUI
 	alias sshlogin=plink
+	alias easyssh=plink
 	complete -W "$(ls $HOME/.putty/sessions/)" sshlogin  # quick setup autocompletion for plink
 	# TODO: more putty aliases 
 fi

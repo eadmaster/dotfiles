@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# TODO: usage: $0 filter_cmd
+
+PIPING_CMD="$@" 
+
+INPUT_FILE="$(zenity --file-selection --title='Select input file')"
+#INPUT_FILE="$(kdialog --getopenfilename)"
+if [ ! -f "$INPUT_FILE" ]; then
+	echo "no input file"
+	exit 1
+fi
+
+OUTPUT_FILE="$(zenity --file-selection --save --title='Select output file')"
+#OUTPUT_FILE="$(kdialog --getsavefilename)"
+
+cat "$INPUT_FILE" | $PIPING_CMD > "$OUTPUT_FILE"

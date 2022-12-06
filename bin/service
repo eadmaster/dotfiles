@@ -11,7 +11,7 @@ esac
 case $SERVICE_NAME in
 	rdp )  export SERVICE_NAME=xrdp  ;;
 	redis )  export SERVICE_NAME=redis-server  ;;
-	bobli* )  export SERVICE_NAME=boblight  ;;
+	ambilight|bobli*|adalight )  export SERVICE_NAME=hyperion@$USER  ;;
 	amule|emule )  export SERVICE_NAME=amule-daemon  ;;
 	softap|ap )  export SERVICE_NAME=create_ap  ;;  # TODO: also try hostapd  https://wiki.archlinux.org/index.php/software_access_point
 	#apache* )  export SERVICE_NAME=apache2  ;;
@@ -99,19 +99,6 @@ elif [ "$SERVICE_NAME" = "redshift" ]; then
 		killall redshift
 		exit $?
 	fi
-elif [ "$SERVICE_NAME" = "boblight" ]; then
-	if [ "$CMD" = "start" ]; then
-		boblightd -f
-		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-		extractrun boblight
-		exit $?
-	elif [ "$CMD" = "stop" ]; then
-		sudo killall boblightd
-		sudo killall boblight-X11
-		exit $?
-	fi
-	#else
-	exit 1
 elif [ "$SERVICE_NAME" = "gdrive" ]; then
 	TARGET_DIR=$HOME/gdrive
 	[ ! -d "$TARGET_DIR" ] && mkdir "$TARGET_DIR"
@@ -239,7 +226,6 @@ elif [ "$CMD" = "start" ] || [ "$CMD" = "restart" ] ; then
 		reversetethering|rtethering ) nohup gnirehtet run $ANDROID_SERIAL  > /tmp/gnirehtet.log & 
 			exit $? ;;
 		#TODO: tor ) command -p service tor start; service privoxy start; nffmetstat -a | grep 9050 ; exit $? ;;
-		#TODO: boblight
 	esac
 elif [ "$CMD" = "disable" ] ; then
 	sudo systemctl disable $SERVICE_NAME.service
@@ -254,18 +240,18 @@ elif [ "$CMD" = "enable" ] || [ "$CMD" = "auto" ] ; then
 	[ $? -eq 0 ] && exit 0
 	sudo chkconfig $SERVICE_NAME on
 	exit $?
-elif [ "$CMD" = "remove" ] || [ "$1" = "rm" ] ; then
+elif [ "$CMD" = "remove" ] || [ "$CMD" = "rm" ] ; then
 	sudo update-rc.d $SERVICE_NAME remove
 	exit $?
-elif [ "$1" = "list" ] || [ "$1" = "ls" ] ; then
+elif [ "$CMD" = "list" ] || [ "$CMD" = "ls" ] ; then
 	command -p service --status-all
 	systemctl --all --no-pager list-units --type=service
 	exit $?
-elif [ "$1" = "search" ] || [ "$1" = "find" ] ; then
+elif [ "$CMD" = "search" ] || [ "$CMD" = "find" ] ; then
 	service --status-all | grep  "*$2*"
 	systemctl --all list-units --type=service  "*$2*"
 	exit $?
-elif [ "$1" = "logs" ] || [ "$1" = "log" ] ; then
+elif [ "$CMD" = "logs" ] || [ "$CMD" = "log" ] ; then
 	sudo journalctl -u $SERVICE_NAME
 	exit $?
 #else

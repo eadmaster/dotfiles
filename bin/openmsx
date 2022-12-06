@@ -7,13 +7,13 @@ INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase e
 [ "$INPUTFILEEXT" = "mx2" ] && _APPENDED_OPTIONS="-carta"
 [ "$INPUTFILEEXT" = "dsk" ] && _APPENDED_OPTIONS="-diska"
 
+command -p openmsx $_APPENDED_OPTIONS "$@"
+[ $? -ne 127 ] && exit $?
+
 flatpak run --filesystem=host --filesystem=home --share=network --device=dri --socket=pulseaudio --socket=system-bus --socket=session-bus   org.openmsx.openMSX $_APPENDED_OPTIONS "$@"
 [ $? -ne 127 ] && exit $?
 
 extractrun openmsx $_APPENDED_OPTIONS "$@"
-[ $? -ne 127 ] && exit $?
-
-command -p openmsx $_APPENDED_OPTIONS "$@"
 [ $? -ne 127 ] && exit $?
 
 #else

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO: allow passing max lenght, requirements
+
 command -p pwgen "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 

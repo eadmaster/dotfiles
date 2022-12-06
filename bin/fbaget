@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # args checking
-if [ "$1" = "-h" ] || [ "$1" = "--help" ] | [ -z "$2" ]; then
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] | [ -z "$1" ]; then
 	echo "usage: $(basename $0) ROMSETNAME"
 	echo
 	exit 1

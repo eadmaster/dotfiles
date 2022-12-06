@@ -1,0 +1,87 @@
+#!/bin/sh
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUT_FILE"
+	echo
+	exit 0
+elif [ -z "$1" ] || [ "$1" = "-" ]; then
+	echo "$(basename $0) warn: reading input file from stdin" >&2
+	INPUTFILE="$TMPDIR/$$.tmp"
+	cat > $INPUTFILE
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+fi
+
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+
+# try to detect the input file type using file
+INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
+
+# try to detect the input file type according on its extension (useful if file is missing or buggy)
+#case $INPUTFILEEXT in
+#	jpg|gif|png|tiff|tif|bmp|xpm|pbm|pgm|ppm|tga|ico|dng|crw ) INPUTFILETYPE=image/$INPUTFILEEXT ;;
+#esac
+
+# look for a specific tool in the system (e.g. pdfcrack, etc. )
+CUSTOMINFOPATH=$( find $(echo -n $PATH|sed 's/:/ /g') -type f -perm /u=x,g=x,o=x  -name $( printf "%scrack" $INPUTFILEEXT ) 2> /dev/null | head -n1 )
+#[ -z "$CUSTOMINFOPATH" ] && CUSTOMINFOPATH=$( find $(echo -n $PATH|sed 's/:/ /g') -type f -perm /u=x,g=x,o=x  -name $( printf "%sdump" $INPUTFILEEXT ) 2> /dev/null | head -n1 )
+if [ ! -z "$CUSTOMINFOPATH" ]; then
+	$CUSTOMINFOPATH "$INPUTFILE"  2> /dev/null 
+	echo
+	#exit $?
+fi
+
+# switch by input file extension
+case $INPUTFILEEXT in
+
+	pdf )
+		# TODO: pdf2john | hashcat
+		
+		zydra.py -f "$INPUTFILE"
+		
+		pdfcrack -f "$INPUTFILE"
+		exit $?
+		;;
+	
+	zip )
+		# TODO: zip2john | hashcat  https://github.com/hashcat/hashcat/issues/69
+		
+	#TODO: |rar|7z|arj|bz2|cab|cpio|gz|lzma|lha|lzh|tar|tgz|tbz|wim )
+	exe ) # windows executable -> assume compressed archive
+		zydra.py -f "$INPUTFILE"
+		exit $?
+		;;
+	
+	# WANTED: swf )  # shockwave files
+	
+	#WANTED: key | pem )  # rsa public/private keys
+	
+	#WANTED: csr )  # Certificate Signing Request
+		openssl req -text -noout -verify -in "$INPUTFILE"
+		exit $?
+		;;
+
+	#WANTED: crt )
+	
+	#WANTED: der )
+		openssl x509 -inform der -text -in "$INPUTFILE"
+		exit $?
+		;;
+		
+	#WANTED: pfx|p12 )
+
+	
+	#p7m )
+	#	
+
+esac
+
+# switch by input file mime type
+#case $INPUTFILETYPE in
+#	image/* )		
+#		;;
+#sesac
+

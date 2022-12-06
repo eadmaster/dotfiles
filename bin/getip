@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "usage: $(basename $0) [HOSTNAME]"
@@ -6,7 +6,6 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 fi
 
 if [ "$1" = "" ]; then
-    #[ ! -z "$ANDROID_ROOT" ] && IFACE=eth0 # Android always defaults to eth0?
     #NO(FORCE RELOAD)? [ -z "$IFACE" ] && 
     IFACE=$(route | grep '^default' | grep -o '[^ ]*$' | head -n1)
     
@@ -36,7 +35,14 @@ if [ "$1" = "" ]; then
     fi
     exit 0
 fi
-# else try other methods
+
+# else try ip lookup
+
+getent hosts ${1}.local | cut -d' ' -f1
+[ "${PIPESTATUS[0]}" = 0 ] && exit 0
+
+#TODO:
+#[ ! -z "$ANDROID_ROOT" ] ...
 
 # remote lookup with nslookup
 REMOTEIP=$(nslookup $1   | tail -n3 | grep 'Address') # default DNS server
@@ -52,16 +58,16 @@ fi
 # else continue
 
 # zeroconf names
-avahi-resolve --name $1  2> /dev/null
-[ $? -eq 0 ] && exit 0  # TODO: fix exit status on failure
+avahi-resolve --name ${1}.local | cut -f2
+[ "${PIPESTATUS[0]}" = 0 ] && exit 0
 
 # netbios names
 nmblookup $1 | cut -d' ' -f1 | grep "\."
-[ $? -eq 0 ] && exit 0  # TODO: fix exit status on failure
+[ ${PIPESTATUS[0]} = 0 ] && exit 0
 
 # lookup via systemd
 systemd-resolve $1 | head -n1 | cut -d' ' -f2 | cut -d'%' -f1
-[ $? -eq 0 ] && exit 0  # TODO: fix exit status on failure
+[ ${PIPESTATUS[0]} = 0 ] && exit 0
 
 #else
 echo "$(basename $0) err: unable to resolve: $1"  >&2

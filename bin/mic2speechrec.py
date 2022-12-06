@@ -22,13 +22,32 @@ def recognize_via_speech_recognition():
 
 	# TODO: Coqui https://stt.readthedocs.io/en/latest/Python-Examples.html
 
+
+	# recognize speech using whisper
+	try:
+		text = r.recognize_whisper(audio, language="english")
+		logging.info("using whisper (local)")
+	except sr.UnknownValueError:
+		print("Whisper could not understand audio")
+	except sr.RequestError as e:
+		print("Could not request results from Whisper")
+    
+	# recognize speech using Sphinx
+	try:
+		text = r.recognize_sphinx(audio)
+		logging.info("using Sphinx (local)")
+	except sr.UnknownValueError:
+		print("Sphinx could not understand audio")
+	except sr.RequestError as e:
+		print("Sphinx error; {0}".format(e))
+	
 	# recognize speech using Google Speech Recognition
 	try:
 		# for testing purposes, we're just using the default API key
 		# to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
 		# instead of `r.recognize_google(audio)`
-		logging.info("using Google Speech Recognition")
 		text = r.recognize_google(audio)
+		logging.info("using Google Speech Recognition")
 	except sr.UnknownValueError:
 		print("Google Speech Recognition could not understand audio")
 	except sr.RequestError as e:
@@ -38,8 +57,8 @@ def recognize_via_speech_recognition():
 	GOOGLE_CLOUD_SPEECH_CREDENTIALS = os.getenv("GOOGLE_CLOUD_SPEECH_CREDENTIALS", "") # INSERT THE CONTENTS OF THE GOOGLE CLOUD SPEECH JSON CREDENTIALS FILE HERE
 	if GOOGLE_CLOUD_SPEECH_CREDENTIALS:
 		try:
-			logging.info("using Google Cloud Speech")
 			text = r.recognize_google_cloud(audio, credentials_json=GOOGLE_CLOUD_SPEECH_CREDENTIALS)
+			logging.info("using Google Cloud Speech")
 		except sr.UnknownValueError:
 			print("Google Cloud Speech could not understand audio")
 		except sr.RequestError as e:
@@ -78,18 +97,6 @@ def recognize_via_speech_recognition():
 		except sr.RequestError as e:
 			print("Could not request results from Microsoft Azure Speech service; {0}".format(e))
 
-	# recognize speech using Houndify
-	HOUNDIFY_CLIENT_ID = os.getenv("HOUNDIFY_CLIENT_ID", "")  # Houndify client IDs are Base64-encoded strings
-	HOUNDIFY_CLIENT_KEY = os.getenv("HOUNDIFY_CLIENT_KEY", "")  # Houndify client keys are Base64-encoded strings
-	if HOUNDIFY_CLIENT_ID and HOUNDIFY_CLIENT_KEY:
-		try:
-			logging.info("using Houndify")
-			text = r.recognize_houndify(audio, client_id=HOUNDIFY_CLIENT_ID, client_key=HOUNDIFY_CLIENT_KEY)
-		except sr.UnknownValueError:
-			print("Houndify could not understand audio")
-		except sr.RequestError as e:
-			print("Could not request results from Houndify service; {0}".format(e))
-
 	# recognize speech using IBM Speech to Text
 	IBM_USERNAME = os.getenv("IBM_USERNAME", "")  # IBM Speech to Text usernames are strings of the form XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 	IBM_PASSWORD = os.getenv("IBM_PASSWORD", "")  # IBM Speech to Text passwords are mixed-case alphanumeric strings
@@ -101,16 +108,7 @@ def recognize_via_speech_recognition():
 			print("IBM Speech to Text could not understand audio")
 		except sr.RequestError as e:
 			print("Could not request results from IBM Speech to Text service; {0}".format(e))
-		
-	# recognize speech using Sphinx
-	try:
-		logging.info("using Sphinx (local)")
-		text = r.recognize_sphinx(audio)
-	except sr.UnknownValueError:
-		print("Sphinx could not understand audio")
-	except sr.RequestError as e:
-		print("Sphinx error; {0}".format(e))
-	
+
 	return(text)
 # end of recognize_via_speech_recognition
 

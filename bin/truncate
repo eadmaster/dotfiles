@@ -1,12 +1,9 @@
+#!/bin/sh
 
-#command -p truncate "$@"
-/usr/bin/truncate "$@"
+command -p truncate "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 extractrun truncate "$@"
-_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-
-toybox truncate "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 busybox truncate "$@"
