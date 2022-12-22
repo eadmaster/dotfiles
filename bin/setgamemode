@@ -1,0 +1,84 @@
+#!/bin/sh
+
+echo "MEMO: switch to gaming activity"
+
+gamma 1.5
+
+setvolume 100
+
+if [ "$(hostname)" = "BOSS2" ]; then
+	lgtv_serial poweron
+	sleep 5
+	#lgtv_serial energysavingmed
+	# TODO: check current time
+	# if hour >8:00 && < 24:00
+	lgtv_serial volume30
+	# else
+	#lgtv_serial volume20
+	
+	# will use optical audio out
+	#lgtv_serial mute
+	# TODO: turn off tv speaker
+	
+	setcpu 3500000
+
+elif [ "$(hostname)" = "PICCIOTTO3" ]; then
+
+	# set performance governor
+	sudo cpupower frequency-set -g performance
+
+	# enable turbo boost
+	echo 0|sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
+
+	# set CPU max freq
+	#setcpu 100
+	# set GPU max freq
+	#setgpu 100
+	
+elif [ ! -z "$ANDROID_ROOT" ]; then  # Android detection
+	setvolume 100
+	
+	settings put system screen_brightness 100
+	# termux-brightness 100
+	
+	# TODO: disable battery saver mode
+	
+	exit 0
+fi
+
+# suspend some CPU-hungry processes
+#pkill -STOP firefox
+#pkill -STOP chromium-browser
+#pkill -STOP plugin-container
+#pkill -STOP "python $PENDRIVE/SharedPrograms/hwmon.py"
+#pkill -STOP "python $PENDRIVE/SharedPrograms/eventsmon.py"
+
+# set a neutral color temperature
+redshift -O 5000
+
+
+# TODO: disable power management (auto-suspend, auto-lock)
+# https://github.com/libretro/RetroArch/issues/7472
+#qdbus local.org_kde_powerdevil /org/freedesktop/PowerManagement/Inhibit org.freedesktop.PowerManagement.Inhibit.Inhibit "retroarch" "gaming"
+# switch to KDE activity "gaming" (disable screen suspend) https://blog.hanschen.org/2011/05/20/switch-to-specific-activities-with-keyboard-shortcuts/
+qdbus org.kde.ActivityManager /ActivityManager/Activities SetCurrentActivity 73b8bb88-89ae-41da-b9f0-01ab783848f7
+
+# disable autolock and screensaver
+loginctl unlock-session
+#xdg-screensaver suspend $(xwininfo -root ...)
+xset dpms 0 0 0 && xset s noblank  && xset s off
+# ... https://askubuntu.com/questions/803629/how-do-i-programmatically-disable-the-kde-screen-locker
+# TODO: KDE "Suspend session" https://forum.kde.org/viewtopic.php?f=14&t=118646
+#kwriteconfig --file powermanagementprofilesrc --group AC/SuspendSession --key idleTime 86400000
+#kwriteconfig --file powermanagementprofilesrc --group AC/SuspendSession --key suspendType 0
+
+
+# start some services
+systemctl --user start gamemoded  # https://github.com/FeralInteractive/gamemode
+systemctl --user start fluidsynth  # MIDI player
+systemctl start timidity  # MIDI player
+
+# show FPS stats
+mangohud bash  # https://github.com/flightlessmango/MangoHud
+
+

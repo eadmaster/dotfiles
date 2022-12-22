@@ -4,7 +4,7 @@
 SERVICE_NAME=$1
 CMD=$2
 case $1 in
-	start|stop|status|restart ) CMD=$1 ; SERVICE_NAME=$2 ;;
+	start|stop|status|restart|list|ls ) CMD=$1 ; SERVICE_NAME=$2 ;;
 esac
 
 # check aliases
@@ -246,6 +246,7 @@ elif [ "$CMD" = "remove" ] || [ "$CMD" = "rm" ] ; then
 elif [ "$CMD" = "list" ] || [ "$CMD" = "ls" ] ; then
 	command -p service --status-all
 	systemctl --all --no-pager list-units --type=service
+	systemctl --user --all --no-pager list-units --type=service
 	exit $?
 elif [ "$CMD" = "search" ] || [ "$CMD" = "find" ] ; then
 	service --status-all | grep  "*$2*"
@@ -261,6 +262,8 @@ fi
 
 export SYSTEMD_LOG_LEVEL=debug  # https://stackoverflow.com/questions/49396098/output-from-systemctl-start-restart-stop
 systemctl $CMD $SERVICE_NAME
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+systemctl --user $CMD $SERVICE_NAME
 _ES=$? ; [ $_ES -eq 0 ] && exit $_ES
 
 command -p service $SERVICE_NAME $CMD

@@ -82,6 +82,8 @@ case "$INPUTFILEEXT" in
 
 	zip|rar|7z|arj|bz2|cab|cpio|gz|lha|lzh|tar|tgz|tbz|wim|iso|img|ima|vhd|vmdk|vdi|ext2|apk )
 		7z t -bb1 -slt "$INPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		aaru image verify "$INPUTFILE"
 		exit $?
 		;;
 

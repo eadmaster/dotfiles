@@ -259,7 +259,7 @@ off|down )  # OFF COMMANDS
 			#TARGET=$(getip DietPi)
 			TARGET=192.168.1.138
 			# remote shutdown
-			ssh root@$TARGET 'poweroff'
+			ssh -o StrictHostKeyChecking=no  root@$TARGET 'poweroff'
 			#curl "https://$TARGET/cgi-bin/poweroff"
 			#curl "http://$TARGET:7681/?arg=/sbin/poweroff"
 			exit $?

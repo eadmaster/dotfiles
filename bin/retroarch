@@ -2,11 +2,14 @@
 
 RETROARCH_CONFIG_PATH=$HOME/.config/retroarch/config
 RETROARCH_CORES_PATH=$HOME/.config/retroarch/cores
+
 #if grep -q -i puppy /etc/DISTRO_SPECS; then
 #if [ "$USER" = "puppy" ]; then
-#	RETROARCH_CONFIG_PATH=/tmp/retroarch/Data/retroarch
-#	RETROARCH_CORES_PATH=/tmp/retroarch/App/lib
-#fi
+if [ "$0" = "retroarch32" ]; then
+	RETROARCH_CONFIG_PATH=/tmp/retroarch/Data/retroarch
+	RETROARCH_CORES_PATH=/tmp/retroarch/App/lib
+fi
+
 
 if [ -f "$1" ] ; then
 	INPUTFILE="$1"

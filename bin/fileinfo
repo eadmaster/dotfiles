@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # args checking
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
@@ -101,11 +101,14 @@ case $INPUTFILEEXT in
 		7z l "$INPUTFILE"
 		echo
 		isoinfo -d -i "$INPUTFILE"
+		echo
+		;&  # fallthru
+		
+	cue|nrg|mdf|pdi|cdi|b5i|gdi|ccd )
+		aaru image info "$INPUTFILE"
+		#aaru fs list "$INPUTFILE"
 		exit $?
 		;;
-		
-	#cue|nrg|mdf|pdi|cdi|b5i )
-	# ;;
 
 	img|ima|vhd|vmdk|qcow|qcow2|raw|vdi|vhd )
 		7z l "$INPUTFILE"
@@ -113,6 +116,9 @@ case $INPUTFILEEXT in
 		qemu-img info "$INPUTFILE"
 		echo
 		vbox-img info --filename "$INPUTFILE"
+		echo
+		aaru image info "$INPUTFILE"
+		aaru fs list "$INPUTFILE"
 		echo
 		file "$INPUTFILE"
 		exit $?

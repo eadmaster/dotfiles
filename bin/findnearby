@@ -61,6 +61,8 @@ sudo nbtscan 192.168.1.0/24
 # https://superuser.com/questions/311019/display-list-of-computers-on-a-lan-in-linux
 # https://unix.stackexchange.com/questions/307399/how-can-i-view-all-device-names-on-lan
 
+# TODO: sudo bettercap ... net.show
+
 echo
 
 # bluetooth devices scan
@@ -83,9 +85,4 @@ if [ $? -ne 0 ]; then
 else
 	radioscan
 fi
-
-# Broadlink smart home devices  https://github.com/mjg59/python-broadlink
-#broadlink_discovery
-
-# TODO: more home automation scanners?
 

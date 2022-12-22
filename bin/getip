@@ -7,7 +7,8 @@ fi
 
 if [ "$1" = "" ]; then
     #NO(FORCE RELOAD)? [ -z "$IFACE" ] && 
-    IFACE=$(route | grep '^default' | grep -o '[^ ]*$' | head -n1)
+    #IFACE=$(route | grep '^default' | grep -o '[^ ]*$' | head -n1)  # freezes
+    IFACE=$( ip route get 8.8.8.8 | sed -n 's/.*dev \([^\ ]*\).*/\1/p' )
     
     #echo "$(basename $0): private IPs:"
     #ifconfig $IFACE | grep "inet addr"

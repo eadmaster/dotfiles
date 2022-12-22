@@ -31,6 +31,9 @@ cksum -o3 "$@" | awk '{ printf("%x%02x\n", int($1/256),$1%256) }'
 freebsd-cksum -o3 "$@" | awk '{ printf("%x%02x\n", int($1/256),$1%256) }'
 [ $? -eq 0 ] && exit 0
 
+7z h "$@" # | grep ...
+[ $? -eq 0 ] && exit 0
+
 # alternative using gzip+gunzip+tempfile (slower)
 # MEMO:"-v" switch is not in busybox, and it does not return error for that
 #gzip -kf "$@" > "$TMPDIR/.$$.tmp"

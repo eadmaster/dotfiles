@@ -1,8 +1,15 @@
 #!/bin/sh
 
-INPUT="$1"
-[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
-[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+if [ -f "$1" ]; then
+	# read from file
+	INPUT=$(cat "$1")
+elif [ -z "$1" ]; then
+	# read from stdin
+	INPUT=$(cat)
+else
+	# read from passed args
+	INPUT="$@"
+fi
 
 echo "$INPUT" | python -c 'import sys, yaml, json; json.dump(yaml.load(sys.stdin), sys.stdout, indent=4)'
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES

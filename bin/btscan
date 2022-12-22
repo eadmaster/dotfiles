@@ -18,7 +18,7 @@ sudo timeout -sINT 10s hcitool lescan
 bleparser
 # via https://github.com/frawau/aioblescan
 aioblescan
-
+# TODO: betterscan  https://www.bettercap.org/modules/ble/
 
 # ALTERNATIVEs:
 #  NO? btscanner (ncurses-based)

@@ -1,8 +1,15 @@
 #!/bin/sh
 
-INPUT="$1"
-[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
-[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+if [ -f "$1" ]; then
+	# read from file
+	INPUT=$(cat "$1")
+elif [ -z "$1" ]; then
+	# read from stdin
+	INPUT=$(cat)
+else
+	# read from passed args
+	INPUT="$@"
+fi
 
 # TODO: handle multiple json of the same file -> "Extra data" error https://stackoverflow.com/questions/54121686/how-to-solve-problem-decoding-from-wrong-json-format
 echo "$INPUT" | python -c 'import sys, yaml, json; yaml.safe_dump(json.load(sys.stdin), sys.stdout, default_flow_style=False)'

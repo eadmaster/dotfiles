@@ -315,6 +315,7 @@ if which fdfind >/dev/null 2>&1 ; then
     f() { fdfind --hidden --glob "*$@*" ; }
 else
     alias fd="find . -xdev -iname"  # 2>/dev/null  -> skip permission denied errors https://unix.stackexchange.com/questions/19430/how-do-i-remove-permission-denied-printout-statements-from-the-find-program
+    alias f=fd
 fi
 #alias search=fd
 #alias ff=fd  # also used for firefox
@@ -509,14 +510,14 @@ xdelta1patch() { [ -z "$1" ] && echo "usage: %0 XDELTAFILE INPUTFILE" && return;
 xdelta3patch() { [ -z "$1" ] && echo "usage: %0 XDELTAFILE INPUTFILE" && return; xdelta3 -d -s "$2" "$1" "$2.patched" ; }  # https://www.pcgamingwiki.com/wiki/Xdelta
 
 # datfile renamers
-if [ -d /p/Documents/db/datfile ]; then
-    getgoodtoolsdatfilepath() { find /p/Documents/db/datfile/GoodTools -iname "*$@*.sfv" -printf '%p\n' | head -n1 ; }
-    getnointrodatfilepath() { find $HOME/datfiles/nointro -iname "*$**.xml" -printf '%p\n' | head -n1 ; }
+if [ -d $HOME/pendrive/Documents/db/datfile ]; then
+    getgoodtoolsdatfilepath() { find $HOME/pendrive/Documents/db/datfile/GoodTools -iname "*$@*.sfv" -printf '%p\n' | head -n1 ; }
+    getnointrodatfilepath() { find $HOME/datfiles/nointro -iname "*$**.dat" -printf '%p\n' | head -n1 ; }
     alias rengoodnes2nointro="renfromdats.py --rename --include-roms \"$(getgoodtoolsdatfilepath GoodNES)\" \"$(getnointrodatfilepath - Nintendo Entertainment System)\""
     alias rengoodsnes2nointro="renfromdats.py --rename --include-roms \"$(getgoodtoolsdatfilepath GoodSNES)\" \"$(getnointrodatfilepath Super Nintendo Entertainment System)\""
     alias rengoodgbx2nointro="renfromdats.py --rename --include-roms \"$(getgoodtoolsdatfilepath GBx)\" \"$(getnointrodatfilepath Game Boy)\""
-    alias rengoodsms2nointro="renfromdats.py --rename --include-roms \"$(getgoodtoolsdatfilepath GoodGen)\" \"$(getnointrodatfilepath Mega Drive - Genesis)\""
-    alias rengoodgen2nointro="renfromdats.py --rename --include-roms \"$(getgoodtoolsdatfilepath GoodSMS)\" \"$(getnointrodatfilepath Master System - Mark III)\""
+    alias rengoodsms2nointro="renfromdats.py --rename --include-roms \"$(getgoodtoolsdatfilepath GoodSMS)\" \"$(getnointrodatfilepath Master System - Mark III)\""
+    alias rengoodgen2nointro="renfromdats.py --rename --include-roms \"$(getgoodtoolsdatfilepath GoodGen)\" \"$(getnointrodatfilepath Mega Drive - Genesis)\""
     alias rengoodpce2nointro="renfromdats.py --rename --include-roms \"$(getgoodtoolsdatfilepath PCE)\" \"$(getnointrodatfilepath PC Engine - TurboGrafx 16)\""
     alias rennointro2goodnes="renfromdats.py --rename --include-roms \"$(getnointrodatfilepath Nintendo \- Nintendo Entertainment System)\" \"$(getgoodtoolsdatfilepath NES | tail -n1)\" ."
     alias rennointro2goodsnes="renfromdats.py --rename --include-roms \"$(getnointrodatfilepath Super Nintendo Entertainment System)\" \"$(getgoodtoolsdatfilepath SNES)\" ."
@@ -652,7 +653,7 @@ alias connect="nc -v"
 alias wsclient=wscat
 alias wsserver="websocat -s"
 
-# alias findcmd="grep /p/Documents/note/linux.txt"
+# alias findcmd="grep $HOME/pendrive/Documents/note/linux.txt"
 alias findcmd=findcommand
 
 alias bench="cpubench ; gpubench"
@@ -838,6 +839,7 @@ fi
 #alias appendnotes=mynotesappend
 alias np=mynotesappend
 #alias na=mynotesappend
+alias notesp=mynotesp
 
 if [ -d $PENDRIVE/Documents/db ]; then
 	finddump() { finddb "$1" $PENDRIVE/Documents/db/datfile ; }  #  $retroarch_base_path\database\dat, metadata?
@@ -857,12 +859,9 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	#findvg() { finddb "$@" $PENDRIVE/Documents/db/vg ; }  # MOVED in a script
 	alias findgame=findvg
 	goodfind() { finddb "$@" "$PENDRIVE/Documents/db/datfile/GoodTools" ; }
-	nointrofind() { ugrep -z "$@" "$PENDRIVE/Documents/db/datfile/No Intro*.zip" ; }
+	#nointrofind() { ugrep "$@" -i -I -z -g "$PENDRIVE/Documents/db/datfile/No Intro*.zip" ; }  # TODO: fix
+	nointrofind() { grep -i -I  "$@" $HOME/datfiles/nointro/*.dat ; }  # TODO: remove
 	scenefind() { finddb "$@" $PENDRIVE/Documents/db/datfile/scene ; }
-	#alias mamefaq=mameinfo
-	mamefind() { mame $1 -listxml | awk -v 'IGNORECASE=1' -v RS="<software" '/'"$1"'/ { print $0 }' ; }
-	messfind() { mame -listsoftware $2 | awk -v 'IGNORECASE=1' -v RS="<software" '/'"$1"'/ { print $0 }' ; }
-	alias mamedebug="mame -debug -v"
 
 	psxfind() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps1/sonyindex_PSone*.txt ; }
 	alias ps1find=psxfind
@@ -876,6 +875,16 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	xb360find() { grep -i "$1" $PENDRIVE/Documents/db/vg/xb360/gamesdatabase_*.tsv ; }
 	3dsfind() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/3ds/list_*.json ; }
 	# MEMO: do not quote escaped paths!
+fi
+
+# mame aliases   
+if which mame >/dev/null 2>&1 ; then
+	#alias mess=mame
+	#alias mamefaq=mameinfo
+	mamefind() { mame $1 -listxml | awk -v 'IGNORECASE=1' -v RS="<software" '/'"$1"'/ { print $0 }' ; }
+	messfind() { mame -listsoftware $2 | awk -v 'IGNORECASE=1' -v RS="<software" '/'"$1"'/ { print $0 }' ; }
+	alias mamedebug="mame -debug -v"
+	complete -W "$(ls $HOME/.mame/roms/*.zip)" mame
 fi
 
 findindex() { finddb "$1" $PENDRIVE/Documents/db/index ; }
@@ -1159,7 +1168,7 @@ alias cmpdir=dircmp
 alias dirdiff=dircmp
 
 alias ra=retroarch
-#alias retroarch32="extractrun retroarch"
+alias retroarch32=retroarch
 
 #alias testjoystick=jstest
 alias joysticksls="sdl2-jstest --list ; evdev-joystick --l ; dmesg | grep Joystick"  # TODO: print some infos  https://wiki.archlinux.org/index.php/Gamepad
@@ -1763,11 +1772,17 @@ alias latestls=findlatestchanged
 alias findup=finddup
 alias fdupes=finddup
 
-findbig() { czkawka big --directories $( pwd ) ; }
+#if which czkawka >/dev/null 2>&1 ; then
+#findbig() { czkawka big --directories $( pwd ) ; }
+alias findbiggest="du -cks * | sort -rn | head"  # TODO: humanized sizes  https://www.cyberciti.biz/faq/linux-find-largest-file-in-directory-recursively-using-find-du/
 
 alias findempty="find . -empty"
 alias rmemptysubdirs="find . -type d -empty -delete"
 alias flattensubdirs="find . -mindepth 2 -type f -print -exec mv {} . \; ; rmemptysubdirs"
+
+alias rmempty="find . -size 0 -print -delete"
+alias rmzerosizedfiles=rmempty
+alias rmemptyretroarchsaves=rmemptysrm
 
 #vimpager() { vim -c '1' -c 'set cmdheight=1' -c 'set readonly' -c 'set nomodifiable' -c 'syntax enable' -c 'set guioptions=aiMr' -c 'nmap q :q!<CR>' -c 'nmap <Up> <C-Y>' -c 'nmap <Down> <C-E>' -c 'nmap ^V <C-F><C-G>' "$@" ; }  # source https://vim.fandom.com/wiki/Using_vim_as_a_syntax-highlighting_pager
 #alias vimcat=vimpager
@@ -1857,7 +1872,7 @@ if ! which rg >/dev/null 2>&1 ; then
     #rg() { grep -r -I -n -H  --exclude \*.min.js --color=always "$@" | cut -c 1-400 ; }
     alias rg="grep -r -I -n -H  --exclude \*.min.js --color=always"
 else
-    alias rg="rg --max-columns 1000 --no-binary --hidden"
+    alias rg="rg --max-columns 1000 --no-binary --hidden --ignore-case"
     # --glob '!*.min.*'"  # exclude minified code
     # ... https://github.com/BurntSushi/ripgrep/
 fi
@@ -1899,13 +1914,14 @@ alias watchfile="tail -F"  # alternative: less +F
 
 # git aliases
 if which git >/dev/null 2>&1 ; then
+	export GIT_EDITOR=nano
     alias gitstats="git remote -v ; echo -n \"$0: last 5 commits:\" ; git log --oneline -n 5 | cat ; git status"
     alias gitlsconfigs="git config --list | cat ; cat .git/config"
     alias gitaddalluntracked="git add -A --verbose"
     alias gitaddall="git add -u --verbose"
     alias gitautoadd=gitaddall
     alias gitcommitwithmessage="git commit -m"
-    #gitaddallandcommit() { git add -A --verbose; git commit -m "$1" ; }
+    alias gitcommitall="gitaddall ; git commit"
     gitamend() { git commit --amend -m "$1" ; }
     alias gitundolastcommit="git reset --soft HEAD~ ; git status"
     #alias gitreverttocommit="git checkout --"  # NEW ALT.: "git restore"
@@ -2078,11 +2094,14 @@ if which avahi-publish >/dev/null 2>&1 ; then
 fi
 
 if which putty >/dev/null 2>&1 ; then
-	alias sshsavedsessions="ls $HOME/.putty/sessions/"  # MEMO: easily create more sessions via the putty GUI
+	alias sshsessions="ls $HOME/.putty/sessions/"  # MEMO: easily create more sessions via the putty GUI
 	alias sshlogin=plink
 	alias easyssh=plink
 	complete -W "$(ls $HOME/.putty/sessions/)" sshlogin  # quick setup autocompletion for plink
 	# TODO: more putty aliases 
 fi
+
+# ssh annoyiances
+alias ssh="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 unset THIS_SCRIPT_DIR

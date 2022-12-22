@@ -27,7 +27,7 @@ def get_file_crc32(full_filepath):
 def get_crc32_from_datfile(src_dat_ext, src_dat_root, src_dat_lines, rom_name, partial_matches):
 	# look for a rom_name in the datfile
 	src_rom_crc = "" # returned value
-	if(src_dat_ext == "xml"):
+	if(src_dat_ext == ".xml"):
 		# search in the xml datfile
 		game_node = src_dat_root.find(".//game[@name=\"{}\"]".format(rom_name))
 		if not game_node:
@@ -80,7 +80,7 @@ def get_crc32_from_datfile(src_dat_ext, src_dat_root, src_dat_lines, rom_name, p
 
 def get_rom_name_from_crc32(dst_dat_ext, dst_dat_lines, dst_dat_root, src_rom_crc, extension):
 	dst_rom_name = ""
-	if dst_dat_ext == "xml":
+	if dst_dat_ext == ".xml":
 		# search in the xml datfile
 		game_node = dst_dat_root.find(".//rom[@crc='{}']...".format(src_rom_crc.upper()))  # MEMO: "..." returns the parent node
 		if(game_node is None):
@@ -134,7 +134,12 @@ def main():
 	src_dat_root = None
 	src_dat_lines = None
 	src_dat_ext = os.path.splitext(args.src_dat)[-1]
-	if(src_dat_ext == "xml"):
+	if(src_dat_ext == ".dat"):
+		# check if xml
+		src_dat_header = open(args.src_dat, 'r').read(10)
+		if src_dat_header.startswith("<?xml version"):
+			src_dat_ext = ".xml"
+	if(src_dat_ext == ".xml"):
 		# assume a listxml datfile
 		src_dat_tree = ET.parse(args.src_dat)
 		src_dat_root = src_dat_tree.getroot()
@@ -148,7 +153,12 @@ def main():
 	dst_dat_root = None
 	dst_dat_lines = None
 	dst_dat_ext = os.path.splitext(args.dst_dat)[-1]
-	if(src_dat_ext == "xml"):
+	if(dst_dat_ext == ".dat"):
+		# check if xml
+		dst_dat_header = open(args.dst_dat, 'r').read(16)
+		if dst_dat_header.startswith("<?xml version"):
+			dst_dat_ext = ".xml"
+	if(dst_dat_ext == ".xml"):
 		dst_dat_tree = ET.parse(args.dst_dat)
 		dst_dat_root = dst_dat_tree.getroot()
 	else:

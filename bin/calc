@@ -40,7 +40,7 @@ if [ "$#" -ge 1 ]; then
 	[ $? -ne 127 ] && exit $?
 
 	# via python sympy
-	isympy <<< "$INPUT"
+	echo "$INPUT" | isympy
 	[ $? -ne 127 ] && exit $?
 	
 	# TODO: more alternatives: python, ... https://unix.stackexchange.com/questions/480121/simple-command-line-calculator

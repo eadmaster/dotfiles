@@ -1,10 +1,14 @@
 #!/bin/sh
 
 if [ -f "$1" ]; then
+	# read from file
 	INPUT=$(cat "$1")
-else
+elif [ -z "$1" ]; then
 	# read from stdin
 	INPUT=$(cat)
+else
+	# read from passed args
+	INPUT="$@"
 fi
 
 # preferred, this also shows the values:

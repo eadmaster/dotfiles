@@ -1,0 +1,7 @@
+
+
+IFACE=$(route | grep '^default' | grep -o '[^ ]*$' | head -n1)
+
+sudo tshark -n -i $IFACE -f 'src port 53' -n -T fields -e dns.qry.name -e dns.a "$@"
+
+# TODO: bettercap -eval '...

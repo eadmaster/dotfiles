@@ -264,7 +264,12 @@ esac
 # try to detect input file type based on its extension
 case $INPUTFILEEXT in
 	mid|midi|kar|mod|xm|s3m|stm|it )
+		musescore3 "$INPUTFILE" --export-to "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
 		timidity "$INPUTFILE" -Ow -o - | ffmpeg -i - "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		# TODO: fluidsynth --fast-render="$OUTPUTFILE" "$INPUTFILE"
+		#   fluidsynth -nli -r 48000  -T oga -F example.ogg /usr/share/soundfonts/FluidR3_GM.sf2 example.MID
 		exit $?
 		;;
 	rtf|odt|odp|odg|ods|doc|xls|mdb|docx|pptx|xlsx|csv|tsv|dbf )
@@ -278,6 +283,7 @@ case $INPUTFILEEXT in
 		pandoc -o "$OUTPUTFILE" "$INPUTFILE"
 		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
 		# TODO: try other alternatives
+		exit $?
 		;;
 	zip|rar|7z|arj|bz2|cab|cpio|gz|lzma|lha|lzh|tar|tgz|tbz|wim|iso )
 		# try to detect the input file type according on its extension (useful if file is missing or buggy)
@@ -307,7 +313,7 @@ case $INPUTFILEEXT in
 			# TODO: arj, cab, cpio, lha|lzh, wim
 		esac
 		# ...
-		# exit $?
+		exit $?
 		;;
 	ps|xps|pdf|djvu|prc|mobi|epub|txt|lit|cbz|cbr|cb7|azw3|azw|kf8|fb2|pdb|chm )
 		ebook-convert "$INPUTFILE" "$OUTPUTFILE"
@@ -326,6 +332,8 @@ case $INPUTFILEEXT in
 		;;
 	img|ima|vhd|vmdk|qcow|qcow2|raw )
 		qemu-img convert "$INPUTFILE" "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		aaru image convert "$INPUTFILE" "$OUTPUTFILE"
 		exit $?
 		;;
 	vmx|ovf )
