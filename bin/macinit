@@ -2010,10 +2010,11 @@ alias quake3="fteqw -basegame baseq3"
 
 #alias duke3d="eduke32 -map"  # data files in ~/.config/eduke32/ # http://wiki.eduke32.com/wiki/Command_line_options
 
-alias calendar="ncal ; gcalendar"
-alias cal=calendar
-alias calnewevent="xdg-open https://www.google.com/calendar/event?action=TEMPLATE&text=Nuovo+Evento"
-alias caladd=calnewevent
+MY_ICAL_URL
+#alias calendar="ncal ; gcalendar"
+#alias cal=calendar
+alias caladd="xdg-open https://www.google.com/calendar/event?action=TEMPLATE&text=Nuovo+Evento"
+alias calnewevent=caladd
 
 # arduino-cli aliases  https://github.com/arduino/arduino-cli
 if which arduino-cli >/dev/null 2>&1 ; then
@@ -2103,5 +2104,7 @@ fi
 
 # ssh annoyiances
 alias ssh="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+alias firewallrules="iptables --list-rules"
 
 unset THIS_SCRIPT_DIR

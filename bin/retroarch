@@ -25,13 +25,11 @@ case $INPUTFILEEXT in
 	nes|fds ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mesen_libretro.so -c "$RETROARCH_CONFIG_PATH/mesen.cfg"" ;;
 	#nes|fds ) _APPENDED_OPTIONS="-L $HOME/github/nestopia/libretro/nestopia_libretro.so -c "$RETROARCH_CONFIG_PATH/nestopia.cfg"" ;;
 	#smc|sfc ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/bsnes_hd_beta_libretro.so -c "$RETROARCH_CONFIG_PATH/bsnes.cfg"" ;;
-	smc|sfc ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/snes9x_libretro.so -c "$RETROARCH_CONFIG_PATH/snes9x.cfg"" ;;
-	#smc|sfc ) _APPENDED_OPTIONS="-L $HOME/github/snes9x/libretro/snes9x_libretro.so -c "$RETROARCH_CONFIG_PATH/snes9x.cfg"" ;;
+	#smc|sfc ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/snes9x_libretro.so -c "$RETROARCH_CONFIG_PATH/snes9x.cfg"" ;;
+	smc|sfc ) _APPENDED_OPTIONS="-L $HOME/github/snes9x/libretro/snes9x_libretro.so -c "$RETROARCH_CONFIG_PATH/snes9x.cfg"" ;;
 	v64|n64|z64 ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mupen64plus_next_libretro.so -c "$RETROARCH_CONFIG_PATH/mupen64.cfg"" ;;
 	#v64|n64|z64 ) _APPENDED_OPTIONS="-L $HOME/github/mupen64plus-libretro-nx/mupen64plus_next_libretro.so -c "$RETROARCH_CONFIG_PATH/mupen64.cfg"" ;;
 	#v64|n64|z64 ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/parallel_n64_libretro.so -c "$RETROARCH_CONFIG_PATH/parallel_n64.cfg"" ;;
-	#gb|gbc ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/gambatte_libretro.so -c "$RETROARCH_CONFIG_PATH/gambatte.cfg"" ;;
-	#gb|gbc ) _APPENDED_OPTIONS="-L $HOME/github/gambatte-libretro/gambatte_libretro.so -c "$RETROARCH_CONFIG_PATH/gambatte.cfg"" ;;
 	gb|gbc ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mgba_libretro.so -c "$RETROARCH_CONFIG_PATH/mgba.cfg"" ;;
 	#gb|gbc ) _APPENDED_OPTIONS="-L /home/andy/github/mgba/mgba_libretro.so -c "$RETROARCH_CONFIG_PATH/mgba.cfg"" ;;
 	#echo "$INPUTFILE" | grep -qF "[S]" && _APPENDED_OPTIONS="-c "$RETROARCH_CONFIG_PATH/bsnes.cfg" \"$RETROARCH_CONFIG_PATH/system/Super Gameboy (J) (V1.2) [R-Euro+USA][!].sfc\" --subsystem sgb"
@@ -99,6 +97,8 @@ fi
 [ "$2" = "snes9x2010" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/snes9x2010_libretro.so -c "$RETROARCH_CONFIG_PATH/snes9x.cfg""
 [ "$2" = "snes9x2002" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/snes9x2002_libretro.so -c "$RETROARCH_CONFIG_PATH/snes9x.cfg""
 #TODO: [ "$2" = "sgb" ]
+[ "$2" = "gambatte" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/gambatte_libretro.so -c "$RETROARCH_CONFIG_PATH/gambatte.cfg""
+#[ "$2" = "gambatte-mine" ] && _APPENDED_OPTIONS="-L $HOME/github/gambatte-libretro/gambatte_libretro.so -c "$RETROARCH_CONFIG_PATH/gambatte.cfg""
 #[ "$2" = "pcefast" ] &&  _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_pce_fast_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-pce.cfg""
 [ "$2" = "pcecd" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_pce_fast_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-pce.cfg""
 [ "$2" = "sgx" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_sgx_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-pce.cfg""
@@ -110,7 +110,8 @@ fi
 [ "$2" = "3do" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/opera_libretro.so -c "$RETROARCH_CONFIG_PATH/opera.cfg""
 [ "$2" = "scd" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/genesis_plus_gx_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus.cfg""
 #[ "$2" = "scd" ] && _APPENDED_OPTIONS="-L $HOME/github/Genesis-Plus-GX/genesis_plus_gx_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus.cfg""
-[ "$2" = "sat" ] || [ "$2" = "ss" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_saturn_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-saturn.cfg""
+#[ "$2" = "sat" ] || [ "$2" = "ss" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_saturn_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-saturn.cfg""
+[ "$2" = "sat" ] || [ "$2" = "ss" ] && _APPENDED_OPTIONS="-L /home/andy/github/beetle-saturn-libretro/mednafen_saturn_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-saturn.cfg""
 [ "$2" = "yaba" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/yabasanshiro_libretro.so -c "$RETROARCH_CONFIG_PATH/yabasanshiro.cfg""
 #[ "$2" = "yaba" ] && _APPENDED_OPTIONS="-L /home/andy/Documents/eadmaster_github/yabause/yabause/src/libretro/yabasanshiro_libretro.so -c "$RETROARCH_CONFIG_PATH/yabasanshiro.cfg""
 [ "$2" = "yaba" ] && [ "$(hostname)" = "PICCIOTTO3" ] && export MESA_GL_VERSION_OVERRIDE=3.30
@@ -131,8 +132,8 @@ fi
 [ "$2" = "amiga" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/puae_libretro.so -c "$RETROARCH_CONFIG_PATH/puae.cfg""
 [ "$2" = "pc" ] || [ "$2" = "dos" ] || [ "$2" = "dosbox" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/dosbox_pure_libretro.so -c "$RETROARCH_CONFIG_PATH/dosbox.cfg""
 [ "$2" = "mame" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mame_libretro.so -c "$RETROARCH_CONFIG_PATH/mame.cfg""
-[ "$2" = "fba" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/fbneo_libretro.so -c "$RETROARCH_CONFIG_PATH/fbneo.cfg""
-#[ "$2" = "fba" ] && _APPENDED_OPTIONS="-L $HOME/github/FBNeo-chvolumemod/src/burner/libretro/fbneo_chvolmod_libretro.so -c "$RETROARCH_CONFIG_PATH/fbneo.cfg""
+#[ "$2" = "fba" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/fbneo_libretro.so -c "$RETROARCH_CONFIG_PATH/fbneo.cfg""
+[ "$2" = "fba" ] && _APPENDED_OPTIONS="-L /home/andy/github/FBNeo-chvolmod/src/burner/libretro/fbneo_libretro.so -c "$RETROARCH_CONFIG_PATH/fbneo.cfg""
 [ "$2" = "fbneo" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/fbneo_libretro.so -c "$RETROARCH_CONFIG_PATH/fbneo.cfg""
 [ "$2" = "dolphin" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/dolphin_libretro.so -c "$RETROARCH_CONFIG_PATH/dolphin.cfg""
 

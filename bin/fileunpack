@@ -191,6 +191,8 @@ case "$INPUTFILEEXT" in
 		# TODO: extract the detached signature in a p7s file
 		exit $?
 		;;
+	
+	# TODO: flatpak (ostree-based)  https://github.com/AppImage/AppImageKit/issues/297
 esac
 
 case $INPUTFILETYPE in

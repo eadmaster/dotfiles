@@ -8,8 +8,9 @@ def ical2dicts(ical_str):
 	parsed_dicts = []
 	curr_dict = {}
 	black_list = ('#', 'BEGIN:VCALENDAR', 'BEGIN:VEVENT', 'VERSION:', 'CHARSET:', 'PRODID:')
-	for line in ical_str.splitlines():
-		if line.startswith("END:VEVENT"):
+	for lineb in ical_str.splitlines():
+		line = lineb.decode('utf-8')
+		if line.startswith("END:"):
 			parsed_dicts.append(curr_dict)
 			curr_dict = {}
 			continue
@@ -19,10 +20,13 @@ def ical2dicts(ical_str):
 			continue
 		elif line.startswith(" "): # TODO: regexpr check
 			# append to prev line
-			curr_dict[k] = v + line
+			#curr_dict[k] = v + line
 			continue
 		# else parse current line
-		k, v = line.split(":", maxsplit=1)
+		try:
+			k, v = line.split(":", maxsplit=1)
+		except:
+			continue
 		# cleanup the key
 		k = k.lower()
 		k = k.replace(";charset=utf-8", "")
@@ -54,7 +58,7 @@ if __name__ == "__main__":
 		
 	ical_str = infile.read()
 	ical_dicts = ical2dicts(ical_str)
-
+	
 	import json
 	for d in ical_dicts:
 		args.outfile.write(json.dumps(d))

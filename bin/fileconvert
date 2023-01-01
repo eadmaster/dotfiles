@@ -112,6 +112,7 @@ elif [ "$INPUTFILEEXT" = "db" ] && [ "$OUTPUTFILEEXT" = "txt"] ; then
 #	gcc -shared -Wl,--whole-archive "$INPUTFILE" -o "$OUTPUTFILE"
 #	exit $?
 #fi
+# TODO: flatpak->appimages https://github.com/AppImage/AppImageKit/issues/297
 elif [ "$INPUTFILEEXT" = "gen" ] || [ "$INPUTFILEEXT" = "bin" ] && [ "$OUTPUTFILEEXT" = "smd" ] ; then  # ROM DUMPS
 	cp "$INPUTFILE" "$OUTPUTFILE"
 	ucon64 --gen --smd --nbak "$OUTPUTFILE"
