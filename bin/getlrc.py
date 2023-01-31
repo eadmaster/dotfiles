@@ -159,8 +159,16 @@ def lyricsify_find_song_lyrics(query):
 			}).text,
 			"html.parser")
 		# If the artist or song name does not exist in the query, return None
-		artist_title = song_html.find("h1").string[:-7]
-		lyrics_text="".join(song_html.find("div", id="entry").strings)
+		#print(song_html.find("h1").string)
+		artist_title = song_html.find("h1").string
+		if not artist_title:
+			continue
+		artist_title = artist_title[:-20]
+		lyrics_tag = song_html.find("div", id="entry")
+		if not lyrics_tag:
+			continue
+		print(lyrics_tag)
+		lyrics_text = "".join(lyrics_tag.strings)
 		if fuzzy_match(query, artist_title):
 			matching_lyrics_list.append(lyrics_text)
 		if fuzzy_match_old(query, artist_title):

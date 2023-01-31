@@ -292,7 +292,7 @@ alias gmail="google mail"
 #alias checkmail="source myemailcheck"
 #alias news="google news"
 #alias calendar="google calendar"
-alias gcal="google calendar"
+#alias gcal="google calendar"
 #alias memo="google calendar"
 #alias events="google calendar"
 #alias remind="google calendar"
@@ -1126,8 +1126,9 @@ alias groupsls="cut -d':' -f1 /etc/group | sort"  # | tr '\n' '\t'
 takeown() { sudo chown -cR $USER:$USER "$@" ; sudo chmod -cR u+X "$@" ; }
 #TODO: resetperm() { ... } #  restore default file permissions and ownership  https://unix.stackexchange.com/questions/49959/how-to-restore-default-group-user-ownership-of-all-files-under-var
 
-alias ytdl=youtube-dl
-alias getvideo=youtube-dl
+alias ytdl="yt-dlp -U --embed-metadata  --embed-chapters --embed-subs"  # --remux-video mp4
+alias ytdlmp4="ytdl --remux-video mp4" # -f mp4
+alias getvideo=ytdl
 #alias getvideourl="youtube-dl --get-url" -> MOVED IN getmediaurl
 alias getvideourl=getmediaurl
 alias geturls=html2urls
@@ -2010,7 +2011,8 @@ alias quake3="fteqw -basegame baseq3"
 
 #alias duke3d="eduke32 -map"  # data files in ~/.config/eduke32/ # http://wiki.eduke32.com/wiki/Command_line_options
 
-MY_ICAL_URL
+alias cal=cal.py
+alias calendar=cal.py
 #alias calendar="ncal ; gcalendar"
 #alias cal=calendar
 alias caladd="xdg-open https://www.google.com/calendar/event?action=TEMPLATE&text=Nuovo+Evento"
@@ -2106,5 +2108,8 @@ fi
 alias ssh="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 alias firewallrules="iptables --list-rules"
+
+alias zipapp="python -m zipapp"
+alias pyapp=zipapp
 
 unset THIS_SCRIPT_DIR

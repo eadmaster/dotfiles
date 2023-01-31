@@ -83,7 +83,15 @@ fi
 
 echo
 
-wget -U "wget" -q -O- "http://wttr.in/$CITY?1n"
+# https://github.com/Rayrsn/Weather-Cli/
+weather-Cli get $CITY
+
+echo
+
+# https://github.com/tobealive/wthrr-the-weathercrab
+wthrr
+
+wget -U "wget" -q -O- "http://v2.wttr.in/$CITY?1n"
 #wget -q -O- "http://wttr.in/$LAT,$LON?1n"
 
 echo

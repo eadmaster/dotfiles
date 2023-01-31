@@ -11,8 +11,6 @@ MY_ICAL_URL = os.getenv('MY_ICAL_URL')
 
 if __name__ == "__main__":
 
-	import calendar
-	
 	# print this month calendar  + highlight today https://stackoverflow.com/questions/66021616/highlighting-todays-date-in-python-using-calendar-py-in-command-prompt-windows
 	from datetime import date
 	import calendar
@@ -30,7 +28,8 @@ if __name__ == "__main__":
 		
 	# read remote calendar and print this month's events
 	from urllib.request import urlopen
-	infile = urlopen(MY_ICAL_URL)
+	import ssl
+	infile = urlopen(MY_ICAL_URL, context=ssl.SSLContext())
 		
 	ical_str = infile.read()
 	ical_dicts = ical2dicts(ical_str)

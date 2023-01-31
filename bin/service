@@ -22,6 +22,7 @@ case $SERVICE_NAME in
 	fluid*|midi )  export SERVICE_NAME=fluidsynth  ;;   #  TODO: also try timidity
 	nzb*|nbz )  export SERVICE_NAME=nzbget  ;;
 	*shell|shellin*|httpsh* ) export SERVICE_NAME=ttyd  ;;  # alt. shellinabox
+	vnc*|*vnc ) export SERVICE_NAME=tigervncserver  ;;
 esac
 
 # check if running on Android
@@ -50,6 +51,16 @@ if [ ! -z "$ANDROID_ROOT" ]; then
 		fi
 		stop adbd
 		start adbd
+		exit $?
+	elif [ "$SERVICE_NAME" = "ssh" ]; then
+		# https://wiki.termux.com/wiki/Remote_Access#SSH
+		if [ "$CMD" = "start" ]; then
+			sshd
+		elif [ "$CMD" = "stop" ]; then
+			pkill sshd
+		elif [ "$CMD" = "status" ]; then
+			logcat -s 'sshd:*'
+		fi
 		exit $?
 	# TODO: more system services aliases
 	fi
@@ -119,32 +130,32 @@ elif [ "$SERVICE_NAME" = "gdrive" ]; then
 	#else
 	echo "$(basename $0) err: unsupported command: $CMD" >&2
 	exit 1
-elif [ "$SERVICE_NAME" = "nzbget" ]; then
-	if [ "$CMD" = "start" ]; then
-		nzbget -D
-		exit $?
-	elif [ "$CMD" = "stop" ]; then
-		nzbget -Q
-		exit $?
-	fi
-	#else
-	echo "$(basename $0) err: unsupported command: $CMD" >&2
-	exit 1
-elif [ "$SERVICE_NAME" = "vnc" ]; then
-	if [ "$CMD" = "start" ]; then
-		vncserver -verbose -useold -noxstartup -SecurityTypes Plain,TLSPlain -PlainUsers $USER -depth 16
-		exit $?
-	elif [ "$CMD" = "stop" ]; then
-		vncserver -verbose -clean -kill :*
-		exit $?
-	elif [ "$CMD" = "status" ]; then
-		pgrep Xtigervnc
-		ss -tulpn | egrep -i 'vnc|590'
-		vncserver -list
-		exit $?
-	fi
-	# TODO: try more alternatives
-	exit 1
+#elif [ "$SERVICE_NAME" = "nzbget" ]; then
+#	if [ "$CMD" = "start" ]; then
+#		nzbget -D
+#		exit $?
+#	elif [ "$CMD" = "stop" ]; then
+#		nzbget -Q
+#		exit $?
+#	fi
+#	#else
+#	echo "$(basename $0) err: unsupported command: $CMD" >&2
+#	exit 1
+#elif [ "$SERVICE_NAME" = "vnc" ]; then
+#	if [ "$CMD" = "start" ]; then
+#		vncserver -verbose -useold -noxstartup -SecurityTypes Plain,TLSPlain -PlainUsers $USER -depth 16
+#		exit $?
+#	elif [ "$CMD" = "stop" ]; then
+#		vncserver -verbose -clean -kill :*
+#		exit $?
+#	elif [ "$CMD" = "status" ]; then
+#		pgrep Xtigervnc
+#		ss -tulpn | egrep -i 'vnc|590'
+#		vncserver -list
+#		exit $?
+#	fi
+#	# TODO: try more alternatives
+#	exit 1
 elif [ "$SERVICE_NAME" = "php" ]; then
 	# php-enabled web server
 	if [ "$CMD" = "start" ]; then

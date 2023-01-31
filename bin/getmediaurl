@@ -1,5 +1,8 @@
 #!/bin/sh
 
+yt-dlp --get-url "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
 youtube-dl --get-url "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
