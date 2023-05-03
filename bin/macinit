@@ -348,9 +348,9 @@ alias unmount="umount -v"  # always verbose
 alias remount="sudo mount -a"
 #alias mountreadonly="mount -o ro"
 alias fuserumount="fusermount -u"
-alias disksls="lsblk --output NAME,MAJ:MIN,SIZE,RO,RM,TYPE,FSTYPE,LABEL,MOUNTPOINT,LOG-SEC,PHY-SEC,OWNER,MODE,HOTPLUG"
-#alias dskls=disksls
-alias drivesls=disksls
+#alias disksls="lsblk --output NAME,MAJ:MIN,SIZE,RO,RM,TYPE,FSTYPE,LABEL,MOUNTPOINT,LOG-SEC,PHY-SEC,OWNER,MODE,HOTPLUG"
+alias lsdsk=drives
+alias disksls=drives
 alias mountsls=findmnt
 
 # qemu aliases
@@ -564,6 +564,7 @@ alias convert=fileconvert
 alias flacgain="metaflac --add-replay-gain"
 
 alias ffmpeglscodecs="ffmpeg -codecs"
+flac2mp3() { ffmpeg -i "$1" -xerror -compression_level 0 -aq 0  -metadata description="encoded by eadmaster" "$2" ; }
 
 #alias pmidi="aplaymidi -p 128:0" -> MOVED IN pmidi
 alias pm=pmidi
@@ -633,6 +634,7 @@ alias ftplsrecursive="ftpfind.py"
 alias wget="wget --no-hsts --hsts-file $TMPDIR/wget-hsts"
 #alias wput="curl --upload-file "
 wsize() { curl --head --silent --location "$1" | grep -i "content-length:" |  cut -d' ' -f2 | bytes2human ; }
+# TODO: rewrite using --write-out '%{json}' https://daniel.haxx.se/blog/2020/03/17/curl-write-out-json/
 
 alias curlstreaming="curl --no-buffer"
 alias curljson="curl -H \"Content-Type: application/json\""
@@ -874,6 +876,7 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	xboxfind() { grep -i "$1" $PENDRIVE/Documents/db/vg/xbox/xbox_titleids.tsv ; }
 	xb360find() { grep -i "$1" $PENDRIVE/Documents/db/vg/xb360/gamesdatabase_*.tsv ; }
 	3dsfind() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/3ds/list_*.json ; }
+	nswfind() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/nsw/*.json ; }
 	# MEMO: do not quote escaped paths!
 fi
 
@@ -945,6 +948,7 @@ alias xmlpprint="xml fo"  #  || xmllint --format
 #alias jsongrep=jq
 #alias jsongrep=jp
 alias ndjsonsplit="jq --compact-output"
+alias jsonmin=jsoncanonize
 alias json2ndjson=ndjsonsplit
 #alias json2csv="jq -r '. | @csv'"   #  https://stackoverflow.com/questions/32960857/how-to-convert-arbitrary-simple-json-to-csv-using-jq
 #alias xml2csv="oq -i xml -r '. | @csv'"  # https://github.com/Blacksmoke16/oq
@@ -1172,10 +1176,10 @@ alias ra=retroarch
 alias retroarch32=retroarch
 
 #alias testjoystick=jstest
-alias joysticksls="sdl2-jstest --list ; evdev-joystick --l ; dmesg | grep Joystick"  # TODO: print some infos  https://wiki.archlinux.org/index.php/Gamepad
+alias joysticksls="jstest-sdl -l ; sdl2-jstest --list ; evdev-joystick --l ; dmesg | grep Joystick"  # TODO: print some infos  https://wiki.archlinux.org/index.php/Gamepad
 alias jsls=joysticksls
 alias jsinfo="udevadm info " # /dev/input/js0
-alias jsfftest="sdl2-jstest -r 0 ; sudo fftest /dev/input/by-id/usb-*event-joystick " # rumble test
+alias fftest="jstest-sdl -r 0; sdl2-jstest -r 0 ; sudo fftest /dev/input/by-id/usb-*event-joystick " # rumble test
 
 alias reloadudevrules="sudo udevadm control --reload-rules ; sudo udevadm trigger"
 
@@ -1481,10 +1485,15 @@ alias unicode2name="unicode -i utf-8 -C USE_COLOUR"
 #unicode2name() { echo -n "$*" | uniname ; }
 # alt.: https://github.com/pemistahl/chr/
 
-alias mqttsuballtopics='mosquitto_sub -v -t "#"'
-alias mqttclientdebug=mqttsuballtopics
-alias mqttlisten=mqttsuballtopics
-alias mqttpublish='mosquitto_pub -t "test" -m'
+# mqtt aliases
+mqttpostlocalhost() { 'curl -d "$1" mqtt://localhost/test' ; }
+# TODO: mqttsuballtopics() { } https://github.com/curl/curl/discussions/10807
+if which mosquitto_sub >/dev/null 2>&1 ; then
+	alias mqttsuballtopics='mosquitto_sub -v -t "#"'
+	alias mqttpublish='mosquitto_pub -t "test" -m'
+	alias mqttclientdebug=mqttsuballtopics
+	alias mqttlisten=mqttsuballtopics
+fi
 
 # LD_LIBRARY_PATH wrappers
 alias setpulse2alsa="apulse bash"

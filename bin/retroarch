@@ -134,7 +134,7 @@ fi
 [ "$2" = "mame" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mame_libretro.so -c "$RETROARCH_CONFIG_PATH/mame.cfg""
 #[ "$2" = "fba" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/fbneo_libretro.so -c "$RETROARCH_CONFIG_PATH/fbneo.cfg""
 [ "$2" = "fba" ] && _APPENDED_OPTIONS="-L /home/andy/github/FBNeo-chvolmod/src/burner/libretro/fbneo_libretro.so -c "$RETROARCH_CONFIG_PATH/fbneo.cfg""
-[ "$2" = "fbneo" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/fbneo_libretro.so -c "$RETROARCH_CONFIG_PATH/fbneo.cfg""
+#[ "$2" = "fbneo" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/fbneo_libretro.so -c "$RETROARCH_CONFIG_PATH/fbneo.cfg""
 [ "$2" = "dolphin" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/dolphin_libretro.so -c "$RETROARCH_CONFIG_PATH/dolphin.cfg""
 
 # fix for menu start

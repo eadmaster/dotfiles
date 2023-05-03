@@ -162,6 +162,10 @@ elif [ "$INPUTFILEEXT" = "dsv" ] && [ "$OUTPUTFILEEXT" = "sav" ] ; then
 	#not supported by busybox: truncate -c -s -122 "$OUTPUTFILE"
 	truncate -c -s $( expr $( stat -c'%s' "$INPUTFILE" ) - 122 ) "$OUTPUTFILE"
 	exit $?
+elif [ "$INPUTFILEEXT" = "mpk" ] || [ "$INPUTFILEEXT" = "eep" ] || [ "$INPUTFILEEXT" = "fla" ] || [ "$INPUTFILEEXT" = "sra" ] && [ "$OUTPUTFILEEXT" = "srm" ] ; then
+	# using https://github.com/drehren/ra_mp64_srm_convert
+	ra_mp64_srm_convert --create-srm "$INPUTFILE" # --output-dir
+	exit $?
 elif [ "$INPUTFILEEXT" = "crt" ] || [ "$INPUTFILEEXT" = "cer" ] || [ "$INPUTFILEEXT" = "der" ] && [ "$OUTPUTFILEEXT" = "pem" ] ; then
 	openssl x509 -inform der -in "$INPUTFILE" -out "$OUTPUTFILE"
 	exit $?
@@ -361,6 +365,12 @@ case $INPUTFILEEXT in
 		exit $?
 		;;
 	psu|cbs|max|pws|sps|xps )  # PS2 memory card saves
+		if [ $OUTPUTFILEEXT = ps2 ]; then
+			# pip install mymcplus  https://github.com/thestr4ng3r/mymcplus
+			mymcplus "$OUTPUTFILE" format 
+			mymcplus "$OUTPUTFILE" import "$INPUTFILE"
+			exit $?
+		fi
 		# using https://github.com/root670/PS2SaveUtility
 		PS2SaveUtility "$INPUTFILE" "$OUTPUTFILE"
 		exit $?

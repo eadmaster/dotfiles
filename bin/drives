@@ -1,6 +1,6 @@
 
 
-#command -p lsblk "$@"
+lsblk --output NAME,MAJ:MIN,SIZE,RO,RM,TYPE,FSTYPE,LABEL,MOUNTPOINT,LOG-SEC,PHY-SEC,OWNER,MODE,HOTPLUG
 #[ $? -ne 127 ] && exit $?
 
 blkid
@@ -16,3 +16,5 @@ fdisk -l
 #[ $? -ne 127 ] && exit $?
 
 cat /proc/partitions
+
+

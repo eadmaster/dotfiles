@@ -134,6 +134,12 @@ case $INPUTFILEEXT in
 		exit $?
 		;;
 	
+	nsp|xci|nro|nsz )
+		# https://github.com/garoxas/NX_Game_Info
+		nxgameinfo_cli -z "$INPUTFILE"
+		exit $?
+		;;
+	
 	torrent )
 		aria2 --dry-run=true --show-files=true "$INPUTFILE"
 		aria2c --dry-run=true --show-files=true "$INPUTFILE"
