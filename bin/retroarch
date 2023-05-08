@@ -75,7 +75,6 @@ case $INPUTFILEEXT in
 		## TODO: detect image type
 		#case "$(readlink -f $1)" in
 			_APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/duckstation_libretro.so -c "$RETROARCH_CONFIG_PATH/duckstation.cfg""
-			#TODO: check cpu arch: _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/pcsx_rearmed_libretro.so -c "$RETROARCH_CONFIG_PATH/pcsx_rearmed.cfg""
 			#*scd*|*scd* )  _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/genesis_plus_gx_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus.cfg""  ;;
 			#*pce*|*engine* ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_pce_fast_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-pce.cfg""  ;;
 			#*pcfx*|*PCFX* ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_pcfx_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-pcfx.cfg""  ;;
@@ -112,7 +111,8 @@ fi
 #[ "$2" = "scd" ] && _APPENDED_OPTIONS="-L $HOME/github/Genesis-Plus-GX/genesis_plus_gx_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus.cfg""
 #[ "$2" = "sat" ] || [ "$2" = "ss" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_saturn_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-saturn.cfg""
 [ "$2" = "sat" ] || [ "$2" = "ss" ] && _APPENDED_OPTIONS="-L /home/andy/github/beetle-saturn-libretro/mednafen_saturn_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-saturn.cfg""
-[ "$2" = "yaba" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/yabasanshiro_libretro.so -c "$RETROARCH_CONFIG_PATH/yabasanshiro.cfg""
+[ "$2" = "yaba" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/yabause_libretro.so -c "$RETROARCH_CONFIG_PATH/yabause.cfg""
+#[ "$2" = "yaba" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/yabasanshiro_libretro.so -c "$RETROARCH_CONFIG_PATH/yabasanshiro.cfg""
 #[ "$2" = "yaba" ] && _APPENDED_OPTIONS="-L /home/andy/Documents/eadmaster_github/yabause/yabause/src/libretro/yabasanshiro_libretro.so -c "$RETROARCH_CONFIG_PATH/yabasanshiro.cfg""
 [ "$2" = "yaba" ] && [ "$(hostname)" = "PICCIOTTO3" ] && export MESA_GL_VERSION_OVERRIDE=3.30
 [ "$2" = "kronos" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/kronos_libretro.so -c "$RETROARCH_CONFIG_PATH/kronos.cfg""

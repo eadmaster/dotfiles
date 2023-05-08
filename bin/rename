@@ -4,12 +4,15 @@
 #command -p rename "$@"
 #_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
 
-# alternative from util-linux package
-rename.ul "$@"
+# alternative from file-rename package (old perl ver?)
+rename.pl "s/$1/$2/g" "$3"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+file-rename "s/$1/$2/g" "$3"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
 
-# alternative from file-rename package (old perl ver?)
-file-rename "s/$1/$2/g" "$3"
+# alternative from util-linux package
+#  removed https://groups.google.com/g/linux.debian.bugs.dist/c/LMjEf2ZuqU0
+rename.ul "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
 
 # alternative perl script from http://tips.webdesign10.com/files/rename.pl.txt

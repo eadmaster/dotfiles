@@ -1916,8 +1916,8 @@ alias aifacerec=face_recognition
 #TODO: alias aiupscalephoto=SRMD, RealSR ...
 #TODO: alias aigrey2colorphoto=DeOldify ... https://github.com/jantic/DeOldify/issues/389
 
-renext() { rename.ul -vo .$1 .$2 *.$1 ; } 
-#ALT.: renext() { file-rename -v "s/.$1/.$2/" "*.$1" ; } 
+#renext() { rename.ul -vo .$1 .$2 *.$1 ; } 
+renext() { rename.pl -v "s/.$1/.$2/" *.$1 ; } 
 alias chext=renext
 
 alias watchfile="tail -F"  # alternative: less +F
