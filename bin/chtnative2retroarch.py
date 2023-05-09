@@ -6,6 +6,7 @@ if __name__ == "__main__":
 	import sys
 	import json
 	
+	# usage: python chtnative2retroarch.py "My Native cheat table.cht" > "My Retroarch cheat table.cht"
 	
 	input_cht_file_str = open(sys.argv[1], "r").read()
 	
@@ -44,10 +45,7 @@ if __name__ == "__main__":
 			if ";" in line_value:
 				multicode_delim = ";"
 			for i, code in enumerate(line_value.split(multicode_delim)):
-				address, value = code.split(" ")
-				#if not address.startswith("0"):
-				#	print("warn: address does not start with 0-, may needs decryption? (code skipped): " + address)
-				#	continue
+				address, value = code.split(" ")  # TODO: handle codes using "+" as separator
 				
 				address = address[2:]  # cut 1st 2 digits , used to identify GS code type 
 				
@@ -83,6 +81,7 @@ if __name__ == "__main__":
 	# end for lines
 	
 	# print the correct cheats counter
+	print("")
 	print("cheats = \"%d\"" % (cheat_counter))
 	
 
