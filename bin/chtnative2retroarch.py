@@ -34,12 +34,16 @@ if __name__ == "__main__":
 			continue
 			
 		if line_desc.endswith("_desc"):
-			print(line) # keep unchanged
 			code_description = line_value.strip("\"")
+			print("")
+			print("cheat%d_desc = \"%s\"" % (cheat_counter, code_description))
 		
 		if line_desc.endswith("_code"):
 			# perform conversion
-			for i, code in enumerate(line_value.split("+")):
+			multicode_delim = "+"
+			if ";" in line_value:
+				multicode_delim = ";"
+			for i, code in enumerate(line_value.split(multicode_delim)):
 				address, value = code.split(" ")
 				#if not address.startswith("0"):
 				#	print("warn: address does not start with 0-, may needs decryption? (code skipped): " + address)
@@ -65,9 +69,10 @@ if __name__ == "__main__":
 				print("cheat%d_handler = \"1\"" % (cheat_counter))
 				print("cheat%d_enable = false" % (cheat_counter))
 			
-				#if strlen(value)==2:
-				#	# assume 8-bit
-				if len(value)==4:
+				if len(value)==4 and value.startswith("00"):
+					# assume 8-bit
+					print("cheat%d_memory_search_size = \"3\"" % (cheat_counter))
+				elif len(value)==4:
 					# assume 16-bit
 					print("cheat%d_memory_search_size = \"4\"" % (cheat_counter))
 				else:
