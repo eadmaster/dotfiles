@@ -13,7 +13,7 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 			continue
 
 		if "=" in line:
-			line_key, line_value = line.split("=")
+			line_key, line_value = line.split("=", maxsplit=1)
 			line_key = line_key.strip()
 			line_value = line_value.strip()
 			line_value = line_value.strip("\"")
@@ -48,11 +48,11 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 				try:
 					address, value = code.split(" ")
 				except:
-					sys.stderr.write("err: could not parse (code skipped): %s\n" % line)
+					sys.stderr.write("err: could not parse this line (skipped): %s\n" % line)
 					continue
 				
 				if "?" in value or "X" in value:
-					sys.stderr.write("err: joker values are not supported (code skipped): %s\n" % line)
+					sys.stderr.write("err: modifier values are not supported, manually edit this code (skipped): %s\n" % line)
 					continue
 					
 				address = address[2:]  # cut 1st 2 digits , used to identify GS code type 
@@ -64,12 +64,13 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 		
 				# TODO: properly parse code type, depends on system https://macrox.gshi.org/The%20Hacking%20Text.htm#playstation_code_types
 				
-				if i>0:
-					# repeat the description
-					output_file.write("\n")
-					output_file.write("cheat%d_desc = \"%s (part %d)\"\n" % (cheat_counter, code_description, i+1))
-				else:
+				output_file.write("\n")
+				
+				if i==0:
 					output_file.write("cheat%d_desc = \"%s\"\n" % (cheat_counter, code_description))
+				else:
+					# append the part number to the description
+					output_file.write("cheat%d_desc = \"%s (part %d)\"\n" % (cheat_counter, code_description, i+1))
 		
 				output_file.write("cheat%d_address = \"%d\"\n" % (cheat_counter, int(address, 16)))
 				output_file.write("cheat%d_value = \"%d\"\n" % (cheat_counter, int(value, 16)))
@@ -77,23 +78,25 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 				output_file.write("cheat%d_handler = \"1\"\n" % (cheat_counter))
 				output_file.write("cheat%d_enable = false\n" % (cheat_counter))
 			
-				if len(value)==4 and value.startswith("00"):
-					# assume 8-bit
-					output_file.write("cheat%d_memory_search_size = \"3\"\n" % (cheat_counter))
-				elif len(value)==4:
+				#if len(value)==4 and value.startswith("00"):
+				#	# assume 8-bit
+				#	output_file.write("cheat%d_memory_search_size = \"3\"\n" % (cheat_counter))
+				if len(value)==4:
 					# assume 16-bit
 					output_file.write("cheat%d_memory_search_size = \"4\"\n" % (cheat_counter))
 				else:
 					# assume 32-bit
 					output_file.write("cheat%d_memory_search_size = \"5\"\n" % (cheat_counter))
+				
 				cheat_counter += 1
 		# end if new code
 	# end for lines
 	
 	# print the correct cheats counter
+	output_file.write("\n")
 	output_file.write("cheats = \"%d\"\n" % (cheat_counter))
 	output_file.close()
-# end of chtnative2retroarch
+# end of chtnative2retroarch()
 
 
 if __name__ == "__main__":
