@@ -54,7 +54,8 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 				if "?" in value or "X" in value:
 					sys.stderr.write("err: modifier values are not supported, manually edit this code (skipped): %s\n" % line)
 					continue
-					
+				
+				code_prefix = address[:2]
 				address = address[2:]  # cut 1st 2 digits , used to identify GS code type 
 				
 				if input_sys_str in ["sat", "ss", "saturn"]:
@@ -64,6 +65,44 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 		
 				# TODO: properly parse code type, depends on system https://macrox.gshi.org/The%20Hacking%20Text.htm#playstation_code_types
 				
+				# detect correct value size (generic guess)
+				if len(value)==2 or (len(value)==4 and value.startswith("00")):
+					# assume 8-bit
+					code_size = 3
+				elif len(value)==4:
+					# assume 16-bit
+					code_size = 4
+				else:
+					# assume 32-bit
+					code_size = 5
+				
+				# system-specific checks
+				if input_sys_str=="sat":
+					if code_prefix[0]=='3':  # 3XXXXXXX 00YY = 8-bit Constant Write
+						code_size = 3  # 8bit
+					elif code_prefix[0] in ['0', '1']:  # 1XXXXXXX YYYY = 16-bit Constant Write
+						code_size = 4  # 16bit
+					else:
+						sys.stderr.write("err: unsupported code type (skipped): %s\n" % line)
+						continue
+				elif input_sys_str=="n64":
+					if code_prefix[1]=='0':  # 80XXXXXX 00YY = 8-bit Constant Write
+						code_size = 3  # 8bit
+					elif code_prefix[1]=='1':  # 81XXXXXX YYYY = 16-bit Constant Write
+						code_size = 4  # 16bit
+					else:
+						sys.stderr.write("err: unsupported code type (skipped): %s\n" % line)
+						continue
+				elif input_sys_str=="ps1":
+					if code_prefix.startswith('30'):   # 30XXXXXX = 8-bit Constant Write
+						code_size = 3  # 8bit
+					elif code_prefix.startswith('80'):  # 80XXXXXX = 16-bit Constant Write
+						code_size = 4  # 16bit
+					else:
+						sys.stderr.write("err: unsupported code type (skipped): %s\n" % line)
+						continue
+						
+				# output curr code
 				output_file.write("\n")
 				
 				if i==0:
@@ -74,19 +113,11 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 		
 				output_file.write("cheat%d_address = \"%d\"\n" % (cheat_counter, int(address, 16)))
 				output_file.write("cheat%d_value = \"%d\"\n" % (cheat_counter, int(value, 16)))
+				output_file.write("cheat%d_memory_search_size = \"%d\"\n" % (cheat_counter, code_size))
 				output_file.write("cheat%d_cheat_type = \"1\"\n" % (cheat_counter))
 				output_file.write("cheat%d_handler = \"1\"\n" % (cheat_counter))
 				output_file.write("cheat%d_enable = false\n" % (cheat_counter))
-			
-				#if len(value)==4 and value.startswith("00"):
-				#	# assume 8-bit
-				#	output_file.write("cheat%d_memory_search_size = \"3\"\n" % (cheat_counter))
-				if len(value)==4:
-					# assume 16-bit
-					output_file.write("cheat%d_memory_search_size = \"4\"\n" % (cheat_counter))
-				else:
-					# assume 32-bit
-					output_file.write("cheat%d_memory_search_size = \"5\"\n" % (cheat_counter))
+				output_file.write("# original code: %s\n" % (line_value))
 				
 				cheat_counter += 1
 		# end if new code
@@ -104,7 +135,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='converts .cht cheat tables from Native/Emulator-handled to Retroarch-handled format')
 	parser.add_argument('infile', nargs='?', default="-", help="input file, defaults to stdin if unspecified. Supports passing urls.")
 	parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'), default=sys.stdout, help="output file, defaults to stdout if unspecified")
-	parser.add_argument("-s", "--system", default=None, help="perform system-specific conversions (currently only saturn is supported)")
+	parser.add_argument("-s", "--system", default=None, help="perform system-specific conversions. Supported values: sat, n64, dc, ps1.")
 	args = parser.parse_args()
 
 	if args.infile == "-":
