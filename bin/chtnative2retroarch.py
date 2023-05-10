@@ -30,19 +30,29 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 			output_file.write("")
 		
 		if line_key.endswith("_code"):
-			# perform conversion
+			# detect code format
+			
 			multicode_delim = "+"
+			# detect ";" as multicode separator (e.g. cheat6_code = "80010AB4 0701;50000F02 0000")
 			if ";" in line_value:
 				multicode_delim = ";"
+				
+			# detect "+" as code/value separator and reformat the line (e.g. cheat6_code = "80010AB4+0701+50000F02+0000+800108B4+0303+50001802+0000+80010A84+0001")
+			if not " " in line_value and "+" in line_value:
+				# replace "+" -> " ", even occurrences only  https://stackoverflow.com/questions/74770647/replace-character-in-python-string-every-even-or-odd-occurrence
+				pieces = line_value.split("+")
+				line_value = '+'.join(' '.join(pieces[i:i+2]) for i in range(0, len(pieces), 2))
+			
 			for i, code in enumerate(line_value.split(multicode_delim)):
+				
 				try:
 					address, value = code.split(" ")
 				except:
-					sys.stderr.write("not using space as code/value separator (code skipped): %s\n" % line)
+					sys.stderr.write("err: could not parse (code skipped): %s\n" % line)
 					continue
 				
-				if "?" in value:
-					sys.stderr.write("joker values are not supported (code skipped): %s\n" % line)
+				if "?" in value or "X" in value:
+					sys.stderr.write("err: joker values are not supported (code skipped): %s\n" % line)
 					continue
 					
 				address = address[2:]  # cut 1st 2 digits , used to identify GS code type 
@@ -104,6 +114,8 @@ if __name__ == "__main__":
 		infile = open(args.infile)
 
 	input_cht_file_str = infile.read()
+	if type(input_cht_file_str)==bytes:
+		input_cht_file_str = input_cht_file_str.decode('utf-8')
 	
 	input_sys_str = args.system
 	
