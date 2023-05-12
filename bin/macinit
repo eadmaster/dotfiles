@@ -2006,6 +2006,7 @@ alias startnointernet="unshare -n -r"  # https://unix.stackexchange.com/question
 
 alias torrentget=gettorrent
 alias magnetget=gettorrent
+alias magnet2torrent=gettorrent
 
 alias doom="doomsday -game doom1 -file"  # data files in ~/.doomsday/runtime/data/
 alias doom2="doomsday -game doom2 -file"

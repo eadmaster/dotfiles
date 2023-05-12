@@ -262,6 +262,7 @@ off|down )  # OFF COMMANDS
 			ssh -o StrictHostKeyChecking=no  root@$TARGET 'poweroff'
 			#curl "https://$TARGET/cgi-bin/poweroff"
 			#curl "http://$TARGET:7681/?arg=/sbin/poweroff"
+			#TODO: try with fastweb router fixed ip
 			exit $?
 		;;
 		

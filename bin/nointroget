@@ -1,0 +1,35 @@
+#!/bin/sh
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] | [ -z "$1" ]; then
+	echo "usage: $(basename $0) ROMFILENAME.ext"
+	echo
+	exit 1
+fi
+
+
+INPUTFILE="$1"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+INPUTFILENAME="`basename \"$INPUTFILE\" | rev | cut -d'.' -f2- | rev`"
+
+if [ -z "$INPUTFILEEXT" ]; then
+	echo "$(basename $0): err: missing input extension"
+	exit 1
+fi
+
+NOINTRO_SYSTEM_NAME="$(ext2nointrosys "$INPUTFILEEXT")"
+
+URL="https://archive.org/download/no-intro-2021/${NOINTRO_SYSTEM_NAME}.zip/${INPUTFILENAME}.zip"
+ESCAPED_URL=$(urlencode "$URL")
+echo "trying $ESCAPED_URL ..."
+
+#curl --fail --remote-time   -o "$INPUTFILENAME.zip" "$ESCAPED_URL"
+#[ $? -eq 0 ] && exit 0
+
+# alternative
+URL="https://archive.org/download/nointro.$INPUTFILEEXT/$INPUTFILENAME.7z"
+ESCAPED_URL=$(urlencode "$URL")
+echo "trying $ESCAPED_URL ..."
+
+curl --fail --remote-time   -o "$INPUTFILENAME.7z" "$ESCAPED_URL"

@@ -1,0 +1,58 @@
+#!/bin/sh
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ -z "$1" ] || [ "$1" = "-" ]; then
+	echo "usage: $(basename $0) INPUT_FILE|EXT"
+	echo
+	exit 0
+fi
+
+INPUTFILE="$1"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+
+NOINTRO_SYSTEM_NAME=""
+
+case $INPUTFILEEXT in
+	nes ) NOINTRO_SYSTEM_NAME="Nintendo - Nintendo Entertainment System" ; MAME_SYSTEM_NAME="nes" ;;
+	fds ) NOINTRO_SYSTEM_NAME="Nintendo - Family Computer Disk System" ;;
+	smc|sfc ) NOINTRO_SYSTEM_NAME="Nintendo - Super Nintendo Entertainment System" ; MAME_SYSTEM_NAME="snes" ;;
+	v64|n64|z64 ) NOINTRO_SYSTEM_NAME="Nintendo - Nintendo 64" ; MAME_SYSTEM_NAME="n64" ;;
+	gb ) NOINTRO_SYSTEM_NAME="Nintendo - Game Boy" ; MAME_SYSTEM_NAME="gameboy" ;;
+	gbc ) NOINTRO_SYSTEM_NAME="Nintendo - Game Boy Color" ; MAME_SYSTEM_NAME="gbcolor" ;;
+	vb ) NOINTRO_SYSTEM_NAME="Nintendo - Virtual Boy" ; MAME_SYSTEM_NAME="vboy" ;;
+	gba ) NOINTRO_SYSTEM_NAME="Nintendo - Game Boy Advance" ; MAME_SYSTEM_NAME="gba" ;;
+	nds ) NOINTRO_SYSTEM_NAME="Nintendo - Nintendo DS" ;;
+	sms ) NOINTRO_SYSTEM_NAME="Sega - Master System - Mark III" ; MAME_SYSTEM_NAME="sms" ;;
+	smd|md|gen ) NOINTRO_SYSTEM_NAME="Sega - Mega Drive - Genesis" ; MAME_SYSTEM_NAME="genesis" ;;
+	32x ) NOINTRO_SYSTEM_NAME="Sega - 32X" ; MAME_SYSTEM_NAME="32x" ;;
+	gg ) NOINTRO_SYSTEM_NAME="Sega - Game Gear" ; MAME_SYSTEM_NAME="gamegear" ;;
+	pce|tg16 ) NOINTRO_SYSTEM_NAME="NEC - PC Engine - TurboGrafx 16" ; MAME_SYSTEM_NAME="pce" ;;
+	sgx ) NOINTRO_SYSTEM_NAME="NEC - PC Engine SuperGrafx" ;;
+	#grep -q "(SGX)" <<< "$INPUTFILE" && _APPENDED_OPTIONS="-c "$RETROARCH_CONFIG_PATH/mednafen-sgx.cfg"" ;;
+	ws ) NOINTRO_SYSTEM_NAME="Bandai - WonderSwan"; MAME_SYSTEM_NAME="wswan" ;;
+	#wsc ) NOINTRO_SYSTEM_NAME="" wscolor;;
+	#ngp ) NOINTRO_SYSTEM_NAME="" ;;
+	#ngc ) NOINTRO_SYSTEM_NAME="" ;;
+	#lnx|lyx ) NOINTRO_SYSTEM_NAME="" ;;
+	#jag ) NOINTRO_SYSTEM_NAME="" ;;
+	#d88 ) NOINTRO_SYSTEM_NAME="" ;;
+	#mx1|mx2|dsk ) NOINTRO_SYSTEM_NAME="" ;;
+	#dim|hdf|xdf ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/px68k_libretro.so -c "$RETROARCH_CONFIG_PATH/px68k.cfg"" ;;
+	#fdi|hdi ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/np2kai_libretro.so -c "$RETROARCH_CONFIG_PATH/np2kai.cfg"" ;;
+	#d64|t64 ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/vice_x64_libretro.so -c "$RETROARCH_CONFIG_PATH/vice.cfg"" ;;
+	#adf|hdf ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/puae_libretro.so -c "$RETROARCH_CONFIG_PATH/puae.cfg"" ;;
+	#exe|bat ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/dosbox_pure_libretro.so -c "$RETROARCH_CONFIG_PATH/dosbox.cfg"" ;;
+	#cdi ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/flycast_libretro.so -c "$RETROARCH_CONFIG_PATH/flycast.cfg"" ;;
+	
+	#TODO: cue|iso|bin|chd )  # try multiple dats?
+	#zip|7z ) NOINTRO_SYSTEM_NAME="FBNeo - Arcade Games" ;;
+	#chd ) NOINTRO_SYSTEM_NAME="disc" ;;
+esac
+
+if [ ! -z "$NOINTRO_SYSTEM_NAME" ]; then
+	echo "$NOINTRO_SYSTEM_NAME"
+else
+	exit 1
+fi
+

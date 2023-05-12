@@ -34,4 +34,6 @@ wget --max-redirect 0 "http://btcache.me/torrent/$HASH"
 # "http://torrage.info/torrent.php?h=$HASH"
 # "http://torrent.cd/$HASH.torrent"
 
+# TODO: add common trackers to the downloaded torrent  https://superuser.com/questions/1209290/how-to-change-add-a-tracker-to-a-torrent-file-using-the-command-line
+
 

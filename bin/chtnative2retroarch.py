@@ -63,9 +63,9 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 					address = address[1:]
 					address = "1" + address
 		
-				# TODO: properly parse code type, depends on system https://macrox.gshi.org/The%20Hacking%20Text.htm#playstation_code_types
+				# TODO: parse all code types, depends on system https://macrox.gshi.org/The%20Hacking%20Text.htm#playstation_code_types
 				
-				# detect correct value size (generic guess)
+				# guess value size
 				if len(value)==2 or (len(value)==4 and value.startswith("00")):
 					# assume 8-bit
 					code_size = 3
@@ -117,7 +117,7 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 				output_file.write("cheat%d_cheat_type = \"1\"\n" % (cheat_counter))
 				output_file.write("cheat%d_handler = \"1\"\n" % (cheat_counter))
 				output_file.write("cheat%d_enable = false\n" % (cheat_counter))
-				output_file.write("# original code: %s\n" % (line_value))
+				output_file.write("# original code: %s\n" % (line_value))  # debug
 				
 				cheat_counter += 1
 		# end if new code

@@ -114,7 +114,7 @@ fi
 [ "$2" = "yaba" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/yabause_libretro.so -c "$RETROARCH_CONFIG_PATH/yabause.cfg""
 #[ "$2" = "yaba" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/yabasanshiro_libretro.so -c "$RETROARCH_CONFIG_PATH/yabasanshiro.cfg""
 #[ "$2" = "yaba" ] && _APPENDED_OPTIONS="-L /home/andy/Documents/eadmaster_github/yabause/yabause/src/libretro/yabasanshiro_libretro.so -c "$RETROARCH_CONFIG_PATH/yabasanshiro.cfg""
-[ "$2" = "yaba" ] && [ "$(hostname)" = "PICCIOTTO3" ] && export MESA_GL_VERSION_OVERRIDE=3.30
+#[ "$2" = "yaba" ] && [ "$(hostname)" = "PICCIOTTO3" ] && export MESA_GL_VERSION_OVERRIDE=3.30
 [ "$2" = "kronos" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/kronos_libretro.so -c "$RETROARCH_CONFIG_PATH/kronos.cfg""
 [ "$2" = "psxold" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/_OLD/mednafen_psx_hw_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-psx.cfg""
 #[ "$2" = "pcsx" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/pcsx_rearmed_libretro.so -c "$RETROARCH_CONFIG_PATH/pcsx_rearmed.cfg""
