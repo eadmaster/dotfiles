@@ -48,7 +48,7 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 				try:
 					address, value = code.split(" ")
 				except:
-					sys.stderr.write("err: could not parse this line (skipped): %s\n" % line)
+					sys.stderr.write("err: malformed or unsupported code format (skipped): %s\n" % line)
 					continue
 				
 				if "?" in value or "X" in value:
@@ -144,12 +144,13 @@ if __name__ == "__main__":
 	elif args.infile.startswith(("http://", "ftp://", "https://")):  # TODO: proper URL validation
 		from urllib.request import urlopen
 		infile = urlopen(args.infile)
+		# switch to text file mode
+		import codecs
+		infile = codecs.getreader("utf-8")(infile)
 	else:
 		infile = open(args.infile)
 
 	input_cht_file_str = infile.read()
-	if type(input_cht_file_str)==bytes:
-		input_cht_file_str = input_cht_file_str.decode('utf-8')
 	
 	input_sys_str = args.system
 	

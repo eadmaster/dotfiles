@@ -52,8 +52,8 @@ echo "$(basename $0) info: created $TEMP_PLAYLIST_FILE" >&2
 
 play_or_enqueue() {
 	# setup lyrics viewer
-	[ ! -d /tmp/lyrics ] && 7z x -o"/tmp/lyrics" "$PENDRIVE/Documents/mus/lyrics.zip" > /dev/null
-	gtk-launch  osdlyrics  # start detached from the terminal
+	#[ ! -d /tmp/lyrics ] && 7z x -o"/tmp/lyrics" "$PENDRIVE/Documents/mus/lyrics.zip" > /dev/null
+	#gtk-launch  osdlyrics  # start detached from the terminal
 	
 	if [ "$_ENQUEUE" = "1" ]; then
 		enqueue $TEMP_PLAYLIST_FILE
@@ -72,25 +72,25 @@ if [ "$1" = "random" ] || [ "$1" = "shuffle" ]; then
 	sed 's/^#EXTINF/\x00/g' "$SOURCE_SONGS_PLAYLIST" | shuf -z | sed ' s/\x00/#EXTINF/g' | head -n-1  >> $TEMP_PLAYLIST_FILE
 	play_or_enqueue  $TEMP_PLAYLIST_FILE
 	exit $?
+elif [ "$1" = "radio" ] && [ -z "$2" ] ; then
+	play_or_enqueue $PENDRIVE/Documents/fav/webradio_top.m3u
+	exit $?
 elif [ "$1" = "radio" ] && [ ! -z "$2" ] ; then
 	QUERY="$2"
-	# TODO: update with new api  https://api.radio-browser.info/
-	wget -q -O- "https://de1.api.radio-browser.info/webservice/m3u/stations/byname/$(urlencode "$QUERY")" | tail -n +2  >> $TEMP_PLAYLIST_FILE
+	wget -q -O- "http://de1.api.radio-browser.info/m3u/stations/byname/$(urlencode "$QUERY")" | tail -n +2  >> $TEMP_PLAYLIST_FILE
 	play_or_enqueue  $TEMP_PLAYLIST_FILE
 	exit $?
-fi
-# TODO: use https://github.com/iptv-org/iptv   https://github.com/streamlink/streamlink  + fuzzy match
+elif [ "$1" = "tv" ] && [ -z "$2" ] ; then
+	play_or_enqueue $PENDRIVE/Documents/fav/webtv_top.m3u
+	exit $?
 #elif [ "$1" = "tv" ] && [ ! -z "$2" ] ; then
-#	QUERY="$2"
-	#wget -q -O- "https://de1.api.radio-browser.info/webservice/m3u/stations/byname/$(urlencode "$QUERY")" | tail -n +2  >> $TEMP_PLAYLIST_FILE
-#	play_or_enqueue  $TEMP_PLAYLIST_FILE
-	#exit $?
-#fi
+# TODO: use https://github.com/iptv-org/iptv   https://github.com/streamlink/streamlink  + fuzzy match
+fi
 
 #find "$SONGS_BASE_PATH" -iname "*${QUERY}*.mp3" -printf '#EXTINF:-1,%P\n%p\n'  >> $TEMP_PLAYLIST_FILE
 #[ $? -ne 0 ] && 
 # fuzzy match, incl. common mispellings
-ugrep -Z2 -A1 -w -i "$QUERY" "$SOURCE_SONGS_PLAYLIST"  >> $TEMP_PLAYLIST_FILE
+ugrep --no-group-separator -Z2 -A1 -w -i "$QUERY" "$SOURCE_SONGS_PLAYLIST"  >> $TEMP_PLAYLIST_FILE
 #[ $? -eq 127 ] && tre-agrep -B -E4 -D1 -d"#EXTINF:-1," -i "$QUERY" "$SOURCE_SONGS_PLAYLIST" >> $TEMP_PLAYLIST_FILE
 [ $? -eq 127 ] && grep -A1 -w -i "$QUERY" "$SOURCE_SONGS_PLAYLIST" >> $TEMP_PLAYLIST_FILE
 

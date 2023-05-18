@@ -45,10 +45,14 @@ if __name__ == "__main__":
 	elif args.infile.startswith(("http://", "ftp://", "https://")):  # TODO: proper URL validation
 		from urllib.request import urlopen
 		infile = urlopen(args.infile)
+		# switch to text file mode
+		import codecs
+		infile = codecs.getreader("utf-8")(infile)
 	else:
 		infile = open(args.infile)
 		
 	vcard_str = infile.read()
+
 	vcard_dicts = vcard2dicts(vcard_str)
 
 	for d in vcard_dicts:

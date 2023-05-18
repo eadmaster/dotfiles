@@ -15,11 +15,6 @@ INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
 INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
 INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
 
-ffmpeg -loglevel error -i "$INPUTFILE" -f crc - 2>/dev/null  # faster
-
-ffmpeg -loglevel error -i "$INPUTFILE" -f md5 - 2>/dev/null
-
-ffmpeg -loglevel error -i "$INPUTFILE" -f hash - 2>/dev/null  # default to SHA256 (slowest)?
 
 case $INPUTFILETYPE in
 	image/*|audio/* )
@@ -28,12 +23,24 @@ case $INPUTFILETYPE in
 		
 		# TODO: audio fingerprinting
 		
+		ffmpeg -loglevel error -i "$INPUTFILE" -vn -f crc - 2>/dev/null  # faster
+
+		ffmpeg -loglevel error -i "$INPUTFILE" -vn -f md5 - 2>/dev/null
+
+		ffmpeg -loglevel error -i "$INPUTFILE" -vn -f hash - 2>/dev/null  # default to SHA256 (slowest)?
+		
 		exit $?
 		;;
 	
 	video/* )
 		# TODO: video fingerprinting
-		
+
+		ffmpeg -loglevel error -i "$INPUTFILE" -f crc - 2>/dev/null  # faster
+
+		ffmpeg -loglevel error -i "$INPUTFILE" -f md5 - 2>/dev/null
+
+		ffmpeg -loglevel error -i "$INPUTFILE" -f hash - 2>/dev/null  # default to SHA256 (slowest)?
+
 		exit $?
 		;;
 		

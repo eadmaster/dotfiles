@@ -355,8 +355,13 @@ case $INPUTFILEEXT in
 		;;
 	m3u|xspf|pls|pla|asx )  # multimedia playlist #|b4s|wpl|smil|hypetape|rmp|plist|kpl|mpcpl|plp
 		# using Lizzy (MEMO: no ext.m3u support)  https://sourceforge.net/projects/lizzy/
-		extractrun lizzy "$INPUTFILE" -o "$OUTPUTFILE"
+		lizzy "$INPUTFILE" -o "$OUTPUTFILE"
 		# TODO: more alternatives
+		exit $?
+		;;
+	srt|sub|ass|smi|sub )  # subtitles
+		# using SubtitleEdit  https://github.com/SubtitleEdit/subtitleedit
+		SubtitleEdit  /convert "$INPUTFILE" $OUTPUTFILEEXT  /outputfolder:"$OUTPUTFILEDIR"
 		exit $?
 		;;
 	icml|smi|smiles|can|cml|mrv|inchi|mol|mdl|mol2 )  # chemistry

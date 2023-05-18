@@ -2057,6 +2057,7 @@ alias emoticon=emoji
 #alias ed2klinkadd=amulelinkadd
 #alias amulels="amulecmd -c 'Show DL'"  # show downloads in progress  # moved in SA script
 
+alias regexbuilder=grex
 alias mkregex=grex
 
 alias audiocut=mediacut
@@ -2121,5 +2122,7 @@ alias firewallrules="iptables --list-rules"
 
 alias zipapp="python -m zipapp"
 alias pyapp=zipapp
+
+alias cb=clipboard
 
 unset THIS_SCRIPT_DIR

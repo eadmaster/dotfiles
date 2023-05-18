@@ -39,7 +39,7 @@ fi
 
 # else try ip lookup
 
-getent hosts ${1}.local | cut -d' ' -f1
+getent hosts ${1} | cut -d' ' -f1
 [ "${PIPESTATUS[0]}" = 0 ] && exit 0
 
 #TODO:
@@ -59,7 +59,7 @@ fi
 # else continue
 
 # zeroconf names
-avahi-resolve --name ${1}.local | cut -f2
+avahi-resolve --name ${1} | cut -f2
 [ "${PIPESTATUS[0]}" = 0 ] && exit 0
 
 # netbios names

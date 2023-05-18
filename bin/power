@@ -255,11 +255,12 @@ off|down )  # OFF COMMANDS
 			exit $?
 		;;
 		
-		*router|*wrt|nanopi )
-			#TARGET=$(getip DietPi)
-			TARGET=192.168.1.138
+		*router|*wrt|nanopi|dietpi )
+			#TARGET=$(getip DietPi.local)
+			#[ -z "$TARGET" ] && TARGET=192.168.1.138
 			# remote shutdown
-			ssh -o StrictHostKeyChecking=no  root@$TARGET 'poweroff'
+			ssh -o StrictHostKeyChecking=no root@192.168.1.138 'poweroff'
+			ssh -o StrictHostKeyChecking=no root@DietPi.local 'poweroff'
 			#curl "https://$TARGET/cgi-bin/poweroff"
 			#curl "http://$TARGET:7681/?arg=/sbin/poweroff"
 			#TODO: try with fastweb router fixed ip
