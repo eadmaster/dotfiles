@@ -36,6 +36,8 @@ fi
 
 # WANTED: javascript URL deobfuscator  http://scraping.pro/javascript-protected-content-scrape/
 
+# WIP: https://github.com/abhimanyu003/sttr/issues/38
+
 # python DOM alternative
 python - "$INPUTFILE" "$BASE_URL"  <<EOF
 import sys

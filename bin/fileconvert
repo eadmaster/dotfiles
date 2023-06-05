@@ -165,6 +165,7 @@ elif [ "$INPUTFILEEXT" = "dsv" ] && [ "$OUTPUTFILEEXT" = "sav" ] ; then
 elif [ "$INPUTFILEEXT" = "mpk" ] || [ "$INPUTFILEEXT" = "eep" ] || [ "$INPUTFILEEXT" = "fla" ] || [ "$INPUTFILEEXT" = "sra" ] && [ "$OUTPUTFILEEXT" = "srm" ] ; then
 	# using https://github.com/drehren/ra_mp64_srm_convert
 	ra_mp64_srm_convert --create-srm "$INPUTFILE" # --output-dir
+	# OLD: https://github.com/heuripedes/pj64tosrm
 	exit $?
 elif [ "$INPUTFILEEXT" = "crt" ] || [ "$INPUTFILEEXT" = "cer" ] || [ "$INPUTFILEEXT" = "der" ] && [ "$OUTPUTFILEEXT" = "pem" ] ; then
 	openssl x509 -inform der -in "$INPUTFILE" -out "$OUTPUTFILE"
@@ -176,6 +177,9 @@ elif [ "$INPUTFILEEXT" = "pfx" ] || [ "$INPUTFILEEXT" = "p12" ] && [ "$OUTPUTFIL
 	openssl pkcs12 -in "$INPUTFILE" -out "$OUTPUTFILE" -nodes
 	exit $?
 elif [ "$OUTPUTFILEEXT" = "json" ]; then
+	# using jc(supports a lot of formats) https://github.com/kellyjonbrazil/jc
+	jc --pretty --monochrome --$INPUTFILEEXT < "$INPUTFILE" > "$OUTPUTFILE"
+	[ -s "$OUTPUTFILE" ] && exit $?
 	# using fq (supports a lot of formats) https://github.com/wader/fq
 	fq --monochrome-output . "$INPUTFILE" > "$OUTPUTFILE"
 	exit $?
@@ -183,7 +187,7 @@ elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "csv" ] || [ "$INPUTFIL
 	# using oq (no csv support) https://github.com/jzelinskie/faq
 	oq -i  $INPUTFILEEXT
 	# using faq (no csv support) https://github.com/jzelinskie/faq
-	faq --monochrome-output -f $INPUTFILEEXT -o $OUTPUTFILEEXT < "$INPUTFILE" > "$OUTPUTFILE"
+	#faq --monochrome-output -f $INPUTFILEEXT -o $OUTPUTFILEEXT < "$INPUTFILE" > "$OUTPUTFILE"
 	#NOT WORKING? _ES=$? ; [ $_ES -eq 0 ] && exit $_ES
 	[ -s "$OUTPUTFILE" ] && exit $?
 	# using catmandu  https://github.com/LibreCat/Catmandu

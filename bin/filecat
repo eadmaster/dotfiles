@@ -35,6 +35,18 @@ OUTPUTFILEEXT=$( echo -n $OUTPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase
 echo "creating $OUTPUTFILE from $INPUT_FILES"
 
 case $INPUTFILETYPE in
+	application/pdf )
+		pdftk $INPUT_FILES cat output "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		pdfunite $INPUT_FILES "$OUTPUTFILE"
+		exit $?
+		;;
+
+	image/vnd.djvu | image/x.djvu | image/x-djvu )
+		djvm -c "$OUTPUTFILE" $INPUT_FILES
+		exit $?
+		;;
+
 	image/* )
 		if [ "$OUTPUTFILEEXT" = "pdf" ] || [ "$OUTPUTFILEEXT" = "tif" ] || [ "$OUTPUTFILEEXT" = "tiff" ]; then
 			# generate an ebook from images with lossless compression
@@ -59,18 +71,6 @@ case $INPUTFILETYPE in
 		exit $?
 		;;
 		
-	application/pdf )
-		pdftk $INPUT_FILES cat output "$OUTPUTFILE"
-		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-		pdfunite $INPUT_FILES "$OUTPUTFILE"
-		exit $?
-		;;
-	
-	image/vnd.djvu | image/x.djvu | image/x-djvu )
-		djvm -c "$OUTPUTFILE" $INPUT_FILES
-		exit $?
-		;;
-	
 	# WANTED: source code amalgamation tools
 	
 	text/* )

@@ -729,6 +729,7 @@ alias pytohn=python
 alias pytohn3=python3
 
 alias ic=cling  # interactive c/cpp shell
+alias pysh=xonsh  # https://github.com/xonsh/xonsh
 
 alias httpd=uhttpd
 alias https=uhttpd
@@ -875,7 +876,7 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	wiiufind() { grep -i "$1" $PENDRIVE/Documents/db/vg/wiiu/wiiutdb_titles.txt ; }
 	xboxfind() { grep -i "$1" $PENDRIVE/Documents/db/vg/xbox/xbox_titleids.tsv ; }
 	xb360find() { grep -i "$1" $PENDRIVE/Documents/db/vg/xb360/gamesdatabase_*.tsv ; }
-	3dsfind() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/3ds/list_*.json ; }
+	3dsfind() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/3ds/*.json ; }
 	nswfind() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/nsw/*.json ; }
 	# MEMO: do not quote escaped paths!
 fi
@@ -943,18 +944,24 @@ alias xmlpprint="xml fo"  #  || xmllint --format
 #alias xml2paths=fileinfo
 #alias xml2paths=xml2  # MOVED in a script
 #xmlgrep() { xml2paths "$2" | grep "$1" ; }
+
+# jq aliases   
+if which jq >/dev/null 2>&1 ; then
+	alias jsongrep=jq
+	alias ndjsonsplit="jq --compact-output"
+	alias json2ndjson=ndjsonsplit
+	#alias json2csv="jq -r '. | @csv'"   #  https://stackoverflow.com/questions/32960857/how-to-convert-arbitrary-simple-json-to-csv-using-jq
+fi
+
 #alias json2paths=fileinfo
 #alias json2pointers=json2paths.py
-#alias jsongrep=jq
-#alias jsongrep=jp
-alias ndjsonsplit="jq --compact-output"
-alias jsonmin=jsoncanonize
-alias json2ndjson=ndjsonsplit
-#alias json2csv="jq -r '. | @csv'"   #  https://stackoverflow.com/questions/32960857/how-to-convert-arbitrary-simple-json-to-csv-using-jq
-#alias xml2csv="oq -i xml -r '. | @csv'"  # https://github.com/Blacksmoke16/oq
+alias jsonmin=jsoncanonize.py
 alias feed2json=xml2json.py
 alias rss2json=xml2json.py
-alias any2json="fq . "  # https://github.com/wader/fq
+#alias any2json="fq . "  # https://github.com/wader/fq
+alias 2json="jc --pretty --asciitable "  # https://github.com/kellyjonbrazil/jc/discussions/412
+alias asciitable2json="jc --pretty --asciitable "
+alias jsonui="fx " # TODO: start expanded https://github.com/antonmedv/fx/discussions/249
 
 alias alert=notify
 #alias alert=dialog
