@@ -145,7 +145,7 @@ case "$INPUTFILEEXT" in
 		#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 		
 		WAVETMPFILE=/tmp/fakeflac_$$.wav
-		ffmpeg -v quiet -i "$INPUTFILE" -acodec pcm_s16le -f wav $WAVETMPFILE
+		ffmpeg -v quiet -i "$INPUTFILE" -acodec pcm_s16le -ar 44100 -f wav $WAVETMPFILE
 		auCDtect $WAVETMPFILE
 		#BUGGY: ffmpeg -v quiet -i "$INPUTFILE" -acodec pcm_s16le -f wav pipe:1 | auCDtect --
 		#fakeflac "$INPUTFILE"

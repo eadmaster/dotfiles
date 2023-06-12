@@ -24,8 +24,8 @@ URL="https://archive.org/download/no-intro-2021/${NOINTRO_SYSTEM_NAME}.zip/${INP
 ESCAPED_URL=$(urlencode "$URL")
 echo "trying $ESCAPED_URL ..."
 
-#curl --fail --remote-time   -o "$INPUTFILENAME.zip" "$ESCAPED_URL"
-#[ $? -eq 0 ] && exit 0
+curl --fail --remote-time   -o "$INPUTFILENAME.zip" "$ESCAPED_URL"
+[ $? -eq 0 ] && exit 0
 
 # alternative
 URL="https://archive.org/download/nointro.$INPUTFILEEXT/$INPUTFILENAME.7z"

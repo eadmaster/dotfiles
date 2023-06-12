@@ -157,7 +157,7 @@ fi
 echo "_APPENDED_OPTIONS=$_APPENDED_OPTIONS"
 #enable -n command
 #command -p retroarch --verbose $_APPENDED_OPTIONS "$@"  # --verbose --log-file /r/retroarch_log.txt  
-/usr/games/retroarch --verbose $_APPENDED_OPTIONS "$@"
+/usr/games/retroarch  $_APPENDED_OPTIONS "$@"  # --verbose
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 #$HOME/github/RetroArch/retroarch --verbose $_APPENDED_OPTIONS "$@"

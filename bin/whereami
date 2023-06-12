@@ -1,7 +1,7 @@
 #!/bin/sh
 
 command -p whereami "$@"
-_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 if [ ! -z "$ANDROID_ROOT" ]; then
 	# using the Termux:API add-on
@@ -23,10 +23,10 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 fi
 
 # read from envvars
-if [ ! -z "$LAT" ] && [ ! -z "$LON" ] && [ -z "$1" ]; then
+if [ ! -z "$LAT" ] && [ ! -z "$LON" ]; then  #  && [ -z "$1" ]
 	echo "$(basename $0) info: coords from envvars LAT,LON:" >&2
 	echo "$LAT,$LON"
-	exit 0
+	#exit 0
 fi
 
 # alternative using DBUS GeoClue https://trollheaven.wordpress.com/2016/09/26/spionage-bei-linux-systemen/  https://unix.stackexchange.com/questions/121269/how-to-talk-to-geoclue-through-its-dbus-interface

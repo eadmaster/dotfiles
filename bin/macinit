@@ -69,6 +69,7 @@ alias call=source
 #alias chkdsk="sudo fsck -v -r"
 alias chkdsk="sudo dosfsck -w -r -l -a -v -t"
 alias scandisk=chkdsk
+alias scandisk.ext="e2fsck -vfy "
 #alias defrag=shake
 alias ipconfig=ifconfig
 alias mem="free -h"
@@ -209,17 +210,18 @@ alias settag=filetag
 alias flush=sync
 #alias commit=sync
 
-alias now=timestampsget
-alias gettimestamps=timestampsget
-#alias datesget=timestampsget
-#alias timestamp=timestampsget
-alias tsget=timestampsget
-timezoneget() { cat /etc/timezone || echo "$TZ" ; }
-alias tzget=timezoneget
+alias now=timestamps
+alias gettimestamps=timestamps
+#alias datesget=timestamps
+#alias timestamp=timestamps
+alias tsget=timestamps
+timezone() { cat /etc/timezone || echo "$TZ" ; }
+alias tzget=timezone
 
-alias locationget="whereami --raw"
-alias positionget=locationget
-alias gpsget=getlocation
+alias location="whereami --raw"
+alias position=location
+alias gpsget=location
+alias getposition=location
 
 alias dateset="touch -c -d"
 alias chdate=dateset
@@ -490,20 +492,24 @@ alias poke=pspoke
 
 # ucon64 aliases
 if which ucon64 >/dev/null 2>&1 ; then
-    #alias ips="ucon64 --nbak -i"  # apply IPS PATCH to ROM (IPS<=v1.2)
-    #alias ppf="ucon64 --nbak --ppf"  # apply PPF PATCH to IMAGE (PPF<=v2.0)
-    ips() { [ -z "$1" ] && echo "usage: $FUNCNAME ROMFILE PATCHFILE" && return;  ucon64 --nbak -i "$1" "$2" ; }
-    gg() { [ -z "$1" ] && echo "usage: $FUNCNAME CODE ROMFILE" && return;  ucon64 --nbak --gg=$1 "$2" ; }  # apply Game Genie code(s) permanently
-    alias fixrom="ucon64 --nbak --chk"  # fix rom checksum in header
-    alias fixhead="ucon64 --nbak --chk"  # fix rom checksum in header
-    mkips() { [ -z "$1" ] && echo "usage: $FUNCNAME ORIGINAL PATCHED" && return; ucon64 --nbak --mki="$1" "$2"; }  # make an ips patch (max 32MB)
-    mkaps() { [ -z "$1" ] && echo "usage: $FUNCNAME ORIGINAL PATCHED" && return; ucon64 --nbak --mka="$1" "$2"; }  # make an aps patch
-    mkppf() { [ -z "$1" ] && echo "usage: $FUNCNAME ORIGINAL PATCHED" && return; ucon64 --nbak --mkppf="$1" "$2"; }  # make a ppf patch
-    alias addheadrom="ucon64 --nbak --ins"
-    alias addromhead=addromhead
-    alias rmheadrom="ucon64 --nbak --stp"
-    alias rmromhead=rmheadrom
-    alias renrom="ucon64 --rdat"
+	#OLD: alias ips="ucon64 --nbak -i"  # apply IPS PATCH to ROM (IPS<=v1.2)
+	#OLD: alias ppf="ucon64 --nbak --ppf"  # apply PPF PATCH to IMAGE (PPF<=v2.0)
+	ips() { [ -z "$1" ] && echo "usage: $FUNCNAME ROMFILE PATCHFILE" && return;  ucon64 --nbak -i "$1" "$2" ; }
+	gg() { [ -z "$1" ] && echo "usage: $FUNCNAME CODE ROMFILE" && return;  ucon64 --nbak --gg=$1 "$2" ; }  # apply Game Genie code(s) permanently
+	alias gamegenie=gg
+	alias fixrom="ucon64 --nbak --chk"  # fix rom checksum in header
+	alias fixhead="ucon64 --nbak --chk"  # fix rom checksum in header
+	mkips() { [ -z "$1" ] && echo "usage: $FUNCNAME ORIGINAL PATCHED" && return; ucon64 --nbak --mki="$1" "$2"; }  # make an ips patch (max 32MB)
+	mkaps() { [ -z "$1" ] && echo "usage: $FUNCNAME ORIGINAL PATCHED" && return; ucon64 --nbak --mka="$1" "$2"; }  # make an aps patch
+	mkppf() { [ -z "$1" ] && echo "usage: $FUNCNAME ORIGINAL PATCHED" && return; ucon64 --nbak --mkppf="$1" "$2"; }  # make a ppf patch
+	alias addheadrom="ucon64 --nbak --ins"
+	alias addromhead=addromhead
+	alias rmheadrom="ucon64 --nbak --stp"
+	alias rmromhead=rmheadrom
+	alias renrom="ucon64 --rdat"
+	alias byteswap="ucon64 --nbak --swap"  # ALT.: byteswap() { dd if="$1" of="$1.swapped" conv=swab; }  #  https://stackoverflow.com/questions/6438099/command-line-to-reverse-byte-order-change-endianess
+	alias byteswap2="ucon64 --nbak --swap2"
+	alias wordswap="ucon64 --nbak --swap2"
 fi
 
 xdelta1patch() { [ -z "$1" ] && echo "usage: %0 XDELTAFILE INPUTFILE" && return; xdelta patch "$1" "$2" "$1.patched" ; }
@@ -538,8 +544,6 @@ alias delhead=rmhead
 #alias truncatehead=rmhead
 rmtail() { truncate -c -s-$2 "$1"; }  # ALT.: ucon64 --strip=$2 "$1"
 #alias strip=rmtail
-byteswap() { dd if="$1" of="$1.swapped" conv=swab; }  # ALT. ucon64 --nbak --swap"  https://stackoverflow.com/questions/6438099/command-line-to-reverse-byte-order-change-endianess
-alias wordswap="ucon64 --nbak --swap2"  # TODO: alternative
 #alias swapendianess=rax2 -e "$1"  # swap an immediate value
 
 alias mp=mplayer
@@ -549,8 +553,8 @@ alias mp=mplayer
 
 #alias im=imconvert
 #alias magick=imconvert
-imgresize() { imconvert "$1" -resize $2 "$2_$1" ; }
-imgsetdpi() { imconvert -units PixelsPerInch "$1" -density $2 "$2dpi_$1" ; }
+imgresize() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE 00%|pixel_width[x00%|pixel_height]" && return;  imconvert "$1" -resize $2 "$2_$1" ; }
+imgsetdpi() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE NEW_DPI" && return;  imconvert -units PixelsPerInch "$1" -density $2 "$2dpi_$1" ; }
 #alias imgcrop=...  # from https://9fans.github.io/plan9port/man/man1/crop.html
 #alias imgtogif, imgtoppm, imgtopng, toico=...  # from https://9fans.github.io/plan9port/man/man1/jpg.html
 
@@ -1444,6 +1448,8 @@ alias phpserv="php -S 0.0.0.0:8000"
 alias ilua=croissant
 alias luainstall="luarocks --local install"
 
+alias idmd=drepl  # interactive D shell  https://github.com/dlang-community/drepl
+
 alias ikotlin=ki-shell  # https://github.com/Kotlin/kotlin-interactive-shell
 
 # gpg aliases
@@ -1457,10 +1463,9 @@ if which gpg >/dev/null 2>&1 ; then
     alias gpggetkey="gpg --recv-keys"
     alias gpgverify="gpg --verbose --verify"
     # symmetric
-    alias gpgcrypt="gpg -a -c --pinentry-mode=loopback --no-symkey-cache --verbose"
-    alias gpgencrypt=gpgcrypt
-    alias aes=gpgcrypt
-    alias gpgdecrypt="gpg -d --use-embedded-filename --pinentry-mode=loopback --no-symkey-cache --verbose"
+    #alias gpgcrypt="gpg -a -c --pinentry-mode=loopback --no-symkey-cache --verbose"
+    #alias gpgencrypt=gpgcrypt
+    #alias gpgdecrypt="gpg -d --use-embedded-filename --pinentry-mode=loopback --no-symkey-cache --verbose"
 fi
 
 alias certutil="certutil -d $FIREFOX_PROFILE_PATH"  # fix for SEC_ERROR_LEGACY_DATABASE
@@ -1472,6 +1477,9 @@ alias pdfchecksignature=pdfsig  #-nssdir $HOME/.pki/nssdb/
 
 smimesign() { openssl smime -sign -signer $SSL_CERT_FILE -inkey $SSL_CERT_FILE -in "$*" -outform DER -nodetach -out "$@.p7m" ; }
 smimeencrypt() { openssl smime -encrypt $SSL_CERT_FILE -in "$1" -outform DER -nodetach -out "$1.p7m" ;   }
+#alias encrypt="openssl enc -e -base64 -aes-256-cbc"  # MEMO: outputs no header
+#alias decrypt="openssl enc -d -base64 -aes-256-cbc"
+#alias aes=encrypt
 
 encrypt() { 7z a -p "$1.zip" "$1" ; }
 
@@ -1487,7 +1495,7 @@ encrypt() { 7z a -p "$1.zip" "$1" ; }
 #alias utf8=unicode
 #ugrep() { egrep -i "^[0-9a-f]{4,} .*$*" $(locate -l 1 CharName.pm) | while read h d; do /usr/bin/printf "\U$(printf "%08x" 0x$h)\tU+%s\t%s\n" $h "$d"; done ; }  # req. libunicode-string-perl and locate    https://www.commandlinefu.com/commands/view/7535/look-up-a-unicode-character-by-name
 alias findunicodecharbyname=ugrep
-alias name2unicode=ugrep
+#alias name2unicode=ugrep
 alias unicode2name="unicode -i utf-8 -C USE_COLOUR"
 #unicode2name() { echo -n "$*" | uniname ; }
 # alt.: https://github.com/pemistahl/chr/
@@ -1889,7 +1897,7 @@ if ! which rg >/dev/null 2>&1 ; then
     #rg() { grep -r -I -n -H  --exclude \*.min.js --color=always "$@" | cut -c 1-400 ; }
     alias rg="grep -r -I -n -H  --exclude \*.min.js --color=always"
 else
-    alias rg="rg --max-columns 1000 --no-binary --hidden --ignore-case"
+    alias rg="rg --max-columns 200 --no-binary --hidden --ignore-case"
     # --glob '!*.min.*'"  # exclude minified code
     # ... https://github.com/BurntSushi/ripgrep/
 fi
@@ -2045,8 +2053,6 @@ if which arduino-cli >/dev/null 2>&1 ; then
 fi
 
 alias vscode=code
-
-alias idmd=drepl  # interactive D shell  https://github.com/dlang-community/drepl
 
 alias curl2python=uncurl  # https://github.com/spulec/uncurl
 
