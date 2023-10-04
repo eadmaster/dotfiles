@@ -37,9 +37,9 @@ case $INPUTFILEEXT in
 	gba ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mgba_libretro.so -c "$RETROARCH_CONFIG_PATH/mgba.cfg"" ;;
 	#nds ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/desmume_libretro.so -c "$RETROARCH_CONFIG_PATH/desmume.cfg"" ;;
 	nds ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/melonds_libretro.so -c "$RETROARCH_CONFIG_PATH/melonds.cfg"" ;  [ "$(hostname)" = "PICCIOTTO3" ] && export MESA_GL_VERSION_OVERRIDE=3.30 ;;
-	#sms|smd|md|gen ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/genesis_plus_gx_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus.cfg"" ;;
+	sms|smd|md|gen ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/genesis_plus_gx_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus.cfg"" ;;
 	#sms|smd|md|gen ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/genesis_plus_gx_wide_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus.cfg"" ;;
-	sms|smd|md|gen ) _APPENDED_OPTIONS="-L $HOME/github/Genesis-Plus-GX/genesis_plus_gx_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus.cfg"" ;;
+	#sms|smd|md|gen ) _APPENDED_OPTIONS="-L $HOME/github/Genesis-Plus-GX/genesis_plus_gx_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus.cfg"" ;;
 	32x ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/picodrive_libretro.so -c "$RETROARCH_CONFIG_PATH/picodrive.cfg"" ;;
 	#grep -q "(32X)" <<< "$INPUTFILE" && _APPENDED_OPTIONS="-c "$RETROARCH_CONFIG_PATH/picodrive.cfg"" ;;
 	gg ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/genesis_plus_gx_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus-gg.cfg"" ;;
@@ -117,8 +117,8 @@ fi
 #[ "$2" = "yaba" ] && [ "$(hostname)" = "PICCIOTTO3" ] && export MESA_GL_VERSION_OVERRIDE=3.30
 [ "$2" = "kronos" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/kronos_libretro.so -c "$RETROARCH_CONFIG_PATH/kronos.cfg""
 [ "$2" = "psxold" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/_OLD/mednafen_psx_hw_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-psx.cfg""
-#[ "$2" = "pcsx" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/pcsx_rearmed_libretro.so -c "$RETROARCH_CONFIG_PATH/pcsx_rearmed.cfg""
-[ "$2" = "pcsx" ] && _APPENDED_OPTIONS="-L $HOME/github/pcsx_rearmed/pcsx_rearmed_libretro.so -c "$RETROARCH_CONFIG_PATH/pcsx_rearmed.cfg""
+[ "$2" = "pcsx" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/pcsx_rearmed_libretro.so -c "$RETROARCH_CONFIG_PATH/pcsx_rearmed.cfg""
+#[ "$2" = "pcsx" ] && _APPENDED_OPTIONS="-L $HOME/github/pcsx_rearmed/pcsx_rearmed_libretro.so -c "$RETROARCH_CONFIG_PATH/pcsx_rearmed.cfg""
 [ "$2" = "dc" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/flycast_libretro.so -c "$RETROARCH_CONFIG_PATH/flycast.cfg""
 [ "$2" = "play" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/play_libretro.so -c "$RETROARCH_CONFIG_PATH/play.cfg""
 [ "$2" = "ps2" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/play_libretro.so -c "$RETROARCH_CONFIG_PATH/play.cfg""
@@ -157,7 +157,7 @@ fi
 echo "_APPENDED_OPTIONS=$_APPENDED_OPTIONS"
 #enable -n command
 #command -p retroarch --verbose $_APPENDED_OPTIONS "$@"  # --verbose --log-file /r/retroarch_log.txt  
-/usr/games/retroarch  $_APPENDED_OPTIONS "$@"  # --verbose
+/usr/games/retroarch  $_APPENDED_OPTIONS --verbose "$@"  # 
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 #$HOME/github/RetroArch/retroarch --verbose $_APPENDED_OPTIONS "$@"

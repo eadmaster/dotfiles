@@ -41,5 +41,9 @@ echo
 # source: https://unix.stackexchange.com/questions/482755/is-there-a-command-to-display-colors-when-giving-hex-value-in-terminal
 #printf '\e]4;1;%s\a\e[0;41m    \n    \n\e[m' $COLOR_QUERY
 
-# hex2rgb  https://github.com/abhimanyu003/sttr
-sttr hex-rgb $COLOR_QUERY
+# TODO: if $COLOR_QUERY starts with "#"
+## hex2rgb  https://github.com/abhimanyu003/sttr
+#sttr hex-rgb $COLOR_QUERY
+
+# https://github.com/sharkdp/pastel
+pastel color $COLOR_QUERY

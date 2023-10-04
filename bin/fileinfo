@@ -293,7 +293,8 @@ case $INPUTFILETYPE in
 		identify "$INPUTFILE"  # from ImageMagick package
 		[ $? -eq 127 ] && imconvert -identify "$INPUTFILE"  # from ImageMagick package
 		exiftool "$INPUTFILE"
-		file "$INPUTFILE"
+		oiiotool -v --info "$INPUTFILE"
+		#file "$INPUTFILE"
 		# detect upscaled images  https://github.com/0x09/resdet
 		resdet -v0 "$INPUTFILE" && echo "image upscaled according to resdet"
 		exit $?
@@ -366,6 +367,13 @@ case $INPUTFILETYPE in
 	
 	#application/octet-stream )  # unknwon mime type
 	
+	application/dicom )  # medical imaging https://en.wikipedia.org/wiki/DICOM
+		# via ImageIO (needs a plugin)
+		oiiotool -v --info "$INPUTFILE"
+		# from dcmtk
+		dcmdump --print-color "$INPUTFILE"
+		exit $?
+		;;
 esac
 
 # if it is a small file (<1GB) compute the hashes, entropy, etc.

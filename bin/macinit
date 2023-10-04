@@ -69,7 +69,7 @@ alias call=source
 #alias chkdsk="sudo fsck -v -r"
 alias chkdsk="sudo dosfsck -w -r -l -a -v -t"
 alias scandisk=chkdsk
-alias scandisk.ext="e2fsck -vfy "
+alias scandisk.ext="sudo e2fsck -vfy "
 #alias defrag=shake
 alias ipconfig=ifconfig
 alias mem="free -h"
@@ -551,12 +551,26 @@ alias mp=mplayer
 #mdecoder() { mplayer -ao pcm:waveheader:file=$*.wav $*; }
 #midentify() { mplayer -identify -vo null -ao null -frames 0 $* 2> /dev/null | grep ID; }
 
-#alias im=imconvert
-#alias magick=imconvert
-imgresize() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE 00%|pixel_width[x00%|pixel_height]" && return;  imconvert "$1" -resize $2 "$2_$1" ; }
-imgsetdpi() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE NEW_DPI" && return;  imconvert -units PixelsPerInch "$1" -density $2 "$2dpi_$1" ; }
+if which imconvert >/dev/null 2>&1 ; then
+	#alias im=imconvert
+	#alias magick=imconvert
+	imgresize() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE 00%|pixel_width[x00%|pixel_height]" && return;  imconvert "$1" -resize $2 "$2_$1" ; }
+	imgsetdpi() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE NEW_DPI" && return;  imconvert -units PixelsPerInch "$1" -density $2 "$2dpi_$1" ; }
+fi
+
+if which oiiotool >/dev/null 2>&1 ; then
+	#alias imgaddmetadata="oiiotool -v --sattrib"
+	#alias imgaddcameramake
+	#alias imgaddcameramodel
+	#alias imgaddlocation
+	#alias imgadddescription="oiiotool -v --caption"
+	alias imglosslessrotate90="oiiotool -v --orientcw"
+	alias imgautotrim="oiiotool -v --autotrim"
+fi
+
 #alias imgcrop=...  # from https://9fans.github.io/plan9port/man/man1/crop.html
 #alias imgtogif, imgtoppm, imgtopng, toico=...  # from https://9fans.github.io/plan9port/man/man1/jpg.html
+
 
 alias convert=fileconvert
 #[ -f "$THIS_SCRIPT_DIR/fileconvert" ] || alias convert="ffmpeg -i"
@@ -569,6 +583,10 @@ alias flacgain="metaflac --add-replay-gain"
 
 alias ffmpeglscodecs="ffmpeg -codecs"
 flac2mp3() { ffmpeg -i "$1" -xerror -compression_level 0 -aq 0  -metadata description="encoded by eadmaster" "$2" ; }
+
+#alias ffmpeglosslessrotate=...
+
+cuesplit() { [ -z "$1" ] && echo "usage: $FUNCNAME AUDIOFILE CUEFILE" && return; shntool split "$1" -f "$2" -t "%p - %a - %n - %t" -o flac; }
 
 #alias pmidi="aplaymidi -p 128:0" -> MOVED IN pmidi
 alias pm=pmidi
@@ -594,6 +612,7 @@ alias nstart="service networking start"
 alias nstop="service networking stop" 
 alias smbstart="service smb start"
 alias smbstop="service smb stop"
+alias setwifihotspot="service softap start"
 
 alias alsa="service alsa"
 alias alsatest="speaker-test"
@@ -798,6 +817,7 @@ alias copyfile=pbcopyfile
 #alias kpaste=pbpastefile
 alias pastefile=pbpastefile
 #TODO: clipboardentries=https://www.nirsoft.net/utils/inside_clipboard.html
+#alias cb=clipboard  # https://github.com/Slackadays/Clipboard
 
 #alias macget="ifconfig -a | grep HWaddr"  # moved in script
 #alias ipget="ifconfig || ip addr"  # moved in script
@@ -976,7 +996,7 @@ alias packagesls="package list | less"
 alias install="package install"
 alias uninstall="package uninstall"
 alias unistall="package uninstall"
-#alias findpackage="package find"
+alias findpackage="package find"
 #alias packagefind="package find"
 #alias pkgsearch="package find"
 #alias packageinfo="package info"
@@ -1071,6 +1091,13 @@ fi
 alias color=findcolor
 #alias colorname=findcolor
 
+# pastel aliases  https://github.com/sharkdp/pastel
+if which pastel >/dev/null 2>&1 ; then
+    alias colorpick="pastel pick"
+    alias colormix="pastel mix"
+    alias colorcomplement="pastel complement"
+fi
+
 #alias scite=geany
 alias khex=okteta
 
@@ -1115,6 +1142,7 @@ alias octalpermdecode=umaskdecode
 alias byte2human=bytes2human
 bits2range() { echo -n "0 .. " ; echo "2 ^ $1 - 1" | bc ; }  # TODO: divide by 2 for signed integers
 range2bits() { python -c "import math ; print(int(math.floor(math.log($1)/math.log(2)) + 1))" ; } # TODO: add an extra bit for the sign
+alias biteditor="bitwise -i"  # https://github.com/mellowcandle/bitwise
 
 [ -f "$THIS_SCRIPT_DIR/hexcmp" ] || hexcmp() { ucon64 -c="$@"; }
 alias hexcmp=hexdiff
@@ -1196,7 +1224,7 @@ alias reloadudevrules="sudo udevadm control --reload-rules ; sudo udevadm trigge
 
 alias retroarch_network_command="nc -u -w1 127.0.0.1 55355"
 
-alias state2mem="STATE2HI_DEBUG=1 state2hi"
+alias state2mem="STATE2HI_DEBUG=1 state2hi.py"
 
 alias dict=sdcv
 #alias findword=dict
@@ -1221,6 +1249,7 @@ alias simplify=mathsimplify
 #alias math=mathsimplify
 #alias plot="gnuplot -persistent -e plot "
 alias plot=mathplot
+alias functionplot=mathplot
 alias factorize=factor
 alias mean=avg
 #isprime() { factor.sh $1 | grep -qE '^(.*): \1$' ; }  # && echo prime || echo "not prime"
@@ -1850,6 +1879,7 @@ alias hdmicec=cec-client
 alias vgacontrol=ddccontrol
 
 if which pip >/dev/null 2>&1 ; then 
+	#alias pip3="python3 -m pip"
     alias pythonmodulesls="pip2 list ; pip3 list"
     alias pipinstall="pip3 install --no-deps --prefer-binary"
     alias pipuninstall="pip3 uninstall"
@@ -1911,7 +1941,9 @@ alias svnget="svn checkout"
 # alias mp3gain=replaygain
 alias mp3gainall="mp3gain -r -T -c"
 
+alias imghash=mediahash
 alias audiohash=mediahash
+alias videohash=mediahash
 
 alias langdet="polyglot detect"
 alias langrec=langdet
@@ -1993,10 +2025,11 @@ fi
 # Bliss-Box_CLI aliases
 if which Bliss-Box_CLI >/dev/null 2>&1 ; then
     # TODO : fix permissions?  https://unix.stackexchange.com/questions/44308/understanding-udev-rules-and-permissions-in-libusb
-    alias blissboxinfo="Bliss-Box_CLI get eeprom_settings ; Bliss-Box_CLI get controller"
-    alias blissboxreset="Bliss-Box_CLI set reset"
-    alias blissboxresetmapping="Bliss-Box_CLI set mapper dft"
-    #alias blissboxsetanalogemu="Bliss-Box_CLI set UDLR 0x10"
+    alias blissboxcli="sudo $(which Bliss-Box_CLI)"
+    alias blissboxinfo="blissboxcli get eeprom_settings ; blissboxcli get controller"
+    alias blissboxreset="blissboxcli set reset"
+    alias blissboxresetmapping="blissboxcli set mapper dft"
+    #alias blissboxsetanalogemu="blissboxcli set UDLR 0x10"
 fi
 
 alias testmic=micechotest
@@ -2136,6 +2169,14 @@ alias firewallrules="iptables --list-rules"
 alias zipapp="python -m zipapp"
 alias pyapp=zipapp
 
-alias cb=clipboard
+if which minimodem >/dev/null 2>&1 ; then
+	#alias file2audio="minimodem --tx 300"
+	alias ascii2audio="minimodem --tx --ascii 300"
+	alias audio2ascii="minimodem --rx --ascii 300"
+	alias ascii2flac="minimodem --tx --ascii 300 --file"
+fi
+
+alias fakeflac=true-bitrate.py
+alias cutoffcheck=true-bitrate.py
 
 unset THIS_SCRIPT_DIR

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # add transliteration next to every lrc line
 
@@ -8,25 +8,32 @@ export LC_ALL=C.UTF-8
 [ -z "$1" ] && exit
 #[ ! -z ] OUTFILE="$2"
 
-echo "[by:eadmaster (automatic transliteration, may contain errors)]\r"
-
+echo -e "[by:eadmaster (automatic transliteration, may contain errors)]\r"
+echo -e "\r"
 
 while read LINE          
 do
 	LINE="$( echo -n "$LINE" | sed -e 's/$/\r/' )"   # force windows newlines
+
 	# skip lines ending with "]"
 	#echo -n "$LINE" | grep -q '\]$'
 	#[ $? -eq 0 ] && continue
+	
 	# remove the parentesis
-	LINE="$( echo -n "$LINE" | sed 's/([^)]*)//g' )"
+	#LINE="$( echo -n "$LINE" | sed 's/([^)]*)//g' )"
 
 	TIMETAG="$( echo -n "$LINE" | rev | cut -d] -f2- | rev )"
 	LRCLINE="$( echo -n "$LINE" | rev | cut -d] -f1 | rev )"
-	TRANSLINE="$( jap2romaji "$LRCLINE" )"
 	#TRANSLINE="$( echo -n "$LRCLINE" | jakaroma 2> /dev/null | kanji2kana | kana2romaji | uconv -x 'Any-Latin;Latin-ASCII' | tr -d '\n' )"
-	if [ -z "$TIMETAG" ]; then
-		echo ""
+	TRANSLINE="$( jap2romaji "$LRCLINE" )"
+	
+	# fix 1st char uppercase
+	TRANSLINE="$( echo -n "$TRANSLINE" | cut -c1 -z | tr -d '\0' | tr [:upper:] [:lower:] ; echo -n "$TRANSLINE" | cut -c2-)"
+
+	#if [ -z "$TIMETAG" ]; then
+	if [[ ${TIMETAG: -1} = $'\r' ]]; then
+		echo -e "\r"
 	else
-		echo "${TIMETAG}]$TRANSLINE"  #>> $OUTFILE
+		echo -e "${TIMETAG}]$TRANSLINE\r"  #>> $OUTFILE
 	fi
 done  <"$1"

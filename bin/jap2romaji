@@ -4,7 +4,7 @@ INPUT="$1"
 [ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
 [ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
 
-echo "$INPUT" | { mecab --node-format="%f[5] " --eos-format= --unk-format=%m || jakaroma  2> /dev/null  || cat ; } | { uconv -x 'Any-Latin;Latin-ASCII' || cat ; }
+echo "$INPUT" | { cutlet || mecab --node-format="%f[5] " --eos-format= --unk-format=%m || jakaroma  2> /dev/null  || cat ; } | { uconv -x 'Any-Latin;Latin-ASCII' || cat ; }
 
 # ALTERNATIVES for Kanji transliteration:
 # INACCURATE:  kakasi -iutf8 -outf8 -Ha -Ka -Ea -ka -Ja -s

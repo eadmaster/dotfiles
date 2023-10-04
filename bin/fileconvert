@@ -219,6 +219,8 @@ case $INPUTFILETYPE in
 		fi
 		imconvert -verbose "$INPUTFILE" "$OUTPUTFILE"
 		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		oiiotool -v -i "$INPUTFILE" -o "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 		ffmpeg -i "$INPUTFILE" "$OUTPUTFILE"
 		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 		# TODO: iconvert, oiiotool ... (from openimageio-tools)

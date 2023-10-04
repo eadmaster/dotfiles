@@ -62,7 +62,7 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 					# need to apply a custom offset (don't ask me why :-), tested with libretro-yabause only atm
 					address = address[1:]
 					address = "1" + address
-		
+
 				# TODO: parse all code types, depends on system https://macrox.gshi.org/The%20Hacking%20Text.htm#playstation_code_types
 				
 				# guess value size
@@ -77,7 +77,7 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 					code_size = 5
 				
 				# system-specific checks
-				if input_sys_str=="sat":
+				if input_sys_str in ["sat", "ss", "saturn"]:
 					if code_prefix[0]=='3':  # 3XXXXXXX 00YY = 8-bit Constant Write
 						code_size = 3  # 8bit
 					elif code_prefix[0] in ['0', '1']:  # 1XXXXXXX YYYY = 16-bit Constant Write
@@ -93,7 +93,7 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 					else:
 						sys.stderr.write("err: unsupported code type (skipped): %s\n" % line)
 						continue
-				elif input_sys_str=="ps1":
+				elif input_sys_str in ["ps1", "psx"]:
 					if code_prefix.startswith('30'):   # 30XXXXXX = 8-bit Constant Write
 						code_size = 3  # 8bit
 					elif code_prefix.startswith('80'):  # 80XXXXXX = 16-bit Constant Write
@@ -153,5 +153,7 @@ if __name__ == "__main__":
 	input_cht_file_str = infile.read()
 	
 	input_sys_str = args.system
+	if not input_sys_str:
+		sys.stderr.write("warning: no system specified, may produce wrong results\n")
 	
 	chtnative2retroarch(input_cht_file_str, input_sys_str, args.outfile)

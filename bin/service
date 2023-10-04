@@ -13,11 +13,11 @@ case $SERVICE_NAME in
 	redis )  export SERVICE_NAME=redis-server  ;;
 	ambilight|bobli*|adalight )  export SERVICE_NAME=hyperion@$USER  ;;
 	amule|emule )  export SERVICE_NAME=amule-daemon  ;;
-	softap|ap )  export SERVICE_NAME=create_ap  ;;  # TODO: also try hostapd  https://wiki.archlinux.org/index.php/software_access_point
 	#apache* )  export SERVICE_NAME=apache2  ;;
 	#tomcat* )  export SERVICE_NAME=tomcat5.5  ;;
 	*ssh )  export SERVICE_NAME=ssh  ;;
 	internet|network|net )  export SERVICE_NAME=networking  ;;
+	hotspot|softap|ap )  export SERVICE_NAME=hotspot  ;;
 	bt )  export SERVICE_NAME=bluetooth  ;;
 	fluid*|midi )  export SERVICE_NAME=fluidsynth  ;;   #  TODO: also try timidity
 	nzb*|nbz )  export SERVICE_NAME=nzbget  ;;
@@ -175,6 +175,20 @@ elif [ "$SERVICE_NAME" = "samba" ]; then
 	[ $? -eq 0 ] && exit 0
 	#else
 	exit 1
+elif [ "$SERVICE_NAME" = "hotspot" ]; then
+	if [ "$CMD" = "start" ]; then
+		sudo create_ap wlan0 eth0 "$(hostname)_softAP" $WIFI_PASSWORD  --daemon 
+		exit $?
+	elif [ "$CMD" = "status" ]; then
+		sudo create_ap --list-running
+		exit $?
+	elif [ "$CMD" = "stop" ]; then
+		sudo create_ap --stop wlan0
+		exit $?
+	fi
+	exit 1
+	# TODO: also try hostapd  https://wiki.archlinux.org/index.php/software_access_point
+
 elif [ "$SERVICE_NAME" = "networking" ]; then
 	# try various names
 	sudo service networking $CMD

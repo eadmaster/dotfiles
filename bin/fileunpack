@@ -98,10 +98,35 @@ case "$INPUTFILEEXT" in
 		;;
 	
 	gz )
-		gzip -dc < "$INPUTFILE" > "$OUTPUTDIR/$INPUTFILENAME"
+		gzip -dckv "$INPUTFILE" > "$OUTPUTDIR/$INPUTFILENAME"
 		exit $?
 		;;
 
+	xz )
+		xz -dckv "$INPUTFILE" > "$OUTPUTDIR/$INPUTFILENAME"
+		exit $?
+		;;
+
+	bz2 )
+		bzip2 -dckv "$INPUTFILE" > "$OUTPUTDIR/$INPUTFILENAME"
+		exit $?
+		;;
+
+	lz )
+		lzip -dckv "$INPUTFILE" > "$OUTPUTDIR/$INPUTFILENAME"
+		exit $?
+		;;
+
+	lz4 )
+		lz4 -dckv "$INPUTFILE" > "$OUTPUTDIR/$INPUTFILENAME"
+		exit $?
+		;;
+
+	zst )
+		zstd -dckv "$INPUTFILE" > "$OUTPUTDIR/$INPUTFILENAME"
+		exit $?
+		;;
+	
 	tar )
 		tar -v -x -C "$OUTPUTDIR" -f "$INPUTFILE"
 		exit $?
@@ -131,7 +156,7 @@ case "$INPUTFILEEXT" in
 		tar -v -x -J -C "$OUTPUTDIR" -f "$INPUTFILE"
 		exit $?
 		;;
-
+		
 	cab )
 		cabextract -d"$OUTPUTDIR" "$INPUTFILE"
 		exit $?

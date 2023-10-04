@@ -17,31 +17,44 @@ INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
 
 
 case $INPUTFILETYPE in
-	image/*|audio/* )
-		#TODO: alternative using vlc
-		#vlc -I rc "$INPUTFILE" :sout='#std{mux=raw,access=file,dst=-}' vlc://quit | md5sum
+	image/* )
+		# TODO: perceptual hashes https://github.com/corona10/goimagehash/issues/62
 		
-		# TODO: audio fingerprinting
-		
-		ffmpeg -loglevel error -i "$INPUTFILE" -vn -f crc - 2>/dev/null  # faster
-
-		ffmpeg -loglevel error -i "$INPUTFILE" -vn -f md5 - 2>/dev/null
-
-		ffmpeg -loglevel error -i "$INPUTFILE" -vn -f hash - 2>/dev/null  # default to SHA256 (slowest)?
-		
-		exit $?
+		if which oiiotool >/dev/null 2>&1 ; then
+			echo "$0: cryptographic hashes via oiiotool: "
+			oiiotool --hash "$INPUTFILE"
+			echo
+		fi
 		;;
-	
-	video/* )
+		
+	audio/* )
+
+		# audio fingerprinting via Chromaprint  https://github.com/acoustid/chromaprint
+		echo "$0: Chromaprint: "
+		if which fpcalc >/dev/null 2>&1 ; then
+			fpcalc  "$INPUTFILE"  
+		else
+			# https://ffmpeg.org/ffmpeg-formats.html#chromaprint-1
+			ffmpeg -loglevel error  -i "$INPUTFILE" -f chromaprint - 2>/dev/null   # -algorithm 2 
+			# -length SECS   Restrict the duration of the processed input audio (default 120)
+			# -algorithm NUM Set the algorithm method (default 2)
+		fi
+		echo
+		;;
+esac
+
+
+case $INPUTFILETYPE in
+	image/*|audio/*|video/* )
 		# TODO: video fingerprinting
 
+		echo "$0: cryptographic hashes via ffmpeg: "
 		ffmpeg -loglevel error -i "$INPUTFILE" -f crc - 2>/dev/null  # faster
-
-		ffmpeg -loglevel error -i "$INPUTFILE" -f md5 - 2>/dev/null
-
-		ffmpeg -loglevel error -i "$INPUTFILE" -f hash - 2>/dev/null  # default to SHA256 (slowest)?
-
-		exit $?
-		;;
+		#ffmpeg -loglevel error -i "$INPUTFILE" -f md5 - 2>/dev/null
+		ffmpeg -loglevel error -i "$INPUTFILE" -f hash - 2>/dev/null  # default to SHA256 (slowest)
+		echo
 		
+		#TODO: alternative using vlc
+		#vlc -I rc "$INPUTFILE" :sout='#std{mux=raw,access=file,dst=-}' vlc://quit | md5sum
+		;;
 esac
