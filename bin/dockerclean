@@ -7,6 +7,10 @@ echo
 
 docker system prune
 
+docker image prune
+
+docker network prune
+
 # OLD:
 #docker volume rm $(docker volume ls -qf dangling=true)
 #docker rmi $(docker images --filter "dangling=true" -q --no-trunc)

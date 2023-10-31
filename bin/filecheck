@@ -144,6 +144,9 @@ case "$INPUTFILEEXT" in
 		flac --test "$INPUTFILE"  # --silent 
 		#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 		
+		# simply check cutoff frequency https://github.com/dvorapa/true-bitrate
+		#true-bitrate.py "$INPUTFILE" 
+		
 		WAVETMPFILE=/tmp/fakeflac_$$.wav
 		ffmpeg -v quiet -i "$INPUTFILE" -acodec pcm_s16le -ar 44100 -f wav $WAVETMPFILE
 		auCDtect $WAVETMPFILE

@@ -556,6 +556,7 @@ if which imconvert >/dev/null 2>&1 ; then
 	#alias magick=imconvert
 	imgresize() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE 00%|pixel_width[x00%|pixel_height]" && return;  imconvert "$1" -resize $2 "$2_$1" ; }
 	imgsetdpi() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE NEW_DPI" && return;  imconvert -units PixelsPerInch "$1" -density $2 "$2dpi_$1" ; }
+	imgs2pdf() { imconvert "*.{png,jpg,jpeg}" -quality 100 outfile.pdf ; }
 fi
 
 if which oiiotool >/dev/null 2>&1 ; then
@@ -570,7 +571,6 @@ fi
 
 #alias imgcrop=...  # from https://9fans.github.io/plan9port/man/man1/crop.html
 #alias imgtogif, imgtoppm, imgtopng, toico=...  # from https://9fans.github.io/plan9port/man/man1/jpg.html
-
 
 alias convert=fileconvert
 #[ -f "$THIS_SCRIPT_DIR/fileconvert" ] || alias convert="ffmpeg -i"
@@ -1823,6 +1823,10 @@ alias findlatestchanged="ls -a -R -t1 -l -p -h |  grep -v / |  head -n 10"  # ht
 alias findchangedtoday="find -mtime -1 -ls"
 alias latestls=findlatestchanged  
 
+alias findbrokensymlinks="find . -xtype l"
+#TODO: symlink2hardlink=find -type l -exec bash -c 'ln -f "$(readlink -m "$0")" "$0"' {} \;
+#  https://stackoverflow.com/questions/8377312/how-to-convert-symlink-to-regular-file
+
 alias findup=finddup
 alias fdupes=finddup
 
@@ -1866,7 +1870,7 @@ alias radiols=sdrls
 alias wificardsls="iw list"
 #alias wifiapls=wifiscan
 #alias apscan=wifiscan
-alias wifils=wifiscan
+#alias wifils=wifiscan
 alias networkcardsls="nmap --iflist ; ip addr"
 #alias nicsls=networkcardsls
 
@@ -1888,6 +1892,8 @@ if which pip >/dev/null 2>&1 ; then
     alias pip2install="pip2 install --no-deps --prefer-binary"
     alias pip2uninstall="pip2 uninstall"
     # TODO: pipdeps="pip install --no-install --verbose"   # https://stackoverflow.com/questions/11460681/listing-the-dependencies-of-a-package-using-pip
+    
+    alias mkvenv="python3 -m venv . ; source bin/activate"
 fi
 
 if which go >/dev/null 2>&1 ; then 
@@ -1922,14 +1928,14 @@ fi
 # TODO: check GNU grep installed
 #alias grep="grep -I -n --exclude \*.min.js --color=always --devices=skip"
 
-if ! which rg >/dev/null 2>&1 ; then
-    # rg not found, provide an alternative:
-    #rg() { grep -r -I -n -H  --exclude \*.min.js --color=always "$@" | cut -c 1-400 ; }
-    alias rg="grep -r -I -n -H  --exclude \*.min.js --color=always"
-else
+if which rg >/dev/null 2>&1 ; then
     alias rg="rg --max-columns 200 --no-binary --hidden --ignore-case"
     # --glob '!*.min.*'"  # exclude minified code
     # ... https://github.com/BurntSushi/ripgrep/
+else
+    # rg not found, provide an alternative:
+    #rg() { grep -r -I -n -H  --exclude \*.min.js --color=always "$@" | cut -c 1-400 ; }
+    alias rg="grep -r -I -n -H  --exclude \*.min.js --color=always"
 fi
 alias rga="rga --rga-no-cache"
 alias ack=rg
@@ -1958,10 +1964,9 @@ alias mic2text=mic2speechrec.py
 alias speech2text=mic2speechrec.py
 alias voice2command=mic2command.py
 
-alias aifacedet=facerec
-alias aifacerec=face_recognition
-#TODO: alias aiupscalephoto=SRMD, RealSR ...
-#TODO: alias aigrey2colorphoto=DeOldify ... https://github.com/jantic/DeOldify/issues/389
+#alias aifacedet=facerec
+#alias aifacerec=face_recognition
+#alias aiupscale=realesrgan-ncnn-vulkan  # moved in script
 
 #renext() { rename.ul -vo .$1 .$2 *.$1 ; } 
 renext() { rename.pl -v "s/.$1/.$2/" *.$1 ; } 
@@ -2056,16 +2061,20 @@ alias torrentget=gettorrent
 alias magnetget=gettorrent
 alias magnet2torrent=gettorrent
 
-alias doom="doomsday -game doom1 -file"  # data files in ~/.doomsday/runtime/data/
-alias doom2="doomsday -game doom2 -file"
-alias heretic="doomsday -game heretic -file"
-alias hexen="doomsday -game hexen -file"
-# -basedir %BASEDIR% -userdir %BASEDIR%\user -savedir %RAMDRIVE%\ -w %XRES% -h %YRES% -parse %BASEDIR%\user\autoexec.cfg %*
-# http://dengine.net/dew/index.php?title=Command_line_option_reference
+if which doomsday >/dev/null 2>&1 ; then
+	alias doom="doomsday -game doom1 -file"  # data files in ~/.doomsday/runtime/data/
+	alias doom2="doomsday -game doom2 -file"
+	alias heretic="doomsday -game heretic -file"
+	alias hexen="doomsday -game hexen -file"
+	# -basedir %BASEDIR% -userdir %BASEDIR%\user -savedir %RAMDRIVE%\ -w %XRES% -h %YRES% -parse %BASEDIR%\user\autoexec.cfg %*
+	# http://dengine.net/dew/index.php?title=Command_line_option_reference
+fi
 
-alias quake="fteqw -basegame id1"  # data files in ~/.config/fteqw/
-alias quake2="fteqw -basegame baseq2"
-alias quake3="fteqw -basegame baseq3"
+if which fteqw >/dev/null 2>&1 ; then
+	alias quake="fteqw -basegame id1"  # data files in ~/.config/fteqw/
+	alias quake2="fteqw -basegame baseq2"
+	alias quake3="fteqw -basegame baseq3"
+fi
 
 #alias duke3d="eduke32 -map"  # data files in ~/.config/eduke32/ # http://wiki.eduke32.com/wiki/Command_line_options
 
@@ -2093,6 +2102,7 @@ alias curl2python=uncurl  # https://github.com/spulec/uncurl
 #TODO: alias stdout2null
 
 alias findcomputernearby=findnearby
+alias neighbourscan=findnearby
 alias fing=findnearby
 
 alias smiley=emoji
@@ -2113,8 +2123,14 @@ alias videocut=mediacut
 alias setsoftap=create_ap
 
 alias easysed=sd
+alias easyfind=fdfind
 # TODO: easygit=...
 # TODO: easydd=...
+
+#alias cheat=quickcmdref
+alias help=quickcmdref
+alias usage=quickcmdref
+alias examples=quickcmdref
 
 if which btrfs >/dev/null 2>&1 ; then
     alias brtfsdf="sudo compsize"
@@ -2127,15 +2143,6 @@ if which btrfs >/dev/null 2>&1 ; then
 fi
 
 alias usbfdformat="sudo ufiformat -f 1440 -v  /dev/sdb"
-
-#alias cheat=quickcmdref
-alias help=quickcmdref
-alias usage=quickcmdref
-alias examples=quickcmdref
-
-alias findbrokensymlinks="find . -xtype l"
-#TODO: symlink2hardlink=find -type l -exec bash -c 'ln -f "$(readlink -m "$0")" "$0"' {} \;
-#  https://stackoverflow.com/questions/8377312/how-to-convert-symlink-to-regular-file
 
 # kindle-specific aliases
 if [ ! -z "$KINDLE_TZ" ]; then
@@ -2175,8 +2182,5 @@ if which minimodem >/dev/null 2>&1 ; then
 	alias audio2ascii="minimodem --rx --ascii 300"
 	alias ascii2flac="minimodem --tx --ascii 300 --file"
 fi
-
-alias fakeflac=true-bitrate.py
-alias cutoffcheck=true-bitrate.py
 
 unset THIS_SCRIPT_DIR

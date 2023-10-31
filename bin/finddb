@@ -14,6 +14,7 @@ fi
 _QUERY=$( echo "$_QUERY" | sed 's/\./\\\./g; s/\*/\.\*/g; s/?/./g' )
 
 ugrep -i -I -r -z -w --exclude-dir=_\* --exclude=\*.{html,htm,xml,json} -H  "$_QUERY" "$_SEARCHDIR/" | cut -c 1-260  # TODO: exclude more files
+echo $?
 [ $? -eq 127 ] && grep -i -I -r --exclude-dir=_\* -H  "$_QUERY" "$_SEARCHDIR/"
 [ $? -eq 1 ] && echo "$(basename $0): nothing found" >&2
 exit $?

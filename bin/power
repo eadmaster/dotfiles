@@ -9,7 +9,7 @@ OPEN_RGB_MOUSE_DEVICE_ID=1
 # used for razer keyboards
 OPENRAZER_BASE_PATH=/sys/bus/hid/drivers/razerkbd
 
-MY_ROUTER_ADDR_LIST=("192.168.42.1"  "192.168.1.138"  "192.168.2.1"  "DietPi.local"  "friendlywrt.local")
+MY_ROUTER_ADDR_LIST=("192.168.1.6"  "192.168.42.1"  "192.168.1.138"  "192.168.2.1"  "DietPi.local"  "friendlywrt.local")
 
 # Windows detection
 if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
@@ -266,7 +266,8 @@ off|down )  # OFF COMMANDS
 			# remote shutdown
 			for addr in ${MY_ROUTER_ADDR_LIST[@]}; do
 				echo "$(basename $0) info: trying ${addr}..." >&2
-				ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=3  root@${addr} 'poweroff'
+				ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3  root@${addr} 'poweroff'  # -o BatchMode=yes
+				[ $? -eq 0 ] && exit 0
 				# -oHostKeyAlgorithms=+ssh-rsa -oPubkeyAcceptedAlgorithms=+ssh-rsa   https://forum.openwrt.org/t/unable-to-connect-via-ssh-no-matching-host-key-type-found/114430/24
 			done
 			exit $?
@@ -473,7 +474,8 @@ cycle|reset|reboot ) # RESET COMMANDS
 		*router|*wrt|nanopi|dietpi )
 			for addr in ${MY_ROUTER_ADDR_LIST[@]}; do
 				echo "$(basename $0) info: trying ${addr}..." >&2
-				ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=3 -oHostKeyAlgorithms=+ssh-rsa -oPubkeyAcceptedAlgorithms=+ssh-rsa  root@${addr} 'reboot'
+				ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3  root@${addr} 'reboot'   # -o BatchMode=yes  -oHostKeyAlgorithms=+ssh-rsa -oPubkeyAcceptedAlgorithms=+ssh-rsa 
+				[ $? -eq 0 ] && exit 0
 			done
 			exit $?
 		;;
