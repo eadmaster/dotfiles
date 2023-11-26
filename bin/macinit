@@ -866,6 +866,7 @@ fi
 #alias appendnotes=mynotesappend
 alias np=mynotesappend
 #alias na=mynotesappend
+alias no=mynotesappend
 alias notesp=mynotesp
 
 if [ -d $PENDRIVE/Documents/db ]; then
@@ -895,6 +896,7 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	ps2find() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps2/sonyindex_PS2*.txt ; }
 	pspfind() { grep -i "$1" $PENDRIVE/Documents/db/vg/psp/sonyindex_PSP*.txt ; }
 	ps3find() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps3/ps3tdb.txt ; }
+	ps4find() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps4/*.* ; }
 	wiifind() { grep -i "$1" $PENDRIVE/Documents/db/vg/wii/wiitdb_titles.txt ; }
 	alias ngcfind=wiifind
 	wiiufind() { grep -i "$1" $PENDRIVE/Documents/db/vg/wiiu/wiiutdb_titles.txt ; }

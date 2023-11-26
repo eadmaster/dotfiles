@@ -1,43 +1,50 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import pykakasi
 import sys
 import os
+import string
 
 PROGRAM_NAME = os.path.basename(sys.argv[0])
 
-
-
-def init_jap_trans_old():
-	# using pykakasi  https://github.com/miurahr/pykakasi
-	import pykakasi
-	kakasi = pykakasi.kakasi()
-	kakasi.setMode("H","a") # Hiragana to ascii, default: no conversion
-	kakasi.setMode("K","a") # Katakana to ascii, default: no conversion
-	kakasi.setMode("J","a") # Japanese to ascii, default: no conversion
-	kakasi.setMode("r","Hepburn") # default: use Hepburn Roman table
-	kakasi.setMode("s", True) # add space, default: no separator
-	kakasi_conv = kakasi.getConverter()
-	return kakasi_conv
-
-
-def jap_trans_old(trans_obj, line_text):
-	s = trans_obj.do(line_text)
-	return s
 	
 def init_jap_trans():
 	# using https://github.com/polm/cutlet
 	import cutlet
 	katsu = cutlet.Cutlet()
 	katsu.use_foreign_spelling = True  # detect english words
-	# TODO: uppercase: https://github.com/polm/cutlet/discussions/38
 	return katsu
 
 
 def jap_trans(trans_obj, line_text):
-	s = trans_obj.romaji(line_text, capitalize=False)
-	return s
+	#s = trans_obj.romaji(line_text, capitalize=False)
+	s = ""
+	for tok in trans_obj.tagger(line_text):
+		if(tok.char_type == 5 or tok.surface.isascii() ):
+			s += tok.surface.upper() + " "
+		else:
+			s += tok.surface + " "
+	line_text = s
+	
+	s = ""
+	tokens = trans_obj.romaji_tokens(trans_obj.tagger(line_text), capitalize=False)
+	for tok in tokens:
+		
+		#if tok.surface in string.punctuation:
+		#	# remove last char
+		#	s = s[:-1]
+		
+		# uppercase foreign tokens https://github.com/polm/cutlet/discussions/38
+		if tok.foreign:  # tok.surface.isascii() or 
+			s += tok.surface.upper()
+		else:
+			s += tok.surface
+		
+		if tok.space:
+			# a space should follow
+			s += " "
+
+	return s.strip()
 	
 	
 if __name__ == "__main__":
@@ -60,6 +67,9 @@ if __name__ == "__main__":
 		infile = open(args.infile)
 
 	input_lrc_str = infile.read()
+	
+	print("[by:eadmaster (automatic transliteration, may contain errors)]")
+	print("")
 	 
 	line_no = 0
 	header_fields_no = 0
@@ -72,8 +82,12 @@ if __name__ == "__main__":
 			# skip empty lines
 			#sys.stderr.write(PROGRAM_NAME + ": warn: line " + str(line_no) + " has more fields than the header\n")
 			continue
-		ts, line_text = line.split("]")
+		ts, line_text = line.split("]", maxsplit=1)
 		
+		# skip meta tag lines
+		if( any(i in line_text for i in ["作词", "作曲"]) ):
+			continue
+
 		line_text = jap_trans(trans_obj, line_text)
 		line_text = line_text.strip()
 		
