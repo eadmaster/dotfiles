@@ -5,12 +5,13 @@ import sys
 import os
 import string
 
+# using https://github.com/polm/cutlet
+import cutlet
+
 PROGRAM_NAME = os.path.basename(sys.argv[0])
 
 	
 def init_jap_trans():
-	# using https://github.com/polm/cutlet
-	import cutlet
 	katsu = cutlet.Cutlet()
 	katsu.use_foreign_spelling = True  # detect english words
 	return katsu
@@ -18,6 +19,9 @@ def init_jap_trans():
 
 def jap_trans(trans_obj, line_text):
 	#s = trans_obj.romaji(line_text, capitalize=False)
+	
+	line_text = cutlet.normalize_text(line_text)
+	
 	s = ""
 	for tok in trans_obj.tagger(line_text):
 		if(tok.char_type == 5 or tok.surface.isascii() ):
@@ -29,6 +33,8 @@ def jap_trans(trans_obj, line_text):
 	s = ""
 	tokens = trans_obj.romaji_tokens(trans_obj.tagger(line_text), capitalize=False)
 	for tok in tokens:
+		
+		# TODO: handle unrecognized kanjis
 		
 		#if tok.surface in string.punctuation:
 		#	# remove last char
@@ -68,8 +74,7 @@ if __name__ == "__main__":
 
 	input_lrc_str = infile.read()
 	
-	print("[by:eadmaster (automatic transliteration, may contain errors)]")
-	print("")
+	args.outfile.write("[by:eadmaster (automatic transliteration, may contain errors)]\n\n")
 	 
 	line_no = 0
 	header_fields_no = 0
@@ -82,7 +87,7 @@ if __name__ == "__main__":
 			# skip empty lines
 			#sys.stderr.write(PROGRAM_NAME + ": warn: line " + str(line_no) + " has more fields than the header\n")
 			continue
-		ts, line_text = line.split("]", maxsplit=1)
+		ts, line_text = line.split("]", maxsplit=1) # TODO: handle multiple tags on the same line
 		
 		# skip meta tag lines
 		if( any(i in line_text for i in ["作词", "作曲"]) ):
@@ -91,7 +96,7 @@ if __name__ == "__main__":
 		line_text = jap_trans(trans_obj, line_text)
 		line_text = line_text.strip()
 		
-		print( ts + "]" + line_text)
+		args.outfile.write( ts + "]" + line_text + "\n")
 	# end for
 
 
