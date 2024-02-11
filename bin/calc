@@ -5,19 +5,22 @@ INPUT="$@"
 if [ "$#" -ge 1 ]; then
 
 	if which qalc >/dev/null 2>&1 ; then
-		echo "$0 example usages:" >&2
-		echo "  units conversion syntax: qalc 15in to cm" >&2
-		echo "  currency conversion syntax: qalc 15usd to eur" >&2
-		echo "  time math syntax: qalc 13:56:12h - 1:25h to s, 10:31 + 8:30 to time, now to utc, timestamp(today - 5 days), 2020-05-20 + 523d"  >&2 #  https://github.com/Qalculate/libqalculate/issues/5
-		echo "  percent calculation: qalc 500 - 20% " >&2
-		echo "  current calculation: qalc \"50ohm * 2A\" " >&2
-		echo "  bytes calculation: qalc 5000 byte to MB" >&2
-		echo "  ---" >&2
-		# more examples: https://github.com/Qalculate/libqalculate
+		if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+			echo "$0 example usages:" >&2
+			echo "  units conversion syntax: calc 15in to cm" >&2
+			echo "  currency conversion syntax: calc 15usd to eur" >&2
+			echo "  time math syntax: calc 13:56:12h - 1:25h to s, 10:31 + 8:30 to time, now to utc, timestamp(today - 5 days), 2020-05-20 + 523d"  >&2 #  https://github.com/Qalculate/libqalculate/issues/5
+			echo "  percent calculation: calc 500 - 20% " >&2
+			echo "  current calculation: calc \"50ohm * 2A\" " >&2
+			echo "  bytes calculation: calc 5000 byte to MB" >&2
+			#echo "  ---" >&2
+			# more examples: https://github.com/Qalculate/libqalculate
+			exit 0
+		fi
 	fi
 
 	# via qalc -> most user-friendly, also provides units normalization (but supports less units than GNU units)
-	qalc -s "exp mode 0" "$INPUT"  
+	qalc -s "exp mode 0"  "$INPUT"   #  -s "maxdeci 3"  https://github.com/Qalculate/libqalculate/issues/149
 	[ $? -ne 127 ] && exit $?
 	# TODO: disable checks for updating rates
 	

@@ -177,7 +177,7 @@ elif [ "$SERVICE_NAME" = "samba" ]; then
 	exit 1
 elif [ "$SERVICE_NAME" = "hotspot" ]; then
 	if [ "$CMD" = "start" ]; then
-		sudo create_ap wlan0 eth0 "$(hostname)_softAP" $WIFI_PASSWORD  --daemon 
+		sudo create_ap wlan0 eth0 "$(hostname)_softAP" $MY_HOTSPOT_PASSWORD  --daemon 
 		exit $?
 	elif [ "$CMD" = "status" ]; then
 		sudo create_ap --list-running

@@ -41,6 +41,16 @@ if [ $_ES -ne 127 ]; then
 	exit $?
 fi
 
+# Piper https://github.com/rhasspy/piper
+# echo "$@" | piper ...
+
+# RHVoice  https://github.com/RHVoice/RHVoice
+echo "$@" | RHVoice-test
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# Coqui TTS   https://github.com/coqui-ai/TTS/tree/dev#user-content-command-line-tts
+#tts --text "Text for TTS" 
+
 # flite 
 #  pulseaudio fix  https://github.com/festvox/flite/issues/16
 flite -voice slt -t "$@"

@@ -123,8 +123,8 @@ echo
 echo "$(basename $0): MEMO: safe limits are PM2.5<25, PM10<40, SO2<125, NO2<40, lead(Pb)<0.5, CO<10000, benzene(C6H6)<5, ozone(O3)<120, UVI<3" >&2
 echo
 
-echo "earthquakes:" #>&2
-wget -q -O- "http://webservices.ingv.it/fdsnws/event/1/query?starttime=$(date -d '-1 day' +'%Y-%m-%dT%H:%M:%S')&endtime=$(date -d '+1 day' +'%Y-%m-%dT%H:%M:%S')&latitude=$LAT&longitude=$LON&maxradius=0.5&format=text" | csvjson | jq .   # minmagnitude=1"  # | rows convert test.csv json:- | jq .
+#TODO: echo "earthquakes:" #>&2
+#wget -q -O- "http://webservices.ingv.it/fdsnws/event/1/query?starttime=$(date -d '-1 day' +'%Y-%m-%dT%H:%M:%S')&endtime=$(date -d '+1 day' +'%Y-%m-%dT%H:%M:%S')&latitude=$LAT&longitude=$LON&maxradius=0.5&format=text" | csvjson | jq .   # minmagnitude=1"  # | rows convert test.csv json:- | jq .
 #wget -q -O- "http://beta-service.geonet.org.nz/fdsnws/event/1/query?endtime=$(date +'%Y-%m-%dT%H:%M:%S')&latitude=$LAT&longitude=$LON&maxradius=100&format=text"  # minmagnitude=5
 # WANTED: predictions
 #  (DISCONT.)? https://www.openhazards.com/data/GetEarthquakeProbability

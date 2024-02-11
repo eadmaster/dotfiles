@@ -176,8 +176,17 @@ elif [ "$INPUTFILEEXT" = "pem" ] && [ "$OUTPUTFILEEXT" = "crt" ] || [ "$OUTPUTFI
 elif [ "$INPUTFILEEXT" = "pfx" ] || [ "$INPUTFILEEXT" = "p12" ] && [ "$OUTPUTFILEEXT" = "pem" ] ; then
 	openssl pkcs12 -in "$INPUTFILE" -out "$OUTPUTFILE" -nodes
 	exit $?
+elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "rdjson" ] && [ "$OUTPUTFILEEXT" = "csv" ] ; then
+	jtbl --csv < "$INPUTFILE" > "$OUTPUTFILE"
+	exit $?
+elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "rdjson" ] && [ "$OUTPUTFILEEXT" = "md" ] ; then
+	jtbl --markdown < "$INPUTFILE" > "$OUTPUTFILE"
+	exit $?
+elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "rdjson" ] && [ "$OUTPUTFILEEXT" = "html" ] ; then
+	jtbl --html < "$INPUTFILE" > "$OUTPUTFILE"
+	exit $?
 elif [ "$OUTPUTFILEEXT" = "json" ]; then
-	# using jc(supports a lot of formats) https://github.com/kellyjonbrazil/jc
+	# using jc (supports a lot of formats) https://github.com/kellyjonbrazil/jc
 	jc --pretty --monochrome --$INPUTFILEEXT < "$INPUTFILE" > "$OUTPUTFILE"
 	[ -s "$OUTPUTFILE" ] && exit $?
 	# using fq (supports a lot of formats) https://github.com/wader/fq
@@ -352,11 +361,15 @@ case $INPUTFILEEXT in
 		# WANTED: open source alternative https://softwarerecs.stackexchange.com/questions/30424/open-source-commandline-tool-to-create-ovf-and-ova-files
 		exit $?
 		;;
-	ov2|kml|gpx|poi|geojson )
+	ov2|kml|gpx|poi|geojson|shp|dxf )
 		# using gpsbabel  https://www.gpsbabel.org/capabilities.html
 		gpsbabel -D 1 -i $INPUTFILEEXT -f "$INPUTFILE" -o $OUTPUTFILEEXT -F "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
 		# from gdal-bin
 		ogr2ogr "$OUTPUTFILE" "$INPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		# from fiona (supported drivers: 'ARCGEN', 'DXF', 'CSV', 'OpenFileGDB', 'ESRIJSON', 'ESRI Shapefile', 'FlatGeobuf', 'GeoJSON', 'GeoJSONSeq', 'GPKG', 'GML', 'OGR_GMT', 'GPX', 'GPSTrackMaker', 'Idrisi', 'MapInfo File', 'DGN', 'PCIDSK', 'OGR_PDS', 'S57', 'SQLite', 'TopoJSON') https://github.com/Toblerity/Fiona/blob/master/docs/cli.rst
+		# fio cat "$INPUTFILE" | fio load -f $OUTPUTFILEEXTUPPER "$OUTPUTFILE"  #  https://github.com/Toblerity/Fiona/discussions/1323
 		exit $?
 		;;
 	m3u|xspf|pls|pla|asx )  # multimedia playlist #|b4s|wpl|smil|hypetape|rmp|plist|kpl|mpcpl|plp

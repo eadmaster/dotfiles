@@ -84,14 +84,14 @@ exit $?
 argos-translate-cli --from-lang it --to-lang en "$(cat $INPUTFILE)"
 [ $? -eq 0 ] && exit 0
 
-# via LibreTranslate (based on Argos Translate)  https://github.com/uav4geo/LibreTranslate
+# via LibreTranslate web API (based on Argos Translate)  https://github.com/uav4geo/LibreTranslate
 # WIP: auto-detect input language, no japanese support
 curl -XPOST -H "Content-Type: application/json"  -H "Authorization: JWT $TOKEN" -d "{\"q\" : \"$(cat $INPUTFILE)\", \"source\": \"it\", \"target\": \"en\"}" "https://libretranslate.com/translate"
 [ $? -eq 0 ] && exit 0
 
 # TODO: detect "The page you have attempted to translate is already in English."
 
-# MORE ALTERNATIVES:
+# TODO: MORE ALTERNATIVES
 #   NO? translate-bin from libtranslate-bin (using webservices)
 #   (NO JAP SUPPORT)? apertium  http://wiki.apertium.org/wiki/List_of_language_pairs
 #   NO(NOT AUTOMATIC)? omegat  https://sourceforge.net/projects/omegat/

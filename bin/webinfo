@@ -7,5 +7,7 @@ _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 curl --head --verbose --output /dev/null "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
+# TODO: cloudflare bypass 
+
 #else
 exit 127

@@ -19,7 +19,7 @@ if [ ! -z "$ANDROID_ROOT" ]; then
 	exit $?
 fi
 
-extractrun chrome $CHROMIUM_FLAGS "$@"
+google-chrome $CHROMIUM_FLAGS "$@"
 [ $? -ne 127 ] && exit $?
 
 command -p chrome $CHROMIUM_FLAGS "$@"
@@ -31,7 +31,7 @@ chromium-browser $CHROMIUM_FLAGS "$@"
 chromium $CHROMIUM_FLAGS "$@"
 [ $? -ne 127 ] && exit $?
 
-google-chrome $CHROMIUM_FLAGS "$@"
+extractrun chrome $CHROMIUM_FLAGS "$@"
 [ $? -ne 127 ] && exit $?
 
 opera "$@"

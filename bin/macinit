@@ -314,7 +314,7 @@ unhide() { mv -v "$1" "${1:1}" ; }
 # easier find with fd https://github.com/sharkdp/fd
 if which fdfind >/dev/null 2>&1 ; then
     alias fd="fdfind --hidden --glob"
-    f() { fdfind --hidden --glob "*$@*" ; }
+    f() { fdfind --hidden --ignore-case --glob "*$@*" ; }
 else
     alias fd="find . -xdev -iname"  # 2>/dev/null  -> skip permission denied errors https://unix.stackexchange.com/questions/19430/how-do-i-remove-permission-denied-printout-statements-from-the-find-program
     alias f=fd
@@ -647,17 +647,22 @@ alias get=wget
 #alias upload="curl --upload-file"
 alias httpdelete="curl -XDELETE --insecure"
 alias httpremove="curl -XDELETE --insecure"
-[ -f "$THIS_SCRIPT_DIR/winfo" ] || alias winfo="wget -S --spider"
-[ -f "$THIS_SCRIPT_DIR/wcat" ] || alias wcat="wget -q -U Firefox -O -"
-alias webhead=whead
+alias winfo=webinfo
+alias whead=webhead
+alias whash=webhash
+alias wcat=webcat
 #alias ftpls="curl --list-only ftp://"  # not recursive
 alias ftpls="curl --list-only ftp://"  # not recursive
-alias ftplsrecursive="ftpfind.py"
-#wgrep() { wget -q -U Firefox -O - "$2" | grep "$1" ; }
+alias ftplsrecursive=ftpfind.py
+wgrep() { webcat "$2" | grep "$1" ; }
 alias wget="wget --no-hsts --hsts-file $TMPDIR/wget-hsts"
 #alias wput="curl --upload-file "
-wsize() { curl --head --silent --location "$1" | grep -i "content-length:" |  cut -d' ' -f2 | bytes2human ; }
+websize() { curl --head --silent --location "$1" | grep -i "content-length:" |  cut -d' ' -f2 | bytes2human ; }
 # TODO: rewrite using --write-out '%{json}' https://daniel.haxx.se/blog/2020/03/17/curl-write-out-json/
+alias wsize=websize
+
+alias web2png=webshot
+alias web2pdf=webshot
 
 alias curlstreaming="curl --no-buffer"
 alias curljson="curl -H \"Content-Type: application/json\""
@@ -979,6 +984,15 @@ if which jq >/dev/null 2>&1 ; then
 	#alias json2csv="jq -r '. | @csv'"   #  https://stackoverflow.com/questions/32960857/how-to-convert-arbitrary-simple-json-to-csv-using-jq
 fi
 
+# jtbl aliases  https://github.com/kellyjonbrazil/jtbl
+if which jtbl >/dev/null 2>&1 ; then
+	alias json2table="jtbl "
+	alias ndjson2table="jtbl "
+	alias json2csv="jtbl --csv "
+	alias json2markdown="jtbl --csv "
+	alias json2html="jtbl --html "
+fi
+
 #alias json2paths=fileinfo
 #alias json2pointers=json2paths.py
 alias jsonmin=jsoncanonize.py
@@ -1103,6 +1117,7 @@ fi
 #alias scite=geany
 alias khex=okteta
 
+alias pslist="ps -la"
 enable -n suspend  # disable the conflicting shell builtin command
 alias suspend=psuspend
 alias resume=psresume
@@ -1364,15 +1379,18 @@ if which qalc >/dev/null 2>&1 ; then
     # comb
     alias anagramscount=factorial
     permutationscount() { qalc "perm($1, $2)" ; }  # n! / (n - k)!
-    dispositionsrepeatedcount() { qalc "$1^$2" ; }   # n^k
+    dispositionsrepeatedcount() { qalc "$1 ^ $2" ; }   # n^k
     combinationscount() { qalc "comb($1, $2)" ; } 
     combinationsrepeatedcount() { qalc "binomial($1+$2-1, $2)" ; }
-
+    pairscount() { qalc --terse "$1 * ($1 - 1) / 2" ; }
+	alias couplescount=pairscount
+	
     # stdin redirectors
     2fraction() { qalc "$(cat) to fraction" ; }
     #2utc() { qalc "$(cat) to UTC" ; }
     2hex() { qalc "$(cat) to hex" ; }
     #to() { qalc "$(cat) to $1" ; }  # generic converter
+    #2sci() { qalc -s "e notation 0" -s "exp mode 3" "$(cat)" ; }  # https://github.com/Qalculate/libqalculate/discussions/614
 
     # units conversion shortcuts
     in2cm() { qalc "$1 in to cm" ; }
@@ -1916,6 +1934,8 @@ alias char2dec="sfk char -lit"  # TODO: move in a script, add alternatives
 alias dec2char="sfk char"  # TODO: move in a script, add alternatives
 alias hex2bytes=hex2rawbytes
 
+sci2sci10pow() { sed 's/\([0-9]*.[0-9]*\)E\([0-9]*\)/\1 * 10^\2/g' ; } # https://stackoverflow.com/questions/59427477/how-to-write-numbers-or-a-column-of-numbers-as-power-of-10-in-bash
+
 if which rizin >/dev/null 2>&1 ; then
     alias asmls="rz-asm -L"
     alias x86asm2hex="asm2hex -a x86"
@@ -2000,7 +2020,7 @@ if which git >/dev/null 2>&1 ; then
     alias gitdifftool="git difftool"
     alias gitclonemin="git clone --recursive --depth 1 -b master"  # https://stackoverflow.com/questions/29368837/copy-a-git-repo-without-history
     alias gitclonedir=gitget
-    alias gitlsbranches="git branch | cat"
+    alias gitbranchesls="git branch | cat"
     alias gitswitchbranch="git checkout"
     alias gitcreatebranch="git checkout -b"
     alias gitundo="git rebase -i HEAD~1"
@@ -2063,13 +2083,25 @@ alias torrentget=gettorrent
 alias magnetget=gettorrent
 alias magnet2torrent=gettorrent
 
-if which doomsday >/dev/null 2>&1 ; then
-	alias doom="doomsday -game doom1 -file"  # data files in ~/.doomsday/runtime/data/
-	alias doom2="doomsday -game doom2 -file"
-	alias heretic="doomsday -game heretic -file"
-	alias hexen="doomsday -game hexen -file"
-	# -basedir %BASEDIR% -userdir %BASEDIR%\user -savedir %RAMDRIVE%\ -w %XRES% -h %YRES% -parse %BASEDIR%\user\autoexec.cfg %*
-	# http://dengine.net/dew/index.php?title=Command_line_option_reference
+if which crispy-doom >/dev/null 2>&1 ; then
+	alias doom="crispy-doom -iwad DOOM.WAD"
+	alias doom2="crispy-doom -iwad DOOM2.WAD"
+	alias heretic="crispy-heretic"
+	alias hexen="crispy-hexen"
+fi
+
+if which gzdoom >/dev/null 2>&1 ; then
+	alias doom="gzdoom -iwad DOOM.WAD"
+	alias doom2="gzdoom -iwad DOOM2.WAD"
+	alias heretic="gzdoom -iwad HERETIC.WAD"
+	alias hexen="gzdoom -iwad HEXEN.WAD"
+fi
+
+if which raze >/dev/null 2>&1 ; then
+	# https://github.com/ZDoom/Raze/issues/655
+	alias duke3d="raze -iwad duke3d.grp"
+	alias blood="raze -iwad blood.rff"
+	#alias sw="raze -iwad sw.grp"
 fi
 
 if which fteqw >/dev/null 2>&1 ; then
@@ -2077,8 +2109,6 @@ if which fteqw >/dev/null 2>&1 ; then
 	alias quake2="fteqw -basegame baseq2"
 	alias quake3="fteqw -basegame baseq3"
 fi
-
-#alias duke3d="eduke32 -map"  # data files in ~/.config/eduke32/ # http://wiki.eduke32.com/wiki/Command_line_options
 
 alias cal=cal.py
 alias calendar=cal.py

@@ -88,10 +88,11 @@ case $INPUTFILEEXT in
 		exit $?
 		;;
 
-	ov2|kml|gpx|poi|geojson )
+	ov2|kml|gpx|poi|geojson|shp )
 		# from gdal-bin
 		ogrinfo "$INPUTFILE"
-		# TODO: more alternatives
+		# from fiona https://github.com/Toblerity/Fiona/blob/master/docs/cli.rst
+		fiona info "$INPUTFILE"
 		exit $?
 		;;
 

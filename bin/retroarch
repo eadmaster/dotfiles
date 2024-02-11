@@ -22,8 +22,8 @@ if [ "$INPUTFILEEXT" = "zip" ] || [ "$INPUTFILEEXT" = "7z" ]; then
 fi
 
 case $INPUTFILEEXT in
-	nes|fds ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mesen_libretro.so -c "$RETROARCH_CONFIG_PATH/mesen.cfg"" ;;
-	#nes|fds ) _APPENDED_OPTIONS="-L $HOME/github/nestopia/libretro/nestopia_libretro.so -c "$RETROARCH_CONFIG_PATH/nestopia.cfg"" ;;
+	#nes|fds ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mesen_libretro.so -c "$RETROARCH_CONFIG_PATH/mesen.cfg"" ;;
+	nes|fds ) _APPENDED_OPTIONS="-L $HOME/github/nestopia/libretro/nestopia_libretro.so -c "$RETROARCH_CONFIG_PATH/nestopia.cfg"" ;;
 	#smc|sfc ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/bsnes_hd_beta_libretro.so -c "$RETROARCH_CONFIG_PATH/bsnes.cfg"" ;;
 	#smc|sfc ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/snes9x_libretro.so -c "$RETROARCH_CONFIG_PATH/snes9x.cfg"" ;;
 	smc|sfc ) _APPENDED_OPTIONS="-L $HOME/github/snes9x/libretro/snes9x_libretro.so -c "$RETROARCH_CONFIG_PATH/snes9x.cfg"" ;;
@@ -154,7 +154,8 @@ if [ "$0" = "retroarch32" ]; then
 	exit $?
 fi
 
-echo "_APPENDED_OPTIONS=$_APPENDED_OPTIONS"
+#echo "_APPENDED_OPTIONS=$_APPENDED_OPTIONS"
+
 #enable -n command
 #command -p retroarch --verbose $_APPENDED_OPTIONS "$@"  # --verbose --log-file /r/retroarch_log.txt  
 /usr/games/retroarch  $_APPENDED_OPTIONS --verbose "$@"  # 
