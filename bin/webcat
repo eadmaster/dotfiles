@@ -15,7 +15,7 @@ fi
 # NO(BUGGY, REQ. FIREFOX)? https://github.com/browsh-org/browsh
 
 # no cloudflare support?
-chrome  --headless --disable-gpu --dump-dom --enable-javascript  "$@" | html2text 
+chrome  --headless --disable-gpu --dump-dom --enable-javascript --ignore-certificate-errors  "$@" 2> /dev/null  | html2text 
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 curl -v -H "Accept: text/javascript, text/html, application/xml, */*" "$@" | html2text

@@ -1,0 +1,9 @@
+
+
+# https://github.com/ggerganov/whisper.cpp#real-time-audio-input-example
+WHISPER_PATH=$HOME/opt/whispercpp
+$WHISPER_PATH/stream -m $WHISPER_PATH/models/ggml-base.en.bin -t 8 --step 500 --length 5000
+exit $1
+
+# try my python wrapper
+mic2speechrec.py "$@"

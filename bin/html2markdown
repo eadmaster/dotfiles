@@ -1,0 +1,11 @@
+
+
+case "$@" in
+	http*|ftp* ) webcat "$@" | $0 ;;
+esac
+
+# from python3-html2text 
+html2markdown.py3 "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+pandoc -f html -t markdown "$@"

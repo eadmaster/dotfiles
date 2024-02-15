@@ -7,6 +7,8 @@ import json,sys
 
 input_json_str = ""
 
+# TODO: rewrite args reading
+
 if(len(sys.argv)==1):
     # read from stdin
     input_json_str = sys.stdin.read()

@@ -189,7 +189,7 @@ alias aratio="zipinfo -m"  # TODO: support other archives formats https://superu
 zipfindlatest() { 7z l "$@" | grep -F "....A" | sort | tail -n2 ; }
 
 alias pprint=file2txt
-alias html2txt=file2txt
+#alias html2txt=html2text
 #alias ocr=file2txt  # moved in a script
 
 alias grepliteral="grep -F"
@@ -1117,7 +1117,8 @@ fi
 #alias scite=geany
 alias khex=okteta
 
-alias pslist="ps -la"
+alias psls="ps -n"  #"ps -Alf"
+#alias pstree="pstree -C age -p"
 enable -n suspend  # disable the conflicting shell builtin command
 alias suspend=psuspend
 alias resume=psresume
@@ -1979,11 +1980,11 @@ alias langrec=langdet
 alias facerec=camera2facerec.py
 alias motiondetect=camera2facerec.py
 
-alias speechrec=mic2speechrec.py
-alias voicerec=mic2speechrec.py
-alias voice2text=mic2speechrec.py
-alias mic2text=mic2speechrec.py
-alias speech2text=mic2speechrec.py
+alias speechrec=mic2speechrec
+alias voicerec=mic2speechrec
+alias voice2text=mic2speechrec
+alias mic2text=mic2speechrec
+alias speech2text=mic2speechrec
 alias voice2command=mic2command.py
 
 #alias aifacedet=facerec
@@ -2136,6 +2137,8 @@ alias curl2python=uncurl  # https://github.com/spulec/uncurl
 alias findcomputernearby=findnearby
 alias neighbourscan=findnearby
 alias fing=findnearby
+
+alias findmatch=findnetplay
 
 alias smiley=emoji
 alias emoticon=emoji

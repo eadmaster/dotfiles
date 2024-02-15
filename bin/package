@@ -438,11 +438,11 @@ case "$1" in
 		
 		# appimage search https://appimage.github.io/apps/
 		# using chob https://github.com/MuhammedKpln/chob
-		chob "$PACKAGE_NAME" #--enableExperiementalFeatures --disableCache
-		zap seach "$PACKAGE_NAME"
+		#chob "$PACKAGE_NAME" #--enableExperiementalFeatures --disableCache
+		#zap seach "$PACKAGE_NAME"
 		
 		# check static builds on 1bin
-		wget -S  --spider 1bin.org/$(uname)/$PACKAGE_NAME
+		#wget -S  --spider 1bin.org/$(uname)/$PACKAGE_NAME
 		# TODO: show version  https://github.com/nikvdp/1bin/issues/2
 		
 		#exit 0

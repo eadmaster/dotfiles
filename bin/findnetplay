@@ -1,64 +1,60 @@
 
 echo
-echo "$0: GameSpy (PC) https://333networks.com/json" 
-#NO? MASTER SERVERS: curl -s "https://master.333networks.com/json/all?s:numplayers"  | jq -c '.[][] | select(.numplayers > 1)'
-curl -s "https://master.333networks.com/json/ut?s:numplayers" | jq -c '.[][] | select(.numplayers > 1) | pick(.label, .country, .mapname, .numplayers, .gametype, .ip, .hostname, .hostport)'
-curl -s "https://master.333networks.com/json/unreal?s:numplayers" | jq -c '.[][] | select(.numplayers > 1) | pick(.label, .country, .mapname, .numplayers, .gametype, .ip, .hostname, .hostport)'
-curl -s "https://master.333networks.com/json/heretic2?s:numplayers" | jq -c '.[][] | select(.numplayers > 1) | pick(.label, .country, .mapname, .numplayers, .gametype, .ip, .hostname, .hostport)'
-curl -s "https://master.333networks.com/json/dnf?s:numplayers" | jq -c '.[][] | select(.numplayers > 1) | pick(.label, .country, .mapname, .numplayers, .gametype, .ip, .hostname, .hostport)'
 
-echo
-
-echo "$0: OpenSpy (PC) http://beta.openspy.net/en/server-list"  
-curl -s "http://beta.openspy.net/api/servers"  | jq -c '.[] | select(.players > 1)'
-
-echo
-
-echo "$0: PSRewired (PS2, PS3, PSP)  https://psrewired.com/"
+echo "$0: PSRewired (PS2, PS3, PSP)  https://psrewired.com"
 curl -s https://api.psrewired.com/us/api/universes?applicationId=20764 | jq -c '.[] | select(.playerCount > 0) | pick(.name, .description, .playerCount)'   # Motorstorm NTSC (PS3)
 curl -s https://api.psrewired.com/us/api/universes?applicationId=20774 | jq -c '.[] | select(.playerCount > 0) | pick(.name, .description, .playerCount)'   # Ratchet & Clank: Size Matters NTSC/PAL (PS2/PSP)
 curl -s https://api.psrewired.com/us/api/universes?applicationId=10694 | jq -c '.[] | select(.playerCount > 0) | pick(.name, .description, .playerCount)'   # Twisted Metal: Head-On (PS2/PSP)
 
 echo
 
-#TODO: echo "Wiimmfi (Wii+NDS) https://wiimmfi.de/stats/game"
+#TODO: echo "Wiimmfi (Wii+NDS) https://wiimmfi.de"
 #TODO: wcat https://wiimmfi.de/stats/game   # real ip: 2.45.200.120 https://www.criminalip.io/
-
-#TODO: Pretendo  https://github.com/PretendoNetwork/website/issues/227
-
-
-#TODO: discord channel fetcher
-#	via 	curl -H "authorization: Bearer $MY_DISCORD_BOT_TOKEN" "https://discord.com/api/channels/1176986109008425080/messages"
-#	via /home/andy/bin/discord_get_latest_messages.py
-#TODO: python discord_get_latest_messages.py  647010523828715520/1176986109008425080  # Insignia matchmaking (xbox)
-#TODO: python discord_get_latest_messages.py  647010523828715520/1062023598627364905  # Insignia events (xbox)
-#TODO: python discord_get_latest_messages.py  408718485913468928/1070381498819170434  # Pretendo MK7 (3DS) matchmaking
-#TODO: python discord_get_latest_messages.py  408718485913468928/1070381417642590239  # Pretendo MK8 (WiiU) matchmaking
-#TODO: python discord_get_latest_messages.py  408718485913468928/1070381730424438814  # Pretendo Splatoon (WiiU) matchmaking
-#TODO: python discord_get_latest_messages.py  408718485913468928/1162800680835227749  # Pretendo Kid Icarus (3ds) matchmaking
-#TODO: python discord_get_latest_messages.py  408718485913468928/1169326175672336507  # Pretendo Tri force heroes (3ds) matchmaking
-
-echo "$0: Kaillera (emus)"
-# TODO: parse games?
-#  docs https://kr.2manygames.fr/docs/kprotocol.txt
-#  https://github.com/opengsq/opengsq-python/discussions/13
-curl -q http://www.kaillera.com/raw_server_list.php | paste -sd ' \n' | grep -v ';0;'
-curl -q http://www.kaillera.com/raw_server_list2.php | paste -sd ' \n' | grep -v ';0;'
 
 echo
 
-# open source fps
-echo "OpenArena (PC)"
-# via https://github.com/Unity-Technologies/qstat
-quakestat -u -ne -json -openarenam  dpmaster.deathmask.net | jq -c '.[] | select(.numplayers > 1) | pick(.protocol, .address, .name, .gametype, .numplayers, .ping)' 
-quakestat -u -ne -json -openarenam  master.ioquake3.org | jq -c '.[] | select(.numplayers > 1) | pick(.protocol, .address, .name, .gametype, .numplayers, .ping)' 
+echo "WiiLink WFC (Wii+NDS) https://wfc.wiilink24.com"
+curl -s https://api.wfc.wiilink24.com/api/stats | jq -c 'del(.global)'
 
-#TODO: Fightcade  
+echo
+
+echo "$0: Insignia (xbox)"
+curl -s https://insignia.live/#games | html2text | grep -B3 "1 session"
+#discord_get_latest_messages 1176986109008425080  # Insignia matchmaking (xbox)
+#discord_get_latest_messages 1062023598627364905 | jq -c '.[] | pick(.embeds[].title, .embeds[].fields, .timestamp) ' # Insignia events (xbox)
+
+echo
+
+#TODO: Pretendo  https://github.com/PretendoNetwork/website/issues/227
+#echo "$0: Pretendo (3DS/WiiU)"
+#discord_get_latest_messages 1070381498819170434  # Pretendo MK7 (3DS) matchmaking
+#discord_get_latest_messages 1070381417642590239  # Pretendo MK8 (WiiU) matchmaking
+#discord_get_latest_messages 1070381730424438814  # Pretendo Splatoon (WiiU) matchmaking
+#discord_get_latest_messages 1162800680835227749  # Pretendo Kid Icarus (3ds) matchmaking
+#discord_get_latest_messages 1169326175672336507  # Pretendo Tri force heroes (3ds) matchmaking
+
+echo
+
+echo "$0: Kaillera (emus)"
+curl -s http://www.kaillera.com/raw_server_list.php | paste -sd ' \n' | grep -v ';0;'
+curl -s http://www.kaillera.com/raw_server_list2.php | paste -sd ' \n' | grep -v ';0;'
+# TODO: parse games?
+#  docs https://kr.2manygames.fr/docs/kprotocol.txt
+#  https://github.com/opengsq/opengsq-python/discussions/13
+
+echo
+
+#TODO: Fightcade  https://discord.com/channels/160417191743848448/741706601949560844/1206120653447634965
 # NO? EVENTS? curl 'https://www.fightcade.com/api/' -X 'POST' -d '{"req": "searchevents", "offset": 0, "limit": 15}' | jq .
 #{"req":"channels","filter":null,"genre":null,"year":null,"system":null,"ranked":null,"favorites":false,"paginated":true,"page":0,"requestIdx":9}
 
 echo
 
-echo "$0: Retroarch Netplay http://lobby.libretro.com/"
-curl -s "http://lobby.libretro.com/list/" | jq -c '.[].fields | select(.has_password == false) | pick(.game_name, .game_crc, .core_name, .core_version, .retroarch_version, .username, .country, .updated)'
-# TODO: filter by region
+echo "$0: XLink Kai (multi) https://www.teamxlink.co.uk"
+webcat https://www.teamxlink.co.uk | grep -A20 "Active Games" | grep -A1 '^\*\*\* ' | paste -sd ' \n' 
+
+echo
+
+echo "$0: Retroarch Netplay (multi) http://lobby.libretro.com"
+curl -s "http://lobby.libretro.com/list/" | jq -c '.[].fields | select(.has_password == false and .country!="cn") | pick(.game_name, .game_crc, .core_name, .core_version, .retroarch_version, .username, .country, .updated)'
+# TODO: filter more countries by region
