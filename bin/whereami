@@ -29,6 +29,10 @@ if [ ! -z "$LAT" ] && [ ! -z "$LON" ]; then  #  && [ -z "$1" ]
 	#exit 0
 fi
 
+# alternative via GPS-enabled WWAN cards  https://wiki.archlinux.org/title/GPS
+mmcli -m 0 --location-enable-gps-raw --location-enable-gps-nmea
+mmcli -m 0 --location-get
+
 # alternative using DBUS GeoClue https://trollheaven.wordpress.com/2016/09/26/spionage-bei-linux-systemen/  https://unix.stackexchange.com/questions/121269/how-to-talk-to-geoclue-through-its-dbus-interface
 echo "\n$(basename $0) info: DBUS GeoClue output:" >&2
 #FILTER="tr '\n' ','"

@@ -1,9 +1,11 @@
 
-
-command -p fdupes "$@"
+sfk dupfind "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
 
-sfk dupfind "$@"
+finddup "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+fdupes "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
 
 #TODO: czkawka dup ...

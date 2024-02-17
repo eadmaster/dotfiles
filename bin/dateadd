@@ -1,6 +1,6 @@
 #!/bin/bash
 
-command -p dateadd "$@"
+dadd "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 dateutils.dadd "$@"

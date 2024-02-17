@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# args checking
+if [ "$#" -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUT_FILE OUTPUT_FILE"
+	echo "INPUT_FILE contain some audio to process"
+	echo "OUTPUT_FILE supported formats: txt, srt, ass, lrc"
+	exit 0
+elif [ "$2" = "-" ]; then
+	echo "$(basename $0) err: stdout redirection not supported" >&2
+	exit 1
+elif [ ! -e "$1" ]; then
+	echo "$(basename $0) err: file does not exist: $1" >&2
+	exit 1
+fi
+
+INPUTFILE="$1"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+INPUTFILEEXTUPPER=$( echo -n $INPUTFILEEXT | tr '[a-z]' '[A-Z]' ) # force uppercase extension
+INPUTFILENAME="`basename \"$INPUTFILE\" | rev | cut -d'.' -f2- | rev`"
+
+OUTPUTFILE="$2"
+OUTPUTFILEEXT=$( echo -n "$OUTPUTFILE" | rev | cut -d'.' -f1 | rev )
+OUTPUTFILEEXT=$( echo -n $OUTPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+OUTPUTFILEEXTUPPER=$( echo -n $OUTPUTFILEEXT | tr '[a-z]' '[A-Z]' ) # force uppercase extension
+OUTPUTFILEDIR="`dirname \"$2\"`"
+
+case $OUTPUTFILEEXT in
+	txt ) WHISPEROPT=otxt ;;
+	srt ) WHISPEROPT=osrt ;;
+	ass ) WHISPEROPT=ojf ;;
+	lrc ) WHISPEROPT=olrc ;;
+esac
+
+# using whispercpp, derived from https://github.com/ggerganov/whisper.cpp/blob/master/examples/generate-karaoke.sh
+
+WHISPER_PATH=$HOME/opt/whispercpp
+TMP_FILE=/tmp/rec16.wav
+
+LANGUAGE="auto"
+#LANGUAGE="ja"
+#LANGUAGE="en"
+LANGUAGE="it"
+
+#MODEL_FILE=$WHISPER_PATH/models/ggml-model-whisper-base.multi.bin
+MODEL_FILE=$WHISPER_PATH/models/ggml-model-whisper-small-q5_1.bin
+#MODEL_FILE=$WHISPER_PATH/models/ggml-model-whisper-medium.en-q5_0.bin
+
+# extract audio and resample to 16kHz
+ffmpeg -y -i "$INPUTFILE"  -vn -ar 16000 -ac 1 -c:a pcm_s16le $TMP_FILE > /dev/null 2>&1
+
+# run Whisper
+whispercpp -m $MODEL_FILE -f $TMP_FILE -${WHISPEROPT} -of "$OUTPUTFILE" # > /dev/null 2>&1  #  -l en -l $LANGUAGE 
+
+if [ LANGUAGE = "ja" ]; then
+	transliterate ${TMP_FILE}.${OUTPUTFILEEXT} ${TMP_FILE}_trans.${OUTPUTFILEEXT}
+	mv ${TMP_FILE}_trans.${OUTPUTFILEEXT} ${TMP_FILE}.${OUTPUTFILEEXT}
+fi
+
+if [ $OUTPUTFILEEXT = "ass" ]; then
+	whispercppjf2ass.py ${TMP_FILE}.json "${INPUTFILENAME}.ass"
+fi

@@ -1,6 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+
+# TODO: https://stackoverflow.com/questions/51382409/programmatically-render-geojson-to-image-file
+# https://medium.com/@h4k1m0u/plot-a-geojson-map-using-geopandas-be89e7a0b93b
+
+
+
 def shapely_geojson2map(geojson_str):
 	from shapely.geometry import mapping, shape
 	# GeoJSON dict -> shapely object

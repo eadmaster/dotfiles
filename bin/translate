@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 command -p translate "$@"  2> /dev/null
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES

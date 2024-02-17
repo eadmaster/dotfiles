@@ -3,7 +3,7 @@
 OPCODES_CSV_PATH=$PENDRIVE/Documents/db/opcode
 
 # args checking
-if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+if [ -z "$2" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "usage: $(basename $0) [opcode] [arch]"
 	echo
 	echo "-L list all supported archs"

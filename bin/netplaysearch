@@ -51,7 +51,8 @@ echo
 echo
 
 echo "$0: XLink Kai (multi) https://www.teamxlink.co.uk"
-webcat https://www.teamxlink.co.uk | grep -A20 "Active Games" | grep -A1 '^\*\*\* ' | paste -sd ' \n' 
+wcat https://www.teamxlink.co.uk | grep -A20 "Active Games" | grep -A1 '^\*\*\* ' | paste -sd ' \n' 
+# TODO: replace with API call
 
 echo
 

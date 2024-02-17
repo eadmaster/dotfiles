@@ -120,9 +120,9 @@ alias checkver=ver
 #alias makedir=md
 #alias makelink=ln
 #alias getkeyboard="cat /etc/keymap /etc/default/keyboard"
-#alias setkeyboard=loadkey -> MOVED in setkeyboard
-#alias setkb=setkeyboard
-alias setmap=setkeyboard
+#alias keyboardset=loadkey -> MOVED in keyboardset
+#alias setkb=keyboardset
+alias setmap=keyboardset
 alias keycodesget="showkey -a"  # ALT. xinput test 14  ... https://superuser.com/questions/248517/show-keys-pressed-in-linux
 #alias eventsget=xev
 #alias status="ps -fC"
@@ -219,9 +219,9 @@ timezone() { cat /etc/timezone || echo "$TZ" ; }
 alias tzget=timezone
 
 alias location="whereami --raw"
-alias position=location
-alias gpsget=location
-alias getposition=location
+alias positionget=whereami
+alias gpsget=whereami
+#TODO: alias gpsls=
 
 alias dateset="touch -c -d"
 alias chdate=dateset
@@ -412,6 +412,8 @@ alias netinfo="sudo lshw -class network"
 alias nm-tool=nmcli
 alias cpuload='ps -A -o pcpu | tail -n+2 | paste -sd+ | bc'  # https://stackoverflow.com/questions/9229333/how-to-get-overall-cpu-usage-e-g-57-on-linux
 #alias gfxinfo=gpuinfo
+alias gpusl="switcherooctl list"
+#alias gpuswitch="sudo prime-select"
 #alias cputemp=... -> MOVED IN cputemp
 #alias hdinfo="sudo smartctl -s on -i /dev/sda ; hdparm -i /dev/sda" -> MOVED IN hdinfo
 alias hddinfo=hdinfo
@@ -438,6 +440,7 @@ alias fsls="echo \"supported filesystems by this kernel: \"; cat /proc/filesyste
 #alias version="cat /proc/version; uname -a" -> MOVED IN osinfo
 #alias version=osinfo
 alias sysinfo=osinfo
+alias distroinfo="lsb_release -a"
 alias sysclean=cleansys
 
 alias debianrels="cat /usr/share/distro-info/debian.csv"
@@ -447,10 +450,10 @@ alias ubunturels="cat /usr/share/distro-info/ubuntu.csv"
 #alias saferemove="udisksctl power-off"
 #alias peject="sudo pccardctl eject"
 
-alias setvol=setvolume
-alias mute="setvolume 0"
-alias unmute="setvolume 100"
-alias umute="setvolume 100"
+alias setvol=volumeset
+alias mute="volumeset 0"
+alias unmute="volumeset 100"
+alias umute="volumeset 100"
 
 #NO? alias logoff, disconnect, halt
 alias reboot="sudo reboot"
@@ -647,19 +650,14 @@ alias get=wget
 #alias upload="curl --upload-file"
 alias httpdelete="curl -XDELETE --insecure"
 alias httpremove="curl -XDELETE --insecure"
-alias winfo=webinfo
-alias whead=webhead
-alias whash=webhash
-alias wcat=webcat
 #alias ftpls="curl --list-only ftp://"  # not recursive
 alias ftpls="curl --list-only ftp://"  # not recursive
 alias ftplsrecursive=ftpfind.py
-wgrep() { webcat "$2" | grep "$1" ; }
+wgrep() { wcat "$2" | grep "$1" ; }
 alias wget="wget --no-hsts --hsts-file $TMPDIR/wget-hsts"
 #alias wput="curl --upload-file "
-websize() { curl --head --silent --location "$1" | grep -i "content-length:" |  cut -d' ' -f2 | bytes2human ; }
+wsize() { curl --head --silent --location "$1" | grep -i "content-length:" |  cut -d' ' -f2 | bytes2human ; }
 # TODO: rewrite using --write-out '%{json}' https://daniel.haxx.se/blog/2020/03/17/curl-write-out-json/
-alias wsize=websize
 
 alias web2png=webshot
 alias web2pdf=webshot
@@ -699,7 +697,8 @@ alias screenshot=shot
 complete -W "$(ls $HOME/Documents/NEW | grep -v / | rev | cut -f 2- -d "." | rev)" mynotes  # quick setup autocompletion
 #complete -W "$(ls $HOME/pendrive/Documents/note | grep -v / | rev | cut -f 2- -d "." | rev)" mynotes  # quick setup autocompletion
 
-alias notefind=findnote
+alias findnote=notegrep
+alias notesearch=notegrep
 
 [ -f "$THIS_SCRIPT_DIR/gamma" ] || alias gamma="xgamma -gamma"
 # NO(for laptops only)? alias brightness=xdotool key XF86MonBrightnessUp|XF86MonBrightnessDown
@@ -828,7 +827,7 @@ alias pastefile=pbpastefile
 #alias ipget="ifconfig || ip addr"  # moved in script
 #alias resolve=ipget
 #alias ipaddr="ip addr"
-findmacaddroui() { grep -s "$@" /var/lib/ieee-data/oui.txt  /usr/share/ieee-data/oui.txt  /usr/share/nmap/nmap-mac-prefixes  /usr/share/misc/oui.txt ; }  # https://www.poftut.com/how-to-lookup-oui-organizationally-unique-identifier-in-linux/
+macaddrouigrep() { grep -s "$@" /var/lib/ieee-data/oui.txt  /usr/share/ieee-data/oui.txt  /usr/share/nmap/nmap-mac-prefixes  /usr/share/misc/oui.txt ; }  # https://www.poftut.com/how-to-lookup-oui-organizationally-unique-identifier-in-linux/
 isprivateip() { python3 -c "import ipaddress ; print(ipaddress.ip_address(\"$1\").is_private)" ; }
 ispublicip() { python3 -c "import ipaddress ; print(not ipaddress.ip_address(\"$1\").is_private)" ; }
 isinsubnet() { python3 -c "import ipaddress ; print(ipaddress.IPv4Address(\"$1\") in ipaddress.IPv4Network(\"$2\"))" ; }
@@ -836,12 +835,14 @@ alias ipcalc=sipcalc
 alias subnetinfo=sipcalc
 alias netmask=sipcalc
 
-alias ipset=setip
-alias ipreset="setip dynamic"
-alias resetip=ipreset
-alias dnsreset="setdns dhcp"
+alias setip=ipset
+alias ipreset="ipset dynamic"
+alias reipset=ipreset
+
+alias setdns=dnsset
+alias dnsreset="dnsset dhcp"
 alias resetdns=dnsreset
-alias resreset="xrandr --auto ; setpcmode"
+alias resreset="xrandr --auto ; pcmodeset"
 alias resetres=resreset
 alias serialreset="tput reset > "
 
@@ -849,7 +850,6 @@ alias serial="busybox microcom"
 alias serialls="cat /proc/tty/drivers"
 alias lsserial=serialls
 
-#alias setres="xrandr --size"  # moved in a script
 alias xandr=xrandr
 alias displayls="xrandr"
 alias monitorsls=displaysls
@@ -875,40 +875,38 @@ alias no=mynotesappend
 alias notesp=mynotesp
 
 if [ -d $PENDRIVE/Documents/db ]; then
-	finddump() { finddb "$1" $PENDRIVE/Documents/db/datfile ; }  #  $retroarch_base_path\database\dat, metadata?
-	alias finddat=finddump
-	findhave() { finddb "$1" $PENDRIVE/Documents/db/list/have ; }
-	finddisc() { finddb "$1" $PENDRIVE/Documents/db/list/have/discs ; }
+	findhave() { dbgrep "$1" $PENDRIVE/Documents/db/list/have ; }
+	alias havesearch=findhave
+	finddisc() { dbgrep "$1" $PENDRIVE/Documents/db/list/have/discs ; }
 	havelist() { find $PENDRIVE/Documents/db/list/have/discs -iname "$1Have.txt" | xargs xdg-open ; }
-	alias havelists=havelist
+	#alias havelists=havelist
 	alias findbackup=findhave
 	#alias finddoc=findhave
 	alias whereis=findhave
 	#alias locate=findhave  # conflicts
 
-	finddump() { finddb "$1" $PENDRIVE/Documents/db/datfile ; }
-	alias findump=finddump
-	alias findrom=finddump
-	#findvg() { finddb "$@" $PENDRIVE/Documents/db/vg ; }  # MOVED in a script
-	alias findgame=findvg
-	goodfind() { finddb "$@" "$PENDRIVE/Documents/db/datfile/GoodTools" ; }
-	#nointrofind() { ugrep "$@" -i -I -z -g "$PENDRIVE/Documents/db/datfile/No Intro*.zip" ; }  # TODO: fix
-	nointrofind() { grep -i -I  "$@" $HOME/datfiles/nointro/*.dat ; }  # TODO: remove
-	scenefind() { finddb "$@" $PENDRIVE/Documents/db/datfile/scene ; }
+	dumpsearch() { dbgrep "$1" $PENDRIVE/Documents/db/datfile ; }  #  $retroarch_base_path\database\dat, metadata?
+	alias datsearch=dumpsearch
+	alias romsearch=dumpsearch
+	alias gamesearch=vgsearch
+	goodsearch() { dbgrep "$@" "$PENDRIVE/Documents/db/datfile/GoodTools" ; }
+	#nointrosearch() { ugrep "$@" -i -I -z -g "$PENDRIVE/Documents/db/datfile/No Intro*.zip" ; }  # TODO: fix
+	nointrosearch() { grep -i -I  "$@" $HOME/datfiles/nointro/*.dat ; }  # TODO: remove
+	scenesearch() { dbgrep "$@" $PENDRIVE/Documents/db/datfile/scene ; }
 
-	psxfind() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps1/sonyindex_PSone*.txt ; }
-	alias ps1find=psxfind
-	ps2find() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps2/sonyindex_PS2*.txt ; }
-	pspfind() { grep -i "$1" $PENDRIVE/Documents/db/vg/psp/sonyindex_PSP*.txt ; }
-	ps3find() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps3/ps3tdb.txt ; }
-	ps4find() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps4/*.* ; }
-	wiifind() { grep -i "$1" $PENDRIVE/Documents/db/vg/wii/wiitdb_titles.txt ; }
-	alias ngcfind=wiifind
-	wiiufind() { grep -i "$1" $PENDRIVE/Documents/db/vg/wiiu/wiiutdb_titles.txt ; }
-	xboxfind() { grep -i "$1" $PENDRIVE/Documents/db/vg/xbox/xbox_titleids.tsv ; }
-	xb360find() { grep -i "$1" $PENDRIVE/Documents/db/vg/xb360/gamesdatabase_*.tsv ; }
-	3dsfind() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/3ds/*.json ; }
-	nswfind() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/nsw/*.json ; }
+	psxsearch() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps1/sonyindex_PSone*.txt ; }
+	alias ps1search=psxsearch
+	ps2search() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps2/sonyindex_PS2*.txt ; }
+	pspsearch() { grep -i "$1" $PENDRIVE/Documents/db/vg/psp/sonyindex_PSP*.txt ; }
+	ps3search() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps3/ps3tdb.txt ; }
+	ps4search() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps4/*.* ; }
+	wiisearch() { grep -i "$1" $PENDRIVE/Documents/db/vg/wii/wiitdb_titles.txt ; }
+	alias ngcsearch=wiisearch
+	wiiusearch() { grep -i "$1" $PENDRIVE/Documents/db/vg/wiiu/wiiutdb_titles.txt ; }
+	xboxsearch() { grep -i "$1" $PENDRIVE/Documents/db/vg/xbox/xbox_titleids.tsv ; }
+	xb360search() { grep -i "$1" $PENDRIVE/Documents/db/vg/xb360/gamesdatabase_*.tsv ; }
+	3dssearch() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/3ds/*.json ; }
+	nswsearch() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/nsw/*.json ; }
 	# MEMO: do not quote escaped paths!
 fi
 
@@ -916,20 +914,19 @@ fi
 if which mame >/dev/null 2>&1 ; then
 	#alias mess=mame
 	#alias mamefaq=mameinfo
-	mamefind() { mame $1 -listxml | awk -v 'IGNORECASE=1' -v RS="<software" '/'"$1"'/ { print $0 }' ; }
-	messfind() { mame -listsoftware $2 | awk -v 'IGNORECASE=1' -v RS="<software" '/'"$1"'/ { print $0 }' ; }
+	mamegrep() { mame $1 -listxml | awk -v 'IGNORECASE=1' -v RS="<software" '/'"$1"'/ { print $0 }' ; }
+	messgrep() { mame -listsoftware $2 | awk -v 'IGNORECASE=1' -v RS="<software" '/'"$1"'/ { print $0 }' ; }
 	alias mamedebug="mame -debug -v"
 	complete -W "$(ls $HOME/.mame/roms/*.zip)" mame
 fi
 
-findindex() { finddb "$1" $PENDRIVE/Documents/db/index ; }
-alias findmag=findindex
+indexgrep() { dbgrep "$1" $PENDRIVE/Documents/db/index ; }
+#alias maggrep=indexgrep
 
-geofind() { finddb "$1" $PENDRIVE/Documents/db/geo ; }  # TODO: merge in geoencode script?
-#alias findgeo=geofind
-alias cityfind=geofind
-#alias findloc=findgeo
-alias langfind=findgeo
+geosearch() { dbgrep "$1" $PENDRIVE/Documents/db/geo ; }  # TODO: merge in geoencode script?
+alias locationsearch=geosearch
+alias citysearch=geosearch
+alias langsearch=geosearch
 #alias human2gps=geocode
 alias gps2human=geocode
 alias geolocate=geocode
@@ -937,36 +934,34 @@ alias geolocate=geocode
 alias ipgeolocate=geoip
 alias ipinfo=geoip
 
-#findcontact() { finddb "$1" $PENDRIVE/Documents/db/addressbook ; } -> MOVED in findcontact
-alias rub=findcontact
-alias contactsls=findcontact
-#alias phonenumls=findcontact
-#getphonenum() { findcontact $1 | grep -m1 'CELL' | cut -d: -f2 ; }
+alias rub=contactsearch
+alias addressbook=contactsearch
+alias contactsls=contactsearch
+alias phonesearch=contactsearch
+#phonesearch() { contactsearch $1 | grep -m1 'CELL' | cut -d: -f2 ; }
+
 alias whocall=phoneid
 alias whoisphone=phoneid
 
-#finddate() { finddb "$1" $PENDRIVE/Documents/db/cal ; } -> MOVED in finddate
-#alias findhist=finddate
-#alias findcal=finddate
-#alias findevent=finddate
-#alias when=finddate
+#alias datessearch=calsearch
+#alias when=calsearch
 
-findchem() { finddb "$1" $PENDRIVE/Documents/db/chem ; }
-alias findelem=findchem
+chemsearch() { dbgrep "$1" $PENDRIVE/Documents/db/chem ; }
+alias elemsearch=chemsearch
 
-#findext() { finddb "$1" $PENDRIVE/Documents/db/file/headers.ini ; }
-#findmime() { finddb "$1" $PENDRIVE/Documents/db/hist ; }
+#findext() { dbgrep "$1" $PENDRIVE/Documents/db/file/headers.ini ; }
+#findmime() { dbgrep "$1" $PENDRIVE/Documents/db/hist ; }
 
-#findfreq() { finddb "$1" $PENDRIVE/Documents/db/freq ; }
-#alias findradios=findfreq
+#freqgrep() { dbgrep "$1" $PENDRIVE/Documents/db/freq ; }
+#alias radiosgrep=findfreq
 alias rfscan=sdrscan
 alias radioscan=sdrscan
 
 alias rtl4332mqtt="rtl_433 -F json -M utc | mosquitto_pub -t home/rtl_433 -l"  # https://github.com/merbanan/rtl_433/blob/master/examples/mqtt_rtl_433_test_client.py
 
-alias rfc=findspecs
+alias rfc=specs
 #alias docs=specs
-alias standard=findspecs
+alias standard=specs
 
 alias xml=xmlstarlet
 alias xmlproc=xsltproc
@@ -978,7 +973,7 @@ alias xmlpprint="xml fo"  #  || xmllint --format
 
 # jq aliases   
 if which jq >/dev/null 2>&1 ; then
-	alias jsongrep=jq
+	#alias jsongrep=jq
 	alias ndjsonsplit="jq --compact-output"
 	alias json2ndjson=ndjsonsplit
 	#alias json2csv="jq -r '. | @csv'"   #  https://stackoverflow.com/questions/32960857/how-to-convert-arbitrary-simple-json-to-csv-using-jq
@@ -1104,8 +1099,8 @@ if which zap >/dev/null 2>&1 ; then
     alias appimagesearch="zap search"
 fi
 
-alias color=findcolor
-#alias colorname=findcolor
+alias color=colorsearch
+#alias colorname=colorsearch
 
 # pastel aliases  https://github.com/sharkdp/pastel
 if which pastel >/dev/null 2>&1 ; then
@@ -1115,9 +1110,20 @@ if which pastel >/dev/null 2>&1 ; then
 fi
 
 #alias scite=geany
-alias khex=okteta
+#alias khex=okteta
 
-alias psls="ps -n"  #"ps -Alf"
+if which pastel >/dev/null 2>&1 ; then
+	alias psls="procs"  # https://github.com/dalance/procs
+else
+	alias psls="ps -n"  #"ps -Alf"
+fi
+
+alias pls=psls
+alias psl=psls
+alias psi=psinfo
+alias pss=psuspend
+alias psr=psresume
+
 #alias pstree="pstree -C age -p"
 enable -n suspend  # disable the conflicting shell builtin command
 alias suspend=psuspend
@@ -1129,6 +1135,7 @@ alias resume=psresume
 #alias terminate="pkill -9"
 alias detach=psdetach
 pscount() { pgrep -c "$@" || ps -C "$@" --no-headers | wc -l ; }  # https://stackoverflow.com/questions/3058137/finding-process-count-in-linux-via-command-line
+
 alias memdump=gcore
 
 alias xmlescape=xmlencode
@@ -1169,7 +1176,7 @@ alias bincmp=hexdiff
 #alias diffbin=hexcmp
 #alias diffhex=hexcmp
 
-alias hexfind=hexgrep
+alias hexsearch=hexgrep
 alias bingrep=hexgrep
 alias binreplace=hexreplace
 
@@ -1189,9 +1196,9 @@ takeown() { sudo chown -cR $USER:$USER "$@" ; sudo chmod -cR u+X "$@" ; }
 
 alias ytdl="yt-dlp -U --embed-metadata  --embed-chapters --embed-subs"  # --remux-video mp4
 alias ytdlmp4="ytdl --remux-video mp4" # -f mp4
-alias getvideo=ytdl
-#alias getvideourl="youtube-dl --get-url" -> MOVED IN getmediaurl
-alias getvideourl=getmediaurl
+alias videoget=ytdl
+#alias videourlget="youtube-dl --get-url" -> MOVED IN mediaurlget
+alias videourlget=mediaurlget
 alias geturls=html2urls
 #alias getlinks=html2urls
 alias html2links=html2urls
@@ -1201,7 +1208,6 @@ alias posix-shell=posh
 
 #alias mime="file -bi"
 alias mimeget="file -bi"  # FIX for symlinks: mimeget() { file -bi $(readlink -f "$@") ; }
-alias getmime=mimeget
 #alias type=mimeget  # NO? conflicts with bash builtin
 alias encodingget=mimeget
 mime2ext() { python -m mimetypes -e "$1" ; }
@@ -1250,7 +1256,7 @@ alias jap2latin=jap2romaji
 #alias kana=romaji2kana
 #alias romaji=transliterate
 #alias ipa="espeak --ipa"
-alias findkanji=dictjap2eng
+alias kanjisearch=dictjap2eng
 alias jap2engdict=dictjap2eng
 alias eng2japdict=dicteng2jap
 
@@ -1308,7 +1314,7 @@ if which python >/dev/null 2>&1 ; then
 
     # usage: $0 "el1 el2 el3 ..." EXPONENT
     #setpower() { python -c "import itertools, math; from pprint import pprint; args_list=\"$*\".split() ; pprint(list(itertools.product(args_list[0:-1], repeat=int(args_list[-1]))))" ; }
-    #alias cartesian-power=setpower
+    #alias cartesian-power=powerset
 
     # usage: $0 "el1 el2 el3 ..."
     #permutationspy() { python -c "import itertools; from pprint import pprint; args_list=\"$*\".split() ; pprint(list(itertools.permutations(args_list)))" ; }  #  https://stackoverflow.com/questions/104420/how-to-generate-all-permutations-of-a-list
@@ -1543,9 +1549,9 @@ encrypt() { 7z a -p "$1.zip" "$1" ; }
 #fi
 
 #alias utf8=unicode
-#ugrep() { egrep -i "^[0-9a-f]{4,} .*$*" $(locate -l 1 CharName.pm) | while read h d; do /usr/bin/printf "\U$(printf "%08x" 0x$h)\tU+%s\t%s\n" $h "$d"; done ; }  # req. libunicode-string-perl and locate    https://www.commandlinefu.com/commands/view/7535/look-up-a-unicode-character-by-name
-alias findunicodecharbyname=ugrep
-#alias name2unicode=ugrep
+#unicodegrep() { egrep -i "^[0-9a-f]{4,} .*$*" $(locate -l 1 CharName.pm) | while read h d; do /usr/bin/printf "\U$(printf "%08x" 0x$h)\tU+%s\t%s\n" $h "$d"; done ; }  # req. libunicode-string-perl and locate    https://www.commandlinefu.com/commands/view/7535/look-up-a-unicode-character-by-name
+#alias unicodecharbyname=unicodegrep
+#alias name2unicode=unicodegrep
 alias unicode2name="unicode -i utf-8 -C USE_COLOUR"
 #unicode2name() { echo -n "$*" | uniname ; }
 # alt.: https://github.com/pemistahl/chr/
@@ -1561,27 +1567,32 @@ if which mosquitto_sub >/dev/null 2>&1 ; then
 fi
 
 # LD_LIBRARY_PATH wrappers
-alias setpulse2alsa="apulse bash"
-#alias setgl2gles="glshim bash"
-alias setfpsdisplay="mangohud bash"
+alias pulse2alsaset="apulse bash"
+#alias gl2glesset="glshim bash"
+alias fpsdisplayset="mangohud bash"
 #alias setogloverlay="mangohud bash"
-alias setfpsdisplay32bit="mangohud.x86 bash"
+alias fpsdisplay32bitset="mangohud.x86 bash"
 #alias glxosd=mangohud
 
+alias camerals="v4l2-ctl --info"
 alias camerals="v4l2-ctl --info"
 alias lscamera=camerals
 alias camerainfo="v4l2-ctl --list-formats-ext ; v4l2-ctl -d /dev/video0 --all"
 alias camera2qr=camera2barcode
-alias camerascan=webcamerascan
+
+alias netcamerascan=webcamerascan
 
 alias hardlinkcp="cp -lr"
 alias lncp="cp -lr"
+
 alias pass=mypass  # conflicts with https://www.passwordstore.org/
 alias getpass=mypass
-#alias 2fa=mypass
-#alias otp=mypass
+alias passget=mypass
 
-alias autotype=exp  # from https://stackoverflow.com/questions/12202587/automatically-enter-ssh-password-with-script#answer-28293101
+alias 2fa=otpclient-cli
+alias otp=otpclient-cli
+
+#alias autotype=exp  # from https://stackoverflow.com/questions/12202587/automatically-enter-ssh-password-with-script#answer-28293101
 
 # rclone aliases
 if which rclone >/dev/null 2>&1 ; then
@@ -1680,7 +1691,6 @@ if which adb >/dev/null 2>&1 ; then
     #androidturngreenled() { adb shell "echo $1 > /sys/class/leds/green/brightness" ; }
     alias androidturnflashlight="androidtermuxshell termux-torch"  #  /sys/class/flashlightdrv/kd_camera_flashlight
     alias androidsettethering="adb shell svc usb setFunction rndis"  # TODO: not supported by all smartphones https://android.stackexchange.com/questions/29954/is-it-possible-to-activate-the-usb-tethering-android-setting-from-the-command
-    alias androidsetreversetethering=setandroidreversetethering  # nohup gnirehtet run $ANDROID_SERIAL  > /tmp/gnirehtet.log
     alias androidwifiscan="androidtermuxshell termux-wifi-scaninfo"
     #alias androidbtscan="androidtermuxshell termux-bluetooth-scaninfo"  # https://github.com/StevenSalazarM/Termux-api-bluetooth
     #alias androidirsend="androidtermuxshell termux-infrared-transmit -f"
@@ -1743,7 +1753,7 @@ alias share=smbshare
 alias smbmount="mkdir /tmp/smb/ service smb start ; smbnetfs /tmp/smb "  # TODO: -o show_$_shares=on use autofs instead?
 alias sambamount=smbmount
 
-findport() { grep -i $1 /etc/services ; }  # ALTERNATIVE: getent services $1
+portgrep() { grep -i $1 /etc/services ; }  # ALTERNATIVE: getent services $1
 #findservice=findport
 portcheck() { sudo fuser -v -n udp $1 ; sudo fuser -v -n tcp $1 ; [ $? -ne 0 ] && echo "portcheck: no process found" ; }
 alias wholisten=portcheck
@@ -1784,11 +1794,10 @@ if which docker >/dev/null 2>&1 ; then
     alias dockerstartattached="docker start -ai"
 fi
 
-#alias tunnel=settunnel
-#alias sshtunnel=settunnel
-#alias publish=settunnel
-#alias expose=settunnel
-#alias export=settunnel
+#alias tunnel=tunnelset
+#alias sshtunnel=tunnelset
+#alias publish=tunnelset
+#alias expose=tunnelset
 
 #alias listen=play
 alias webradio="play radio"
@@ -1842,14 +1851,14 @@ findext() { fd -e "$1" || find . -iname "*.$1" ; }
 
 alias findlatestchanged="ls -a -R -t1 -l -p -h |  grep -v / |  head -n 10"  # https://unix.stackexchange.com/questions/132340/how-do-i-get-the-latest-file-from-a-list-of-files-in-a-particular-directory
 alias findchangedtoday="find -mtime -1 -ls"
-alias latestls=findlatestchanged  
+alias lslatest=findlatestchanged  
 
 alias findbrokensymlinks="find . -xtype l"
 #TODO: symlink2hardlink=find -type l -exec bash -c 'ln -f "$(readlink -m "$0")" "$0"' {} \;
 #  https://stackoverflow.com/questions/8377312/how-to-convert-symlink-to-regular-file
 
-alias findup=finddup
-alias fdupes=finddup
+alias findup=dupfind
+#alias fdupes=dupfind
 
 #if which czkawka >/dev/null 2>&1 ; then
 #findbig() { czkawka big --directories $( pwd ) ; }
@@ -1868,12 +1877,11 @@ alias rmemptyretroarchsaves=rmemptysrm
 #alias vimless=vimpager
 #alias vless=vimpager
 
-alias manpagesls="man -k ''"
+alias manls="man -k ''"
 alias findman="man -k"  # || find $1 /usr/share/man
 alias manfind=findman
 
-alias wsearch=websearch
-#alias ffsearch=websearch
+#alias wsearch=websearch
 #alias opensearch=websearch
 
 alias bookmarkopen=webopen
@@ -1885,7 +1893,6 @@ alias limitsls="getconf -a ; ulimit -a"
 alias kernelflagsls="getconf -a"
 #alias confls="getconf -a"
 
-alias irls=ir-keytable
 alias sdrls="SoapySDRUtil --probe"
 alias radiols=sdrls
 alias wificardsls="iw list"
@@ -1941,7 +1948,7 @@ if which rizin >/dev/null 2>&1 ; then
     alias asmls="rz-asm -L"
     alias x86asm2hex="asm2hex -a x86"
     alias hex2x86asm="asm2hex -d -a x86"
-    alias opcodels=opcodefind
+    alias opcodels=opcodesearch
     alias hex2numbers="rz-ax -r"   # TODO: add signed values
     alias hex2carr="rz-ax -i"  # hex string to C array
     alias ip2hex="rz-ax -I"  # https://stackoverflow.com/questions/461742/how-to-convert-an-ipv4-address-into-a-integer-in-c
@@ -1987,9 +1994,8 @@ alias mic2text=mic2speechrec
 alias speech2text=mic2speechrec
 alias voice2command=mic2command.py
 
-#alias aifacedet=facerec
-#alias aifacerec=face_recognition
-#alias aiupscale=realesrgan-ncnn-vulkan  # moved in script
+#alias facedet=facerec
+#alias facerec=face_recognition
 
 #renext() { rename.ul -vo .$1 .$2 *.$1 ; } 
 renext() { rename.pl -v "s/.$1/.$2/" *.$1 ; } 
@@ -2080,9 +2086,8 @@ alias setlibrarypath2cwd="export LD_LIBRARY_PATH=."
 
 alias startnointernet="unshare -n -r"  # https://unix.stackexchange.com/questions/252714/is-it-possible-to-run-unshare-n-program-as-an-unprivileged-user
 
-alias torrentget=gettorrent
-alias magnetget=gettorrent
-alias magnet2torrent=gettorrent
+alias torrentget=magnet2torrent
+alias magnetget=magnet2torrent
 
 if which crispy-doom >/dev/null 2>&1 ; then
 	alias doom="crispy-doom -iwad DOOM.WAD"
@@ -2134,11 +2139,12 @@ alias curl2python=uncurl  # https://github.com/spulec/uncurl
 #TODO: alias stderr2null
 #TODO: alias stdout2null
 
-alias findcomputernearby=findnearby
-alias neighbourscan=findnearby
-alias fing=findnearby
+alias neighbourscan=nearbyscan
+#alias fing=nearbyscan
 
-alias findmatch=findnetplay
+alias matchsearch=netplaysearch
+#alias gamespy=xqf
+alias gamespy=netplaysearch
 
 alias smiley=emoji
 alias emoticon=emoji
@@ -2157,15 +2163,30 @@ alias videocut=mediacut
 #alias setsoftap="service hostapd start"
 alias setsoftap=create_ap
 
-alias easysed=sd
-alias easyfind=fdfind
+if which zoxide >/dev/null 2>&1 ; then
+	eval "$(zoxide init bash )"  # by default register "z" alias as cd alternative
+	#eval "$(zoxide init bash --cmd cd)"  # replace system cd command
+	# TODO: multiple aliases https://github.com/ajeetdsouza/zoxide/discussions/709
+	#alias z=zoxide
+	alias jump=z
+fi
+
+if which eza >/dev/null 2>&1 ; then
+	alias easyls="eza --icons=auto"  # alt. lsd
+	# eza --long --extended --links --header --git --icons --classify -a -a
+	alias ls=easyls
+fi
+
+alias easysed=sd  # alt. sad
+alias easyfind=fdfind  # alt. bfs
+alias easydiff=diff-so-fancy
 # TODO: easygit=...
 # TODO: easydd=...
 
-#alias cheat=quickcmdref
-alias help=quickcmdref
-alias usage=quickcmdref
-alias examples=quickcmdref
+alias help=cmdhelp
+alias usage=cmdhelp
+alias examples=cmdhelp
+alias cheatsheet=cmdhelp
 
 if which btrfs >/dev/null 2>&1 ; then
     alias brtfsdf="sudo compsize"
@@ -2177,7 +2198,7 @@ if which btrfs >/dev/null 2>&1 ; then
     # ... https://www.reddit.com/r/linux_gaming/comments/mcfcdz/save_disk_space_for_your_games_btrfs_filesystem/
 fi
 
-alias usbfdformat="sudo ufiformat -f 1440 -v  /dev/sdb"
+#alias usbfdformat="sudo ufiformat -f 1440 -v  /dev/sdb"
 
 # kindle-specific aliases
 if [ ! -z "$KINDLE_TZ" ]; then
@@ -2190,7 +2211,7 @@ fi
 
 if which avahi-publish >/dev/null 2>&1 ; then
 	#mdns_publish_port() { avahi-publish -s "$(hostname):$PORT" _myservic._tcp $PORT }
-	mdns-announce() { avahi-publish -a -R $(hostname).local $(getip) ;  }
+	mdns-announce() { avahi-publish -a -R $(hostname).local $(ipget) ;  }
 	#mdns_publish_host() { avahi-publish -a -R $2.local $1 ;  }
 	# https://pi3g.com/2019/04/10/avahi-how-to-assign-several-local-names-to-same-ip/
 fi
@@ -2211,11 +2232,21 @@ alias firewallrules="iptables --list-rules"
 alias zipapp="python -m zipapp"
 alias pyapp=zipapp
 
+if which ir-keytable >/dev/null 2>&1 ; then
+	alias irls=ir-keytable
+	#alias remotels=irls
+	#alias remoteset=irset
+	alias irclear=ir-keytable --clear
+	# ...
+fi
+
 if which minimodem >/dev/null 2>&1 ; then
 	#alias file2audio="minimodem --tx 300"
 	alias ascii2audio="minimodem --tx --ascii 300"
 	alias audio2ascii="minimodem --rx --ascii 300"
 	alias ascii2flac="minimodem --tx --ascii 300 --file"
 fi
+
+alias media2subs=transcribe
 
 unset THIS_SCRIPT_DIR

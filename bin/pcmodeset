@@ -14,7 +14,7 @@ if [ "$(hostname)" = "BOSS2" ]; then
 	lgtv_serial volume20
 	lgtv_serial brightness50
 	
-	setcpu 80
+	cpuset 80
 
 elif [ "$(hostname)" = "PICCIOTTO3" ]; then
 
@@ -25,10 +25,12 @@ elif [ "$(hostname)" = "PICCIOTTO3" ]; then
 	echo 1|sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
 	
 	# set GPU reduced max freq.
-	setgpu 50
+	gpuset 50
 	
 	# switch to KDE activity "gaming"  https://blog.hanschen.org/2011/05/20/switch-to-specific-activities-with-keyboard-shortcuts/
 	qdbus org.kde.ActivityManager /ActivityManager/Activities SetCurrentActivity da9a261c-328d-454e-9f97-e4d417b1331a
+	
+	resolutionset 1920x1080
 
 elif [ ! -z "$ANDROID_ROOT" ]; then  # Android detection
 
@@ -41,9 +43,7 @@ fi
 
 gamma 1.0
 
-setvolume 85
-
-setres 1920x1080
+volumeset 85
 
 # set a warmer color temperature
 redshift -O 5000
@@ -54,8 +54,8 @@ pkill -CONT chromium-browser
 pkill -CONT plugin-container
 pkill -CONT "python $PENDRIVE/SharedPrograms/eventsmon.py"
 
-# setcpugovernor powersave
+# cpusetgovernor powersave
 
-# TODO: enable gamemode ... https://github.com/FeralInteractive/gamemode
+# TODO: disable gamemode ... https://github.com/FeralInteractive/gamemode
 
 

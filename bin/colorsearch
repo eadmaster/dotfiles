@@ -8,7 +8,7 @@ fi
 
 COLOR_QUERY=$1
 
-finddb $COLOR_QUERY $PENDRIVE/Documents/db/palette
+dbgrep $COLOR_QUERY $PENDRIVE/Documents/db/palette
 
 # TODO: seach "rgb.txt" and "colors.xml" in /usr and /etc
 grep -i $COLOR_QUERY "$PYTHONHOME/examples/pynche/*colors.txt"  2> /dev/null

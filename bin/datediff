@@ -1,6 +1,6 @@
 #!/bin/bash
 
-command -p datediff "$@"
+ddiff "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 dateutils.ddiff "$@"

@@ -4,7 +4,7 @@ echo "MEMO: switch to gaming activity"
 
 gamma 1.5
 
-setvolume 100
+volumeset 100
 
 if [ "$(hostname)" = "BOSS2" ]; then
 	lgtv_serial poweron
@@ -20,7 +20,7 @@ if [ "$(hostname)" = "BOSS2" ]; then
 	#lgtv_serial mute
 	# TODO: turn off tv speaker
 	
-	setcpu 3500000
+	cpuset 3500000
 
 elif [ "$(hostname)" = "PICCIOTTO3" ]; then
 
@@ -31,12 +31,12 @@ elif [ "$(hostname)" = "PICCIOTTO3" ]; then
 	echo 0|sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
 
 	# set CPU max freq
-	#setcpu 100
+	#cpuset 100
 	# set GPU max freq
-	#setgpu 100
+	#gpuset 100
 	
 elif [ ! -z "$ANDROID_ROOT" ]; then  # Android detection
-	setvolume 100
+	volumeset 100
 	
 	settings put system screen_brightness 100
 	# termux-brightness 100
@@ -78,7 +78,8 @@ systemctl --user start gamemoded  # https://github.com/FeralInteractive/gamemode
 systemctl --user start fluidsynth  # MIDI player
 systemctl start timidity  # MIDI player
 
-# show FPS stats
-mangohud bash  # https://github.com/flightlessmango/MangoHud
-
-
+# show FPS stats + enter gamemode for all subprocesses
+# https://github.com/FeralInteractive/gamemode/
+# https://github.com/flightlessmango/MangoHud
+gamemoderun mangohud bash
+# switcherooctl launch  ..  Launch a command on a specific GPU

@@ -38,7 +38,7 @@ case "$CMD" in
 status|check )
 	case "$TARGET" in
 		""|all )
-			findnearby
+			nearbyscan
 			exit 0
 			
 			#OLD:
@@ -290,7 +290,7 @@ off|down )  # OFF COMMANDS
 			sudo ping -c 1 -W 2 $TARGET >/dev/null
 			if [ $? -ne 0 ]; then
 				# try names resolving with with mDNS
-				#TARGET=$(getip $TARGET)
+				#TARGET=$(ipget $TARGET)
 				TARGET=$(getent hosts ${TARGET}.local | cut -f2)
 				[ -z "$TARGET" ] && TARGET=$(avahi-resolve --name ${TARGET}.local | cut -f2)
 				[ -z "$TARGET" ] && TARGET=$(nmblookup $TARGET | cut -d' ' -f1)

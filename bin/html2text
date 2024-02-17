@@ -1,7 +1,7 @@
 
 
 case "$@" in
-	http*|ftp* ) webcat "$@" | $0 ;;
+	http*|ftp* ) wcat "$@" | $0 ;;
 esac
 
 # from https://github.com/grobian/html2text 

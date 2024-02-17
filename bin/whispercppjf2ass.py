@@ -1,10 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-#  http://stackoverflow.com/questions/37913415/list-all-json-pointers-and-skip-common-decoding-errors
-
 import json,sys, codecs
-
 
 
 if __name__ == "__main__":
@@ -28,11 +25,8 @@ if __name__ == "__main__":
 		#infile = codecs.getreader("utf-8")(infile)
 
 	input_json_str = infile.read()
-	
 		
 	parsed_json = json.loads(input_json_str) # TODO: better handle decoding errors (create a custom JSONDecoder?)
-
-	#2FIX(not working with top level lists): print("fileinfo: number of top-level entries: " + str(len(obj.keys())))  # TODO: print more infos?
 	
 	# header
 	args.outfile.write("[Script Info]\n")
