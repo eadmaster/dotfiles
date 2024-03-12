@@ -2,9 +2,9 @@
 echo
 
 echo "$0: PSRewired (PS2, PS3, PSP)  https://psrewired.com"
-curl -s https://api.psrewired.com/us/api/universes?applicationId=20764 | jq -c '.[] | select(.playerCount > 0) | pick(.name, .description, .playerCount)'   # Motorstorm NTSC (PS3)
-curl -s https://api.psrewired.com/us/api/universes?applicationId=20774 | jq -c '.[] | select(.playerCount > 0) | pick(.name, .description, .playerCount)'   # Ratchet & Clank: Size Matters NTSC/PAL (PS2/PSP)
-curl -s https://api.psrewired.com/us/api/universes?applicationId=10694 | jq -c '.[] | select(.playerCount > 0) | pick(.name, .description, .playerCount)'   # Twisted Metal: Head-On (PS2/PSP)
+curl -s -m3 https://api.psrewired.com/us/api/universes?applicationId=20764 | jq -c '.[] | select(.playerCount > 0) | pick(.name, .description, .playerCount)'   # Motorstorm NTSC (PS3)
+curl -s -m3 https://api.psrewired.com/us/api/universes?applicationId=20774 | jq -c '.[] | select(.playerCount > 0) | pick(.name, .description, .playerCount)'   # Ratchet & Clank: Size Matters NTSC/PAL (PS2/PSP)
+curl -s -m3 https://api.psrewired.com/us/api/universes?applicationId=10694 | jq -c '.[] | select(.playerCount > 0) | pick(.name, .description, .playerCount)'   # Twisted Metal: Head-On (PS2/PSP)
 
 echo
 
@@ -14,12 +14,12 @@ echo
 echo
 
 echo "WiiLink WFC (Wii+NDS) https://wfc.wiilink24.com"
-curl -s https://api.wfc.wiilink24.com/api/stats | jq -c 'del(.global)'
+curl -s -m3 https://api.wfc.wiilink24.com/api/stats | jq -c 'del(.global)'
 
 echo
 
 echo "$0: Insignia (xbox)"
-curl -s https://insignia.live/#games | html2text | grep -B3 "1 session"
+curl -s -m3 https://insignia.live/#games | html2text | grep -B3 "1 session"
 #discord_get_latest_messages 1176986109008425080  # Insignia matchmaking (xbox)
 #discord_get_latest_messages 1062023598627364905 | jq -c '.[] | pick(.embeds[].title, .embeds[].fields, .timestamp) ' # Insignia events (xbox)
 
@@ -36,8 +36,8 @@ echo
 echo
 
 echo "$0: Kaillera (emus)"
-curl -s http://www.kaillera.com/raw_server_list.php | paste -sd ' \n' | grep -v ';0;'
-curl -s http://www.kaillera.com/raw_server_list2.php | paste -sd ' \n' | grep -v ';0;'
+curl -s -m3  http://www.kaillera.com/raw_server_list.php | paste -sd ' \n' | grep -v ';0;'
+curl -s -m3  http://www.kaillera.com/raw_server_list2.php | paste -sd ' \n' | grep -v ';0;'
 # TODO: parse games?
 #  docs https://kr.2manygames.fr/docs/kprotocol.txt
 #  https://github.com/opengsq/opengsq-python/discussions/13
@@ -57,5 +57,25 @@ wcat https://www.teamxlink.co.uk | grep -A20 "Active Games" | grep -A1 '^\*\*\* 
 echo
 
 echo "$0: Retroarch Netplay (multi) http://lobby.libretro.com"
-curl -s "http://lobby.libretro.com/list/" | jq -c '.[].fields | select(.has_password == false and .country!="cn") | pick(.game_name, .game_crc, .core_name, .core_version, .retroarch_version, .username, .country, .updated)'
+curl -s -m3 "http://lobby.libretro.com/list/" | jq -c '.[].fields | select(.has_password == false and .country!="cn") | pick(.game_name, .core_name, .username, .country)'  # .game_crc, .core_version, .retroarch_version, 
 # TODO: filter more countries by region
+
+echo
+
+echo "$0: Lan Play (NSW, PS4) http://lan-play.com/"
+#curl 'https://api.uptimerobot.com/v2/getMonitors'  -H 'Host: api.uptimerobot.com' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0 Waterfox/56.6.2022.11' -H 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Referer: http://lan-play.com/' -H 'content-type: application/x-www-form-urlencoded' -H 'origin: http://lan-play.com' -H 'Connection: keep-alive' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' --data 'api_key=ur905839-35c881f5b6efeb47afd5bff9&format=json&all_time_uptime_ratio=1'
+echo "$0: switch.servegame.com: "
+curl 'http://switch.servegame.com:11451/' -H 'Host: layer8.fail:11451' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0 Waterfox/56.6.2022.11' -H 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Referer: http://lan-play.com/' -H 'content-type: application/json' -H 'origin: http://lan-play.com' -H 'Connection: keep-alive' --data '{"query":"{room{contentId hostPlayerName nodeCount nodeCountMax advertiseData nodes{playerName}}}"}'
+echo
+echo "$0: layer8.fail: "
+curl 'http://layer8.fail:11451/' -H 'Host: layer8.fail:11451' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0 Waterfox/56.6.2022.11' -H 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Referer: http://lan-play.com/' -H 'content-type: application/json' -H 'origin: http://lan-play.com' -H 'Connection: keep-alive' --data '{"query":"{room{contentId hostPlayerName nodeCount nodeCountMax advertiseData nodes{playerName}}}"}'
+echo
+echo "$0: switch-lanyplay-de.ddns.net:"
+curl 'http://switch-lanyplay-de.ddns.net:11451/' -H 'Host: layer8.fail:11451' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0 Waterfox/56.6.2022.11' -H 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Referer: http://lan-play.com/' -H 'content-type: application/json' -H 'origin: http://lan-play.com' -H 'Connection: keep-alive' --data '{"query":"{room{contentId hostPlayerName nodeCount nodeCountMax advertiseData nodes{playerName}}}"}'
+echo
+echo "$0: switch.nvds.be:"
+curl 'http://switch.nvds.be:11451/' -H 'Host: layer8.fail:11451' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0 Waterfox/56.6.2022.11' -H 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Referer: http://lan-play.com/' -H 'content-type: application/json' -H 'origin: http://lan-play.com' -H 'Connection: keep-alive' --data '{"query":"{room{contentId hostPlayerName nodeCount nodeCountMax advertiseData nodes{playerName}}}"}'
+echo
+echo "$0: switch.jayseateam.nl:"
+curl 'http://switch.jayseateam.nl:11451/' -H 'Host: layer8.fail:11451' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0 Waterfox/56.6.2022.11' -H 'Accept: */*' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Referer: http://lan-play.com/' -H 'content-type: application/json' -H 'origin: http://lan-play.com' -H 'Connection: keep-alive' --data '{"query":"{room{contentId hostPlayerName nodeCount nodeCountMax advertiseData nodes{playerName}}}"}'
+

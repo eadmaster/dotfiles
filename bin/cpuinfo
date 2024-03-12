@@ -51,3 +51,9 @@ cpupower idle-info
 echo
 
 inxi -f
+
+echo
+
+# https://unix.stackexchange.com/questions/180726/easy-command-line-method-to-determine-specific-arm-architecture-string
+dpkg --print-architecture
+arch

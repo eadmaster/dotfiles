@@ -37,17 +37,6 @@ alias cdhome="cd ~"
 #alias cdr="cd /r"
 #alias gohome="cd ~"
 #NO? zsh option autopushd emulation  http://unix.stackexchange.com/questions/4290/aliasing-cd-to-pushd-is-it-a-good-idea
-# detect ls standalone vs busybox ver
-if [ -L $(which ls) ] ; then
-    # ls is a symlink, use only switches implemented in busybox
-    alias ls="ls -AF --color=auto"
-else
-    alias ls="ls -AF --color=auto -v -h --author --time-style=long-iso"
-    # TODO: case-insensitive filename sorting  https://stackoverflow.com/questions/18413646/making-the-ls-command-sort-a-before-b-vs-a-b-a-b
-    # https://www.topbug.net/blog/2016/11/28/a-better-ls-command/
-fi
-alias dir="ls -l"
-[ ! -z "$ANDROID_ROOT" ] && alias dir="ls -l -a"
 alias cls="clear ; reset"
 #alias ren=rename
 alias ren="mv -vi"
@@ -122,7 +111,7 @@ alias checkver=ver
 #alias getkeyboard="cat /etc/keymap /etc/default/keyboard"
 #alias keyboardset=loadkey -> MOVED in keyboardset
 #alias setkb=keyboardset
-alias setmap=keyboardset
+#alias setmap=keyboardset
 alias keycodesget="showkey -a"  # ALT. xinput test 14  ... https://superuser.com/questions/248517/show-keys-pressed-in-linux
 #alias eventsget=xev
 #alias status="ps -fC"
@@ -197,6 +186,7 @@ alias grepliteral="grep -F"
 #alias pdfgrep=filegrep
 #alias anygrep=filegrep
 
+alias fileappend=filecat
 #alias anycat=filecat
 #alias append=filecat
 #alias merge=filecat
@@ -211,7 +201,7 @@ alias flush=sync
 #alias commit=sync
 
 alias now=timestamps
-alias gettimestamps=timestamps
+#alias gettimestamps=timestamps
 #alias datesget=timestamps
 #alias timestamp=timestamps
 alias tsget=timestamps
@@ -230,7 +220,8 @@ alias datecp=cpdate
 
 # always verbose cp, ln, mv and rm
 #NO? alias cp='cp -vi' -> "-i" override "-f" switch
-alias cp='cp -va'
+#alias cp='cp -va'
+alias cp='cp -v'
 # WANTED: progress bar  https://unix.stackexchange.com/questions/65077/is-it-possible-to-see-cp-speed-and-percent-copied
 #  | progress https://github.com/Xfennec/progress
 [ ! -z "$ANDROID_ROOT" ] && alias cp="cp -p"
@@ -242,6 +233,11 @@ alias rm="rm -v"
 [ ! -z "$ANDROID_ROOT" ] && alias rm=rm
 #alias ln='ln -vi' -> "-i" override "-f" switch
 alias ln='ln -v'
+
+#bypass "time" shell builtin https://www.reddit.com/r/linux/comments/tq7xws/til_theres_another_time_command_that_gives_some/
+#alias time="command time"
+alias resources='time -v'
+alias timeit="time -f '%e'"
 
 alias qrdecode=barcode2txt
 #alias barcode=zxing
@@ -269,7 +265,7 @@ alias undelete=testdisk
 alias trunc=truncate
 alias truncatesize="truncate -s"
 chsize() { truncate -s $2 $1 ; }  # -c  # TODO: swap $2 <-> $1 ?
-alias setsize=chsize
+#alias sizeset=chsize
 alias createsz=chsize
 #alias newsz=chsize
 extend() { truncate -c -s+$2 $1 ; }
@@ -742,13 +738,15 @@ alias lowercase=strtolower
 alias netbench=webbench
 alias speedtest=webbench
 
-alias replace=sd
+type sd 2> /dev/null && alias replace=sd
+
 alias wildcards2re="sed 's/\./\\\./g; s/\*/\.\*/g; s/?/./g'"
 
 alias py=python
 alias py3=python3
 type ipython 2> /dev/null && alias py=ipython
 type ipython3 2> /dev/null && alias py=ipython3
+type ptpython3 2> /dev/null && alias py=ptpython3
 #alias piton=python
 #alias pithon=python
 #alias pyton=python
@@ -770,7 +768,6 @@ alias ftps=uftpd
 [ -f "$THIS_SCRIPT_DIR/stopwatch" ] || stopwatch() { echo 'timer started, press CTRL+C to stop...' ; time cat; }
 #alias timer=stopwatch
 alias chronometer=stopwatch
-alias timeit=time
 #alias clock=time
 
 #alias pylab="ipython --pylab"
@@ -783,7 +780,8 @@ alias h=history
 alias s=f
 #alias p="ps -ut" # oppure -lt -aux?
 alias i=fileinfo
-alias d="du -shx"
+alias d="du -hcx"
+#alias usage=d
 alias c=cd
 #alias c=calc
 alias l=ls
@@ -793,7 +791,7 @@ alias l=ls
 #alias g=geany
 #alias e=geany
 
-alias ll='ls -AFh --color=auto'
+#alias ll='ls -AFh --color=auto'
 #alias la='ls -A'
 alias bb=busybox
 alias ff=firefox
@@ -806,7 +804,6 @@ alias mi=mediainfo
 #alias rn=mv
 
 #alias df="df -Tmh" # prints Free Disk space in Human-readable mode
-#alias du="du -hcx"
 
 #alias clip=pbcopy
 #alias pbcopy='xclip -selection clipboard' -> MOVED in pbcopy
@@ -984,7 +981,8 @@ if which jtbl >/dev/null 2>&1 ; then
 	alias json2table="jtbl "
 	alias ndjson2table="jtbl "
 	alias json2csv="jtbl --csv "
-	alias json2markdown="jtbl --csv "
+	alias json2markdown="jtbl --markdown "
+	alias json2mdtable="jtbl --markdown "
 	alias json2html="jtbl --html "
 fi
 
@@ -1089,13 +1087,13 @@ fi
 
 # zap aliases  https://github.com/srevinsaju/zap
 if which zap >/dev/null 2>&1 ; then
-    alias appimageinstall="zap install"
-    alias appimageinstalllocal="zap install"
+#    alias appimageinstall="zap install"
+#    alias appimageinstalllocal="zap install"
     alias appimageinstallgithub="zap install --github --from "
     alias appimageuninstall="zap remove"
     alias appimageupdate="zap update"
     alias appimagelist="zap list"
-    #appimageinfo() { nix-env -qa --description ".*$@.*" | cat ; }
+#    #appimageinfo() { nix-env -qa --description ".*$@.*" | cat ; }
     alias appimagesearch="zap search"
 fi
 
@@ -1343,14 +1341,27 @@ fi
 #alias convertunits=calc
 #alias unitsconvert=units
 
-alias unitsls="cat /usr/share/units/definitions.units ; cat $PENDRIVE/Documents/db/phys/units.dat ; qalc --list-units"
-alias constantsls="qalc --list-variables"
-alias currencyls="(cat /usr/share/units/currency.units || zcat /usr/share/misc/currency.gz)"
-alias localels="(cat /usr/share/units/locale_map.txt || cat /etc/locale.gen ; echo -e "\ninstalled:" ; locale -a )"
-alias langls="(zcat /usr/share/misc/languages.gz || cat /usr/share/units/locale_map.txt)"
-alias countryls="zcat /usr/share/misc/countries.gz ; cat $PENDRIVE/Documents/db/geo/countries.csv"
-alias abbrevsls="zcat /usr/share/misc/abbrevs.gen.gz"
-alias tldls="zcat /usr/share/misc/top-level.domains.gz"
+if [ -d /usr/share/units ]; then
+	alias unitsls="cat /usr/share/units/definitions.units ; cat $PENDRIVE/Documents/db/phys/units.dat ; qalc --list-units"
+	alias constantsls="qalc --list-variables"
+	alias currencyls="(cat /usr/share/units/currency.units || zcat /usr/share/misc/currency.gz)"
+	alias localels="(cat /usr/share/units/locale_map.txt || cat /etc/locale.gen ; echo -e "\ninstalled:" ; locale -a )"
+fi
+
+if [ -d /usr/share/misc ]; then
+	alias langls="(zcat /usr/share/misc/languages.gz || cat /usr/share/units/locale_map.txt)"
+	alias countryls="zcat /usr/share/misc/countries.gz ; cat $PENDRIVE/Documents/db/geo/countries.csv"
+	alias abbrevsls="zcat /usr/share/misc/abbrevs.gen.gz"
+	alias tldls="zcat /usr/share/misc/top-level.domains.gz"
+fi
+
+# if [ -d $PENDRIVE/Documents/db/geo
+#alias eucountriessearch="jq -c '.features[] | .properties | select(.continent==\"Europe\") | pick(.name, .postal, .wb_a2, .wb_a3)' $PENDRIVE/Documents/db/geo/countries.geojson "
+# grepeucountries="eucountriessearch | grep -F -f-"
+#alias eucountriesgrep="grep  "$(coco EU --output_sep \|)""
+#alias eucountriesiso2grep="grep  "$(coco EU --output_sep \| --to ISO2)""
+#alias eucountriesiso3grep="grep  "$(coco EU --output_sep \| --to ISO3)""
+
 alias charsetsls="iconv -l"
 alias encodingsls=charsetsls
 
@@ -1704,10 +1715,15 @@ if which adb >/dev/null 2>&1 ; then
     alias androidnotificationsls="adb shell dumpsys notification | grep ticker | cut -d= -f2"
     alias androidalertsla=androidnotificationsls
     alias androidunlock=myandroidunlock
-    alias androidremotecontrol="scrcpy &"
     alias androidphotostransfer="androidget sdcard/DCIM"  # "storage/sdcard1/DCIM/Camera" if using SD card
     alias androidremountsystemrw="adb root ; adb remount"  # TODO: reconnect before the 2nd command if necessary...  https://android.stackexchange.com/questions/60446/cant-remount-system-in-rw
     #TODO: alias androidassistantquery="adb shell am start-activity com.google.android.apps.googleassistant/.AssistantActivity"
+fi
+
+if which scrcpy >/dev/null 2>&1 ; then
+    alias androidremotecontrol="scrcpy &"
+	#TODO: alias androidcamerabridgeset="scrcpy --video-source=camera --no-audio --camera-facing=front --v4l2-sink=/dev/video0"
+	# https://adityatelange.in/blog/android-phone-webcam-linux/
 fi
 
 alias androidmount="mkdir /tmp/adb ; sudo umount /tmp/adb ; adbfs /tmp/adb -o hard_remove,umask=000" # from fuse-adbfs | https://github.com/spion/adbfs-rootless
@@ -1812,13 +1828,14 @@ alias gid="id -g"
 #alias airquality="weather 2> /dev/null | grep -A5 'air quality'"  # TODO: move in a separate script?
 #alias uvindex="weather 2> /dev/null | grep 'UV index'"  # TODO: move in a separate script?
 
-alias countwords="wc -w"
-alias countlines="wc -l"
-alias countbytes="wc -c"
-alias countchars="wc -m"
-countcharslike() { tr -cd $1 | wc -m ; }
+alias wordscount="wc -w"
+alias linescount="wc -l"
+alias bytescount="wc -c"
+alias charscount="wc -m"
+#countcharslike() { tr -cd $1 | wc -m ; }
+filescount() { find . -maxdepth 1 -type f -iname "$@" | wc -l  ; }  # MEMO: wildcards must be escaped
 
-alias addlinescount=nl
+alias linescountadd=nl
 
 alias ptrace=strace
 
@@ -1956,7 +1973,7 @@ if which rizin >/dev/null 2>&1 ; then
 fi
 
 # TODO: check GNU grep installed
-#alias grep="grep -I -n --exclude \*.min.js --color=always --devices=skip"
+#alias g="grep -I -n --exclude \*.min.js --color=always --devices=skip"
 
 if which rg >/dev/null 2>&1 ; then
     alias rg="rg --max-columns 200 --no-binary --hidden --ignore-case"
@@ -2000,8 +2017,6 @@ alias voice2command=mic2command.py
 #renext() { rename.ul -vo .$1 .$2 *.$1 ; } 
 renext() { rename.pl -v "s/.$1/.$2/" *.$1 ; } 
 alias chext=renext
-
-alias watchfile="tail -F"  # alternative: less +F
 
 # git aliases
 if which git >/dev/null 2>&1 ; then
@@ -2075,8 +2090,8 @@ alias setalternative="sudo update-alternatives --config"
 alias findmyphone="xdg-open https://www.google.com/android/find?u=0"  # TODO: move in a script
 alias whereismyphone=findmyphone
 alias findmydevices="xdg-open https://myaccount.google.com/find-your-phone"  # TODO: move in a script
-alias findmycar="xdg-open https://www.unipolsai.it/myportal/area_riservata/telematica-mobilita" # TODO: move in a script
-alias whereismycar=findmycar
+#alias findmycar="xdg-open https://www.unipolsai.it/myportal/area_riservata/telematica-mobilita" # TODO: move in a script
+#alias whereismycar=findmycar
 
 #alias wine=wine32
 alias winecmd="wine cmd"
@@ -2169,13 +2184,24 @@ if which zoxide >/dev/null 2>&1 ; then
 	# TODO: multiple aliases https://github.com/ajeetdsouza/zoxide/discussions/709
 	#alias z=zoxide
 	alias jump=z
+	alias j=z
 fi
 
 if which eza >/dev/null 2>&1 ; then
-	alias easyls="eza --icons=auto"  # alt. lsd
+	alias easyls="eza --icons=auto -ahF"  # alt. lsd
 	# eza --long --extended --links --header --git --icons --classify -a -a
-	alias ls=easyls
+	alias l=easyls
+# detect ls standalone vs busybox ver
+elif [ -L $(which ls) ] ; then
+	# ls is a symlink, use only switches implemented in busybox
+	alias ls="ls -AF --color=auto"
+else
+	alias ls="ls -AF --color=auto -v -h --author --time-style=long-iso"
+	# TODO: case-insensitive filename sorting  https://stackoverflow.com/questions/18413646/making-the-ls-command-sort-a-before-b-vs-a-b-a-b
+	# https://www.topbug.net/blog/2016/11/28/a-better-ls-command/
 fi
+alias dir="l -l"
+[ ! -z "$ANDROID_ROOT" ] && alias dir="l -l -a"
 
 alias easysed=sd  # alt. sad
 alias easyfind=fdfind  # alt. bfs
@@ -2184,7 +2210,7 @@ alias easydiff=diff-so-fancy
 # TODO: easydd=...
 
 alias help=cmdhelp
-alias usage=cmdhelp
+#alias usage=cmdhelp
 alias examples=cmdhelp
 alias cheatsheet=cmdhelp
 
@@ -2236,7 +2262,7 @@ if which ir-keytable >/dev/null 2>&1 ; then
 	alias irls=ir-keytable
 	#alias remotels=irls
 	#alias remoteset=irset
-	alias irclear=ir-keytable --clear
+	alias irclear="ir-keytable --clear"
 	# ...
 fi
 
@@ -2248,5 +2274,14 @@ if which minimodem >/dev/null 2>&1 ; then
 fi
 
 alias media2subs=transcribe
+
+alias hashsearch=findmyhash
+
+alias watchfile="tail -F"  # alternative: less +F
+
+# alias watchfileschanges="inotifywait --monitor --recursive" # moved in a script
+alias watchdirchanges=watchfileschanges
+alias monitorfilechanges=watchfileschanges
+
 
 unset THIS_SCRIPT_DIR

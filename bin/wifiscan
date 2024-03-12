@@ -1,7 +1,15 @@
 
+
 power on wifi
 
 echo
+
+if [ ! -z "$ANDROID_ROOT" ]; then
+	termux-wifi-connectioninfo
+	termux-wifi-scaninfo
+	# ...
+	exit $?
+fi
 
 sudo wlanconfig wlan0 list scan
 #[ $? -eq 0 ] && exit 0

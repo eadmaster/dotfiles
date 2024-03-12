@@ -226,7 +226,9 @@ elif [ "$SERVICE_NAME" = "networking" ]; then
 		echo "$(basename $0): unsupported command: $CMD" >&2
 		exit 1
 	fi
-	
+elif [ "$SERVICE_NAME" = "lanplay" ]; then
+	# http://lan-play.com/install-switch
+	sudo $HOME/.local/bin/lan-play-linux --relay-server-addr switch.servegame.com:11451
 fi
 
 # more alternatives

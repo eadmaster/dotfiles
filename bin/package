@@ -389,7 +389,7 @@ case "$1" in
 		
 		# TODO: search PPAs in https://launchpad.net/
 		
-		python _OLD/ppasearch.py "$PACKAGE_NAME" 
+		python $HOME/bin/_OLD/ppasearch.py "$PACKAGE_NAME" 
 		# TODO using official API  https://launchpad.net/+apidoc/1.0.html
 		# https://askubuntu.com/questions/403782/is-there-an-alternative-for-ppasearch-in-newer-versions-of-ubuntu
 		#curl "https://api.launchpad.net/1.0/projects?search?text=$PACKAGE_NAME" | jq -c '.entries[] | pick(.display_name, .summary, .web_link)'

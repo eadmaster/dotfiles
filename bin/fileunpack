@@ -62,6 +62,7 @@ case "$INPUTFILEEXT" in
 	deb )
 		# try using dpkg-deb
 		dpkg-deb -x "$INPUTFILE" "$OUTPUTDIR"
+		#dpkg-deb -R "$INPUTFILE" "$OUTPUTDIR"
 		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 		
 		# try using 7z + temp file
@@ -162,7 +163,15 @@ case "$INPUTFILEEXT" in
 		exit $?
 		;;
 		
-	zip|7z|arj|iso|cab )
+	zip|7z|arj|iso|qcow2|vdi|vhd|vmdk|cab|xar|pkg|dmg|lzh|lha|cpio|001 )  #jar|war
+		if [ -n "$DISPLAY" ]; then
+			# use a GUI extractor if X is running 
+			ark -b --autosubfolder --destination "$OUTPUTDIR" "$INPUTFILE"
+			_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+			# TODO: more alternatives
+		fi
+		
 		7z x -bb1 -y -o"$OUTPUTDIR" "$INPUTFILE"
 		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
@@ -217,7 +226,29 @@ case "$INPUTFILEEXT" in
 		exit $?
 		;;
 	
-	# TODO: flatpak (ostree-based)  https://github.com/AppImage/AppImageKit/issues/297
+	squashfs|sfs|snap )
+		unsquashfs -f -d "$OUTPUTDIR" "$INPUTFILE"
+		exit $?
+		;;
+		
+	#TODO: zar|wua ) #  https://github.com/Exzap/ZArchive
+	#	exit $?
+	#	;;
+	
+	#TODO: gci )  
+	#TODO: ps2 )  https://github.com/ps2dev/mymc/issues/9
+
+	# TODO: flatpak (ostree-based)  https://github.com/flatpak/flatpak/issues/126  
+	
+	appimage )
+		appimagetool -v "$INPUTFILE" "$OUTPUTDIR"
+		[ $? -eq 0 ] && exit 0
+		
+		#./"$INPUTFILE" --appimage-extract "$OUTPUTDIR" # creates "squashfs-root",  no switch for $OUTPUTDIR  https://docs.appimage.org/user-guide/run-appimages.html#extract-the-contents-of-an-appimage
+		#[ $? -eq 0 ] && exit 0
+		
+		# ... https://superuser.com/questions/1301583/how-can-i-extract-files-from-an-appimage
+		;;
 esac
 
 case $INPUTFILETYPE in
@@ -250,32 +281,32 @@ esac
 
 #else try with some generic unpackers
 
-# try game archives via GameExtractor  http://www.watto.org/game_extractor.html
-gameextractor -extract -input "$(readlink -f "$INPUTFILE")" -output "$OUTPUTDIR"
-_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+7z x -bb1 -y -o"$OUTPUTDIR" "$INPUTFILE"
+[ $? -eq 0 ] && exit 0
 
-# try some generic unpackers
+7za x -y -o"$OUTPUTDIR" "$INPUTFILE"
+[ $? -eq 0 ] && exit 0
+
+rar x "$INPUTFILE" "$OUTPUTDIR"
+[ $? -eq 0 ] && exit 0
+
+# try game archives via GameExtractor  http://www.watto.org/game_extractor.html
+#gameextractor -extract -input "$(readlink -f "$INPUTFILE")" -output "$OUTPUTDIR"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
 binwalk --extract --carve "$INPUTFILE"
-_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+[ $? -eq 0 ] && exit 0
 
 #retdec-unpacker "$INPUTFILE"
 
 foremost -v -o "$OUTPUTDIR" -i "$INPUTFILE"
-_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+[ $? -eq 0 ] && exit 0
 
-7z x -bb1 -y -o"$OUTPUTDIR" "$INPUTFILE"
-_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
-7za x -y -o"$OUTPUTDIR" "$INPUTFILE"
-_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-
-rar x "$INPUTFILE" "$OUTPUTDIR"
-_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-
-if [ "$INPUTFILEEXT" = "zip" ]; then
-	unzip "$INPUTFILE" -d "$OUTPUTDIR"
-	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-fi
+#if [ "$INPUTFILEEXT" = "zip" ]; then
+#	unzip "$INPUTFILE" -d "$OUTPUTDIR"
+#	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+#fi
 
 # TODO? shar
 # TODO? .lz -> lzip

@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# remote quotes
+
+
+# from wikiquote  https://stackoverflow.com/questions/33614492/wikipedia-api-get-random-pages
+#  https://stackoverflow.com/questions/13762688/wiki-quotes-api
+#html2text "https://en.wikiquote.org/wiki/Special:Random" | head -n10
+wget -q -O - "https://en.wikiquote.org/w/api.php?format=json&action=query&generator=random&grnnamespace=0&prop=revisions&rvprop=content&grnlimit=1&rvslots=main" | jq -r '.query.pages[].revisions[].slots.main."*"'
+# TODO: extract a single quote
+# https://github.com/topics/wikiquote
+# https://github.com/piger/wikiquote2fortune
+# https://github.com/federicotdn/wikiquote
+# | use https://github.com/fdesjardins/wikiquote-cli
+
+echo
+
+wget -q -O- "https://quotesondesign.com/wp-json/wp/v2/posts/?orderby=rand&per_page=1" | jq '.[] | pick(.title,.content,.link)'
+#[ $? -eq 0 ] && exit 0
+
+echo
+
+wget -q -O- https://favqs.com/api/qotd | jq '.quote | pick(.body,.author,.url)'
+#[ $? -eq 0 ] && exit 0
+
+echo
+
+#wget -q -O- "https://api.paperquotes.com/quotes?language=en&random=random&limit=1" | jq '.results[] | pick(.quote,.author)'
+
+#echo
+
+#command -p fortune "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+/usr/games/fortune "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+echo
+
+# ALTERNATIVE USING AWK
+[ -d "/usr/share/games/fortune" ] && FORTUNES_DIR=/usr/share/games/fortune
+[ -d "/usr/share/games/fortunes" ] && FORTUNES_DIR=/usr/share/games/fortunes
+[ -d "$PENDRIVE/Documents/db/fortune" ] && FORTUNES_DIR=$PENDRIVE/Documents/db/fortune
+# https://github.com/topics/fortune-cookies
+
+if [ -d "$FORTUNES_DIR" ]; then
+	# pick a random file  http://stackoverflow.com/questions/701505/best-way-to-choose-a-random-file-from-a-directory-in-a-shell-script
+	RANDOM_FILE=$( find $FORTUNES_DIR -maxdepth 2 -type f  ! -name "*.*" | shuf -n1 )
+
+	echo "$0: $RANDOM_FILE :"
+	# pick a random fortune  http://blog.commandlinekungfu.com/2011_08_01_archive.html
+	numfortunes=$(grep '^%$' $RANDOM_FILE | wc -l)
+	if [ $numfortunes = 0 ]; then
+		echo "$(basename $0): no fortunes found: $RANDOM_FILE" >&2
+		#exit 1
+	fi
+	# 
+	awk "BEGIN { RS = \"%\"; srand(); sel = int(rand()*$numfortunes)+1 }; NR == sel"  "$RANDOM_FILE"
+fi
+

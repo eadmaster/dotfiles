@@ -1,12 +1,13 @@
 
 
+if [ "$(hostname)" = "PICCIOTTO3" ]; then
+	# only for intel gpus  
+	sudo intel_gpu_top
+fi
+
 # all vendors supported on recent kernels https://github.com/Syllo/nvtop
 nvtop
 
 # only for nvidia gpus   https://github.com/wookayin/gpustat
-gpustat
-
-# only for intel gpus  
-intel_gpu_top
- 
+#gpustat
 # ... https://unix.stackexchange.com/questions/38560/gpu-usage-monitoring-cuda

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+DIR_TO_MONITOR="$@"
+
+# using inotify-tools
+0inotifywait --monitor --recursive "$DIR_TO_MONITOR"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# MEMO: use strace to monitor a single process only (req. root) https://linux-audit.com/the-ultimate-strace-cheat-sheet/
+
+# using watch (incl. in busybox without "-d" arg)
+while true; do
+	watch -d -t -g  ls -lR $DIR_TO_MONITOR | tee  # https://superuser.com/questions/297283/store-the-output-of-date-and-watch-command-to-a-file
+	#watch -t  ls -lR  $DIR_TO_MONITOR
+	#notify "dir changed"
+	sleep 1    # to allow break script by Ctrl+c
+done

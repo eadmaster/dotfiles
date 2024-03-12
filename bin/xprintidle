@@ -15,6 +15,12 @@ fi
 command -p xprintidle "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
 
+if [ -z "$DISPLAY" ]; then
+	# just return an high value if X is not running
+	echo 99999
+	exit 0
+fi
+
 # from suckless-tools https://tools.suckless.org/x/xssstate/
 xssstate -i
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES 

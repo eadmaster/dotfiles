@@ -6,15 +6,21 @@ command -p man "$@"
 # else 
 echo "$(basename $0): regular man is not installed, try to retrive the manpage from the web..."
 
-# TODO: public web API returning txt directly
+#BASE_URL="http://manpages.ubuntu.com/manpages.gz/xenial/en/man1/$1.1.gz"
+#BASE_URL="http://linux.die.net/man/1/$1"
+HTML_URL="http://man.he.net/man1/$1"
+#RAW_URL="http://manpages.ubuntu.com/manpages.gz/jammy/en/man1/$1.1.gz"
+RAW_URL="https://manned.org/raw/$1.1"  # multidistro, more matches
+# ... https://wiki.archlinux.org/title/man_page#Online_man_pages
 
-pandoc -f html -t plain "http://linux.die.net/man/1/$1" | less
+pandoc -f man -t plain "$RAW_URL" | less
+#wget --quiet -O- "$RAW_URL"  | less  # TODO: | sed -e 's/<[^>]*>//g'
 _ES=$? ; [ $_ES -eq 0 ] && exit $_ES
 
-html2text --ignore-links --decode-errors=ignore "http://linux.die.net/man/1/$1" | less
+pandoc -f html -t plain "$HTML_URL" | less
 _ES=$? ; [ $_ES -eq 0 ] && exit $_ES
 
-wget --quiet -O- "http://manpages.ubuntu.com/manpages.gz/xenial/en/man1/$1.1.gz" | gzip -dc  | less  # TODO: | sed -e 's/<[^>]*>//g'
+html2text --ignore-links --decode-errors=ignore  "$HTML_URL"  | less
 _ES=$? ; [ $_ES -eq 0 ] && exit $_ES
 
 # try all manpages sections

@@ -58,6 +58,14 @@ case $INPUTFILEEXT in
 	html|htm ) INPUTFILETYPE=text/html ;;
 esac
 
+# extensions aliases
+case $INPUTFILEEXT in
+	rdjson|jsonl )  INPUTFILEEXT=ndjson ;;
+esac
+case $OUTPUTFILEEXT in
+	rdjson|jsonl )  OUTPUTFILEEXT=ndjson ;;
+esac
+
 # look for a specific tool in the system (e.g. ps2pdf, pdf2djvu, etc.)
 CUSTOMCONVERTERPATH=$( findcommand ${INPUTFILEEXT}2${OUTPUTFILEEXT} | head -n1 )
 [ -z "$CUSTOMCONVERTERPATH" ] && CUSTOMCONVERTERPATH=$( findcommand ${INPUTFILEEXT}to${OUTPUTFILEEXT} | head -n1 )
@@ -68,7 +76,7 @@ if [ ! -z "$CUSTOMCONVERTERPATH" ]; then
 fi
 
 # WANTED: html microdata, microformats extractors
-
+ 
 # archives compression from single files
 # TODO: support files wildcards
 #case $OUTPUTFILEEXT in
@@ -176,13 +184,16 @@ elif [ "$INPUTFILEEXT" = "pem" ] && [ "$OUTPUTFILEEXT" = "crt" ] || [ "$OUTPUTFI
 elif [ "$INPUTFILEEXT" = "pfx" ] || [ "$INPUTFILEEXT" = "p12" ] && [ "$OUTPUTFILEEXT" = "pem" ] ; then
 	openssl pkcs12 -in "$INPUTFILE" -out "$OUTPUTFILE" -nodes
 	exit $?
-elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "rdjson" ] && [ "$OUTPUTFILEEXT" = "csv" ] ; then
+elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "ndjson" ] && [ "$OUTPUTFILEEXT" = "csv" ] ; then
+	# using https://github.com/kellyjonbrazil/jtbl
 	jtbl --csv < "$INPUTFILE" > "$OUTPUTFILE"
 	exit $?
-elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "rdjson" ] && [ "$OUTPUTFILEEXT" = "md" ] ; then
+elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "ndjson" ] && [ "$OUTPUTFILEEXT" = "md" ] ; then
+	# using https://github.com/kellyjonbrazil/jtbl
 	jtbl --markdown < "$INPUTFILE" > "$OUTPUTFILE"
 	exit $?
-elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "rdjson" ] && [ "$OUTPUTFILEEXT" = "html" ] ; then
+elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "ndjson" ] && [ "$OUTPUTFILEEXT" = "html" ] ; then
+	# using https://github.com/kellyjonbrazil/jtbl
 	jtbl --html < "$INPUTFILE" > "$OUTPUTFILE"
 	exit $?
 elif [ "$OUTPUTFILEEXT" = "json" ]; then
@@ -193,8 +204,11 @@ elif [ "$OUTPUTFILEEXT" = "json" ]; then
 	fq --monochrome-output . "$INPUTFILE" > "$OUTPUTFILE"
 	exit $?
 elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "csv" ] || [ "$INPUTFILEEXT" = "yaml" ] ||  [ "$INPUTFILEEXT" = "xml" ]; then
-	# using oq (no csv support) https://github.com/jzelinskie/faq
-	oq -i  $INPUTFILEEXT
+	# using yq () https://github.com/mikefarah/yq/
+	yq --prettyPrint --input-format $INPUTFILEEXT --output-format  $OUTPUTFILEEXT   < "$INPUTFILE" > "$OUTPUTFILE" 
+	[ -s "$OUTPUTFILE" ] && exit $?
+	# using oq (no csv support)  https://github.com/blacksmoke16/oq
+	oq -i $INPUTFILEEXT -o $OUTPUTFILEEXT  < "$INPUTFILE" > "$OUTPUTFILE" 
 	# using faq (no csv support) https://github.com/jzelinskie/faq
 	#faq --monochrome-output -f $INPUTFILEEXT -o $OUTPUTFILEEXT < "$INPUTFILE" > "$OUTPUTFILE"
 	#NOT WORKING? _ES=$? ; [ $_ES -eq 0 ] && exit $_ES
