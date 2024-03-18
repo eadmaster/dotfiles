@@ -1727,11 +1727,20 @@ if which adb >/dev/null 2>&1 ; then
     alias androidcpuinfo="adb shell cat /proc/cpuinfo ; adb shell getprop | grep -i cpu"
     #alias androidsetsilent="adb shell settings put global mode_ringer 0"  # set RINGER MODE=SILENT TODO: https://android.stackexchange.com/questions/186925/android-phone-shell-command-silent-mode
     alias androidnotificationsls="adb shell dumpsys notification | grep ticker | cut -d= -f2"
-    alias androidalertsla=androidnotificationsls
+    alias androidalertsls=androidnotificationsls
     alias androidunlock=myandroidunlock
     alias androidphotostransfer="androidget sdcard/DCIM"  # "storage/sdcard1/DCIM/Camera" if using SD card
     alias androidremountsystemrw="adb root ; adb remount"  # TODO: reconnect before the 2nd command if necessary...  https://android.stackexchange.com/questions/60446/cant-remount-system-in-rw
     #TODO: alias androidassistantquery="adb shell am start-activity com.google.android.apps.googleassistant/.AssistantActivity"
+fi
+
+
+# kdeconnect aliases
+if which kdeconnect-cli >/dev/null 2>&1 ; then
+	alias androidnotificationsls="kdeconnect-cli --list-notifications"
+	alias androidput="kdeconnect-cli  --share"
+	alias androidring="kdeconnect-cli --ring"
+	#alias android...="kdeconnect-cli  --execute-command "
 fi
 
 if which scrcpy >/dev/null 2>&1 ; then

@@ -42,6 +42,7 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 				# replace "+" -> " ", even occurrences only  https://stackoverflow.com/questions/74770647/replace-character-in-python-string-every-even-or-odd-occurrence
 				pieces = line_value.split("+")
 				line_value = '+'.join('+'.join(pieces[i:i+2]) for i in range(0, len(pieces), 2))
+				multicode_delim = "+"
 			
 			for i, code in enumerate(line_value.split(multicode_delim)):
 				try:
@@ -66,8 +67,8 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 					address = "1" + address
 				elif input_sys_str in ["pce"]:
 					# take the 3 least significant digits from the code address (e.g. F82DB4 -> DB4) https://github.com/libretro/beetle-pce-fast-libretro/issues/93#issuecomment-547064141
-					address = address[3:]
-					
+					address = address[1:]
+				
 				# TODO: parse all code types, depends on system https://macrox.gshi.org/The%20Hacking%20Text.htm#playstation_code_types
 				
 				# guess value size
