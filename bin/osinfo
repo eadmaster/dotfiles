@@ -40,7 +40,7 @@ env
 echo
 
 echo "$(basename $0): kernel params: "
-sudo sysctl -a
+sysctl -a
 [ $? -ne 0 ] && sysctl -a
 
 echo "$(basename $0): kernel supported filesystems:"

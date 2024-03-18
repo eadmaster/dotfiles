@@ -13,6 +13,10 @@ python -c "import zlib; print('%08x  $@' % (zlib.crc32(open(\"$@\").read()) & 0x
 [ $? -eq 0 ] && exit 0
 # SLOWER ALTERNATIVE: binascii.crc32 https://maze.io/2009/10/15/generating-crc32-in-python/
 
+# using rclone  https://rclone.org/commands/rclone_hashsum/
+rclone hashsum crc32 "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
 # TODO: using php function hash_file  http://php.net/manual/it/function.hash-file.php
 #2FIX: php -r "\$hash=hash_file('crc32b', \"$@\"); \$array=unpack('N', pack('H*', \$hash)); printf( \"%x  $@\n\", \$array[1] );"
 #[ $? -eq 0 ] && exit 0
@@ -23,7 +27,7 @@ python -c "import zlib; print('%08x  $@' % (zlib.crc32(open(\"$@\").read()) & 0x
 
 # WANTED: alternative using awk only http://stackoverflow.com/questions/4994537/calculating-crc-in-awk
 
-# alternative using cksum+awk from http://hints.macworld.com/article.php?story=20041227082911874
+# alternative using cksum+awk  http://hints.macworld.com/article.php?story=20041227082911874
 # MEMO: "-o3" switch is available in cksum from "freebsd-buildutils" and is preinstalled in MacOSX
 echo -n "$@  "
 cksum -o3 "$@" | awk '{ printf("%x%02x\n", int($1/256),$1%256) }'
@@ -31,7 +35,7 @@ cksum -o3 "$@" | awk '{ printf("%x%02x\n", int($1/256),$1%256) }'
 freebsd-cksum -o3 "$@" | awk '{ printf("%x%02x\n", int($1/256),$1%256) }'
 [ $? -eq 0 ] && exit 0
 
-7z h "$@" # | grep ...
+7z h "$@" | grep "$@"
 [ $? -eq 0 ] && exit 0
 
 # alternative using gzip+gunzip+tempfile (slower)

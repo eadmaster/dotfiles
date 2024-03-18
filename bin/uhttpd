@@ -15,37 +15,30 @@ echo "$(basename $0): serving $DIR_SERVED at http://$_MYIP:$PORT/ or http://${_H
 echo "$(basename $0): press CTRL+C to abort"
 
 # using rclone  https://rclone.org/commands/rclone_serve_http/
-rclone serve http --addr :$PORT "$DIR_SERVED"
+# rclone serve http --addr :$PORT "$DIR_SERVED"
+rclone serve webdav --addr :$PORT "$DIR_SERVED"  # webdav supports file uploads  https://rclone.org/commands/rclone_serve_webdav/
 [ $? -eq 0 ] && exit 0
+
+# using sfk (supports file upload, dir listing) http://stahlworks.com/dev/?tool=httpserv
+sfk httpserv -port $PORT -rw
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 # using python 3
 python3 -m http.server $PORT
 [ $? -eq 0 ] && exit 0
 
 # using python 2
-python -m SimpleHTTPServer $PORT
+python2 -m SimpleHTTPServer $PORT
 [ $? -eq 0 ] && exit 0
 
 # using PHP >=5.4 (no dir listing supported)  http://php.net/manual/en/features.commandline.webserver.php
 php -S 0.0.0.0:$PORT -t $DIR_SERVED
 [ $? -eq 0 ] && exit 0
 
-# using nodejs modules
-http-server -p $PORT "$@"
-_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-#light-server "$@"
-#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-#serve "$@"
-#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-
-# using sfk (supports NOT RECURSIVE dir listing+file upload) http://stahlworks.com/dev/?tool=httpserv
-sfk httpserv -port $PORT -rw
-_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-
 # using busybox
 # MEMO: dir listing must be enabled in $HOME/httpd.conf  http://wiki.chumby.com/index.php?title=Using_the_busybox_HTTP_server  http://wiki.openwrt.org/doc/howto/http.httpd 
-#busybox httpd -f -v -b 0.0.0.0:$PORT -h $DIR_SERVED
-#[ $? -eq 0 ] && exit 0
+busybox httpd -f -v -b 0.0.0.0:$PORT -h $DIR_SERVED
+[ $? -eq 0 ] && exit 0
 
 # else
 exit 127

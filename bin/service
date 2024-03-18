@@ -90,9 +90,6 @@ if [ ! -z "$ANDROID_ROOT" ]; then
 	exit 1
 fi
 
-# TODO: if [ "$SERVICE_NAME" = "androidswap" ]; then
-	# rclone mount...
-
 if [ "$SERVICE_NAME" = "anbox" ]; then
 	# https://www.linuxuprising.com/2018/07/anbox-how-to-install-google-play-store.html
 	sudo systemctl $CMD snap.anbox.container-manager.service
@@ -159,7 +156,7 @@ elif [ "$SERVICE_NAME" = "gdrive" ]; then
 elif [ "$SERVICE_NAME" = "php" ]; then
 	# php-enabled web server
 	if [ "$CMD" = "start" ]; then
-		php -S 0.0.0.0:8001 # -t $DIR_SERVED
+		php -S 0.0.0.0:8001  # -t $DIR_SERVED
 		exit $?
 	elif [ "$CMD" = "stop" ]; then
 		killall php
@@ -226,9 +223,6 @@ elif [ "$SERVICE_NAME" = "networking" ]; then
 		echo "$(basename $0): unsupported command: $CMD" >&2
 		exit 1
 	fi
-elif [ "$SERVICE_NAME" = "lanplay" ]; then
-	# http://lan-play.com/install-switch
-	sudo $HOME/.local/bin/lan-play-linux --relay-server-addr switch.servegame.com:11451
 fi
 
 # more alternatives

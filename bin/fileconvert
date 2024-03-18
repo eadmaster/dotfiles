@@ -74,8 +74,6 @@ if [ ! -z "$CUSTOMCONVERTERPATH" ]; then
 	# note: syntax and output file location may vary...
 	exit $?
 fi
-
-# WANTED: html microdata, microformats extractors
  
 # archives compression from single files
 # TODO: support files wildcards
@@ -97,6 +95,8 @@ elif [ "$INPUTFILEEXT" = "tex" ] && [ "$OUTPUTFILEEXT" = "pdf"] ; then
 	# other methods here: http://www-rohan.sdsu.edu/~aty/bibliog/latex/LaTeXtoPDF.html
 	pdftex "$INPUTFILE" -output-directory "$OUTPUTFILEDIR"
 	exit $?
+	
+# sqlite formats
 elif [ "$INPUTFILEEXT" = "sqlite" ] && [ "$OUTPUTFILEEXT" = "sql"] ; then
 	sqlite3 "$INPUTFILE" .dump > "$OUTPUTFILE"
 	# TODO: python, php alternatives
@@ -120,7 +120,12 @@ elif [ "$INPUTFILEEXT" = "db" ] && [ "$OUTPUTFILEEXT" = "txt"] ; then
 #	gcc -shared -Wl,--whole-archive "$INPUTFILE" -o "$OUTPUTFILE"
 #	exit $?
 #fi
+
 # TODO: flatpak->appimages https://github.com/AppImage/AppImageKit/issues/297
+
+# WANTED: html microdata, microformats extractors
+
+# ROM dumps conversions
 elif [ "$INPUTFILEEXT" = "gen" ] || [ "$INPUTFILEEXT" = "bin" ] && [ "$OUTPUTFILEEXT" = "smd" ] ; then  # ROM DUMPS
 	cp "$INPUTFILE" "$OUTPUTFILE"
 	ucon64 --gen --smd --nbak "$OUTPUTFILE"
@@ -145,6 +150,8 @@ elif [ "$OUTPUTFILEEXT" = "smc" ] ; then
 elif [ "$OUTPUTFILEEXT" = "chd" ] ; then
 	chdman createcd -i "$INPUTFILE" -o "$OUTPUTFILE"
 	exit $?
+	
+# savegame / memcard conversion
 elif [ "$INPUTFILEEXT" = "gcs" ] && [ "$OUTPUTFILEEXT" = "gci" ] ; then  # ROM SAVEGAMES
 	# remove the 272 bytes header
 	cp "$INPUTFILE" "$OUTPUTFILE"
@@ -175,6 +182,8 @@ elif [ "$INPUTFILEEXT" = "mpk" ] || [ "$INPUTFILEEXT" = "eep" ] || [ "$INPUTFILE
 	ra_mp64_srm_convert --create-srm "$INPUTFILE" # --output-dir
 	# OLD: https://github.com/heuripedes/pj64tosrm
 	exit $?
+
+# certs conversions
 elif [ "$INPUTFILEEXT" = "crt" ] || [ "$INPUTFILEEXT" = "cer" ] || [ "$INPUTFILEEXT" = "der" ] && [ "$OUTPUTFILEEXT" = "pem" ] ; then
 	openssl x509 -inform der -in "$INPUTFILE" -out "$OUTPUTFILE"
 	exit $?
@@ -184,6 +193,8 @@ elif [ "$INPUTFILEEXT" = "pem" ] && [ "$OUTPUTFILEEXT" = "crt" ] || [ "$OUTPUTFI
 elif [ "$INPUTFILEEXT" = "pfx" ] || [ "$INPUTFILEEXT" = "p12" ] && [ "$OUTPUTFILEEXT" = "pem" ] ; then
 	openssl pkcs12 -in "$INPUTFILE" -out "$OUTPUTFILE" -nodes
 	exit $?
+	
+# json 2 tables conversion
 elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "ndjson" ] && [ "$OUTPUTFILEEXT" = "csv" ] ; then
 	# using https://github.com/kellyjonbrazil/jtbl
 	jtbl --csv < "$INPUTFILE" > "$OUTPUTFILE"
@@ -196,32 +207,35 @@ elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "ndjson" ] && [ "$OUTPU
 	# using https://github.com/kellyjonbrazil/jtbl
 	jtbl --html < "$INPUTFILE" > "$OUTPUTFILE"
 	exit $?
-elif [ "$OUTPUTFILEEXT" = "json" ]; then
-	# using jc (supports a lot of formats) https://github.com/kellyjonbrazil/jc
-	jc --pretty --monochrome --$INPUTFILEEXT < "$INPUTFILE" > "$OUTPUTFILE"
-	[ -s "$OUTPUTFILE" ] && exit $?
-	# using fq (supports a lot of formats) https://github.com/wader/fq
-	fq --monochrome-output . "$INPUTFILE" > "$OUTPUTFILE"
-	exit $?
+	
+# structured formats conversion
 elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "csv" ] || [ "$INPUTFILEEXT" = "yaml" ] ||  [ "$INPUTFILEEXT" = "xml" ]; then
 	# using yq () https://github.com/mikefarah/yq/
 	yq --prettyPrint --input-format $INPUTFILEEXT --output-format  $OUTPUTFILEEXT   < "$INPUTFILE" > "$OUTPUTFILE" 
 	[ -s "$OUTPUTFILE" ] && exit $?
 	# using oq (no csv support)  https://github.com/blacksmoke16/oq
 	oq -i $INPUTFILEEXT -o $OUTPUTFILEEXT  < "$INPUTFILE" > "$OUTPUTFILE" 
-	# using faq (no csv support) https://github.com/jzelinskie/faq
-	#faq --monochrome-output -f $INPUTFILEEXT -o $OUTPUTFILEEXT < "$INPUTFILE" > "$OUTPUTFILE"
-	#NOT WORKING? _ES=$? ; [ $_ES -eq 0 ] && exit $_ES
 	[ -s "$OUTPUTFILE" ] && exit $?
 	# using catmandu  https://github.com/LibreCat/Catmandu
 	catmandu convert $INPUTFILEEXTUPPER to $OUTPUTFILEEXTUPPER < "$INPUTFILE" > "$OUTPUTFILE"  # TODO: verbose
+	# TODO: using https://github.com/TomWright/dasel
 	exit $?
+elif [ "$OUTPUTFILEEXT" = "json" ]; then
+	# using jc (supports a lot of formats) https://github.com/kellyjonbrazil/jc
+	#jc --pretty --monochrome --$INPUTFILEEXT < "$INPUTFILE" > "$OUTPUTFILE"
+	#[ -s "$OUTPUTFILE" ] && exit $?
+	# using fq (supports a lot of formats) https://github.com/wader/fq
+	fq --monochrome-output -d $INPUTFILEEXT . "$INPUTFILE" > "$OUTPUTFILE"
+	exit $?
+
+# graph conversions
 elif [ "$INPUTFILEEXT" = "dot" ]; then
 	GRAPHVIZ_TYPE=$OUTPUTFILEEXT
 	#TODO: fix networkx compat.  [ "$OUTPUTFILEEXT" = "json" ] && GRAPHVIZ_TYPE=dot_json # networkx compat.  https://stackoverflow.com/questions/40262441/how-to-transform-a-dot-graph-to-json-graph
 	dot -v -o "$OUTPUTFILE" -T$GRAPHVIZ_TYPE "$INPUTFILE"
 	exit $?
 	# TODO: more alternatives
+
 elif [ "$INPUTFILEEXT" = "pu" ] || [ "$INPUTFILEEXT" = "puml" ] ; then
 	# plantuml  https://plantuml.com/command-line
 	plantuml -v -T$OUTPUTFILEEXT -o "$OUTPUTFILEDIR" "$INPUTFILE"
@@ -232,6 +246,7 @@ elif [ "$INPUTFILEEXT" = "ipynb" ] ; then
 fi
 
 
+# switch on mimetype
 case $INPUTFILETYPE in
 	image/* )
 		if [ $OUTPUTFILEEXT = svg ]; then

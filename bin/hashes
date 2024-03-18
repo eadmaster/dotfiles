@@ -5,8 +5,15 @@ INPUT="$1"
 [ -f "$1" ] && INPUT=$(cat "$1")
 [ ! -f "$1" ] && INPUT=$(wget -q -U Firefox -O - "$1")
 
-echo "$INPUT" | rhash --printf "%p\n CRC32: %C\n MD5: %M\n SHA1: %H\n ED2K: %E" -
+#echo "$INPUT" | rhash --printf "%p\n CRC32: %C\n MD5: %M\n SHA1: %H\n ED2K: %E" -
+echo "$INPUT" | rhash --bsd --all  -
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+echo
+
+echo "$INPUT" | jacksum -a all -F "#ALGONAME{i} (#FILENAME) = #CHECKSUM{i}" -
+
+echo
 
 # alternative:
 echo -n " cksum: "

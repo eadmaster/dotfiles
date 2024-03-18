@@ -8,6 +8,10 @@ _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 fdupes "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
 
+# rclone alternative  https://rclone.org/commands/rclone_dedupe/
+rclone dedupe "$@"  --by-hash --dedupe-mode list  --dry-run
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
 #TODO: czkawka dup ...
 
 # else alternative using find

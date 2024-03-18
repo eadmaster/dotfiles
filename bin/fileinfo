@@ -183,6 +183,7 @@ case $INPUTFILEEXT in
 		wrestool --extract --raw --type=version "$INPUTFILE"
 		wrestool --list "$INPUTFILE"
 		retdec-fileinfo "$INPUTFILE"
+		sfk ver "$INPUTFILE"  # http://stahlworks.com/sfk-version
 		exit $?
 		;;
 	

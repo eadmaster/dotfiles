@@ -266,7 +266,8 @@ alias trunc=truncate
 alias truncatesize="truncate -s"
 chsize() { truncate -s $2 $1 ; }  # -c  # TODO: swap $2 <-> $1 ?
 #alias sizeset=chsize
-alias createsz=chsize
+#alias createsz=chsize
+alias createsz=fallocate
 #alias newsz=chsize
 extend() { truncate -c -s+$2 $1 ; }
 #alias expand=extend  # conflict with "expand" command
@@ -970,13 +971,24 @@ alias xmlpprint="xml fo"  #  || xmllint --format
 
 # jq aliases   
 if which jq >/dev/null 2>&1 ; then
-	#alias jsongrep=jq
+	alias jsongrep=jq
 	alias ndjsonsplit="jq --compact-output"
 	alias json2ndjson=ndjsonsplit
 	#alias json2csv="jq -r '. | @csv'"   #  https://stackoverflow.com/questions/32960857/how-to-convert-arbitrary-simple-json-to-csv-using-jq
 fi
 
-# jtbl aliases  https://github.com/kellyjonbrazil/jtbl
+# fq aliases (jq for binary formats) https://github.com/wader/fq
+if which fq >/dev/null 2>&1 ; then
+	alias any2json="fq ."
+	alias 2json=any2json
+	alias html2json="fq -d html ."
+	
+	# ALT.
+	#alias 2json="jc --pretty --asciitable "  # converts the output of popular command-line tools, file-types, and common strings to JSON, YAML, or Dictionaries   https://github.com/kellyjonbrazil/jc
+	#alias asciitable2json="jc --pretty --asciitable "
+fi
+
+# jtbl aliases https://github.com/kellyjonbrazil/jtbl
 if which jtbl >/dev/null 2>&1 ; then
 	alias json2table="jtbl "
 	alias ndjson2table="jtbl "
@@ -991,10 +1003,8 @@ fi
 alias jsonmin=jsoncanonize.py
 alias feed2json=xml2json.py
 alias rss2json=xml2json.py
-#alias any2json="fq . "  # https://github.com/wader/fq
-alias 2json="jc --pretty --asciitable "  # https://github.com/kellyjonbrazil/jc/discussions/412
-alias asciitable2json="jc --pretty --asciitable "
-alias jsonui="fx " # TODO: start expanded https://github.com/antonmedv/fx/discussions/249
+alias jsonui="fx " # TODO: start not expanded https://github.com/antonmedv/fx/discussions/249
+
 
 alias alert=notify
 #alias alert=dialog
@@ -1610,6 +1620,10 @@ if which rclone >/dev/null 2>&1 ; then
     [ ! -z "$ANDROID_ROOT" ] && alias rclone="rclone --no-check-certificate"
     #alias rclone="rclone --progress --drive-use-trash=false --copy-links"  # add some default args  # MOVED IN autoexec as envvars
     #alias dirsync="rclone sync --interactive --progress -v --track-renames --transfers 1 --checksum"  # --ignore-case-sync  https://rclone.org/flags/
+    alias rclonecp='rclone copy'
+    alias rclonerm='rclone delete'
+    alias rclonedeltree='rclone purge'
+    
     gdrivels() { rclone lsf "gdrive:$1" | { column || cat ; } ; }
     #gdrivelsl() { rclone lsl "gdrive:$1" --max-depth 1 -q ; }  # list files only with size and modtime
     gdrivefind() { rclone ls  gdrive: --include "*$1*" --ignore-case -v ; }

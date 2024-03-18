@@ -3,6 +3,8 @@
 command -p ascii "$@"  2> /dev/null
 [ $? -ne 127 ] && exit $?
 
+#ALTERNATIVEs: rz-ax -a, busybox ascii sfk ascii, zcat /usr/share/misc/ascii.gz, for((i=32;i<=127;i++)) do printf "| $i \\$(printf '%03o' $i) "; done;  http://stackoverflow.com/questions/13127950/bash-script-iterate-through-all-ascii-chars
+
 if [ -z "$1" ]; then
 	# print the full ASCII table
 	cat <<'EOF'
@@ -57,8 +59,6 @@ if [ -z "$1" ]; then
 |112  p |113  q |114  r |115  s |116  t |117  u |118  v |119  w |
 |120  x |121  y |122  z |123  { |124  | |125  } |126  ~ |127 del|
 EOF
-
-	#ALTERNATIVEs: rz-ax -a, sfk ascii, zcat /usr/share/misc/ascii.gz, for((i=32;i<=127;i++)) do printf "| $i \\$(printf '%03o' $i) "; done;  http://stackoverflow.com/questions/13127950/bash-script-iterate-through-all-ascii-chars
 	exit 0
 fi
 
@@ -68,8 +68,6 @@ fi
 python -c "if(len('$1')==1): print('ASCII char \`$1\' codes: decimal '+str(ord('$1'))+', hex '+hex(ord('$1'))+', octal '+oct(ord('$1'))+', bits '+bin(ord('$1')))"
 # code->char
 python -c "if('$1'.isdigit()): print('ASCII char for code \`$1\': '+chr(int('$1')))"
-
-exit 0
 
 # ALTERNATIVES:
 #echo -e "\0$1" ... 
@@ -81,3 +79,4 @@ exit 0
 #printf 'binary %x' "$(ord($1))"
 #printf "$1 \\$(printf '%03o' $1) "
 
+exit 0

@@ -41,15 +41,17 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 			if not " " in line_value and "+" in line_value:
 				# replace "+" -> " ", even occurrences only  https://stackoverflow.com/questions/74770647/replace-character-in-python-string-every-even-or-odd-occurrence
 				pieces = line_value.split("+")
-				line_value = '+'.join(' '.join(pieces[i:i+2]) for i in range(0, len(pieces), 2))
+				line_value = '+'.join('+'.join(pieces[i:i+2]) for i in range(0, len(pieces), 2))
 			
 			for i, code in enumerate(line_value.split(multicode_delim)):
-				
 				try:
 					address, value = code.split(" ")
 				except:
-					sys.stderr.write("err: malformed or unsupported code format (skipped): %s\n" % line)
-					continue
+					try:
+						address, value = code.split(":")
+					except:
+						sys.stderr.write("err: malformed or unsupported code format (skipped): %s\n" % line)
+						continue
 				
 				if "?" in value or "X" in value:
 					sys.stderr.write("err: modifier values are not supported, manually edit this code (skipped): %s\n" % line)
@@ -62,7 +64,10 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 					# need to apply a custom offset (don't ask me why :-), tested with libretro-yabause only atm
 					address = address[1:]
 					address = "1" + address
-
+				elif input_sys_str in ["pce"]:
+					# take the 3 least significant digits from the code address (e.g. F82DB4 -> DB4) https://github.com/libretro/beetle-pce-fast-libretro/issues/93#issuecomment-547064141
+					address = address[3:]
+					
 				# TODO: parse all code types, depends on system https://macrox.gshi.org/The%20Hacking%20Text.htm#playstation_code_types
 				
 				# guess value size
@@ -101,7 +106,7 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 					else:
 						sys.stderr.write("err: unsupported code type (skipped): %s\n" % line)
 						continue
-						
+					
 				# output curr code
 				output_file.write("\n")
 				
@@ -135,7 +140,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='converts .cht cheat tables from Native/Emulator-handled to Retroarch-handled format')
 	parser.add_argument('infile', nargs='?', default="-", help="input file, defaults to stdin if unspecified. Supports passing urls.")
 	parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'), default=sys.stdout, help="output file, defaults to stdout if unspecified")
-	parser.add_argument("-s", "--system", default=None, help="perform system-specific conversions. Supported values: sat, n64, dc, ps1.")
+	parser.add_argument("-s", "--system", default=None, help="perform system-specific conversions. Supported values: sat, n64, dc, ps1, pce.")
 	args = parser.parse_args()
 
 	if args.infile == "-":

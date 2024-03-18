@@ -61,6 +61,6 @@ if __name__ == "__main__":
 	xml_str = infile.read()
 	d = xml2dict(xml_str)
 	import json
-	args.outfile.write(json.dumps(d))
+	args.outfile.write(json.dumps(d, indent=4))
 	args.outfile.write("\n")
 	

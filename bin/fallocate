@@ -3,6 +3,9 @@
 command -p fallocate "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
+busybox fallocate "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
 # else alternative using truncate or dd
 
 # args checking

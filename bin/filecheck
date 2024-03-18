@@ -102,8 +102,12 @@ case "$INPUTFILEEXT" in
 		exit $?
 		;;
 		
-	crc|crc32|sfv|md5|ed2k|emulecollection|hash )
+	crc|crc32|sfv|md5|sfvmd5|ed2k|emulecollection|hash )
 		rhash -c "$INPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		jacksum --check-file "$INPUTFILE"  --style sfv
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		# TODO: more alternatives
 		exit $?
 		;;
 	

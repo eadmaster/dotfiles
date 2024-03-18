@@ -16,5 +16,9 @@ else
 fi
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
+# using rclone  https://rclone.org/commands/rclone_hashsum/
+rclone hashsum sha1  "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
 #else
 exit 127

@@ -7,10 +7,14 @@ _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 busybox md5sum "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
+# using rclone https://rclone.org/commands/rclone_md5sum/
+rclone md5sum "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
 openssl dgst -md5 -r "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
-sfk md5 "$@"
+sfk md5 "$@"  # TODO: echo filename  http://stahlworks.com/sfk-md5list
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 if [ -z "$1"]; then
