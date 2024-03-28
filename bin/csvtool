@@ -41,7 +41,7 @@ case $1 in
 		print_usage_and_exit 0
 		;;
 		
-	print|pprint|view|readable|look )
+	print|pprint|view|readable|look|pretty )
 		[ ! -f "$2" ] && print_usage_and_exit 1
 		# TODO: read INPUTFILE from stdin
 		INPUTFILE="$2"

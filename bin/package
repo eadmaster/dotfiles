@@ -445,10 +445,8 @@ case "$1" in
 		echo "$0: flatpak:"
 		flatpak search "$PACKAGE_NAME"
 		
-		# appimage search https://appimage.github.io/apps/
-		# using chob https://github.com/MuhammedKpln/chob
-		#chob "$PACKAGE_NAME" #--enableExperiementalFeatures --disableCache
-		#zap seach "$PACKAGE_NAME"
+		# github releases search https://appimage.github.io/apps/
+		zap seach "$PACKAGE_NAME"  # appimages only  https://github.com/srevinsaju/zap
 		
 		# check static builds on 1bin
 		#wget -S  --spider 1bin.org/$(uname)/$PACKAGE_NAME

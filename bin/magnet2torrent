@@ -1,39 +1,63 @@
-#!/bin/sh
+#!/bin/bash
 
 HASH=$(echo "$1" | tr '[a-z]' '[A-Z]')
 
+# extract hash if full magnet link is passed
 case "$1" in
 	magnet:* )
 		HASH=$(echo \"$1\" | cut -d'&' -f1 | cut -d':' -f4)
 		TITLE="$(echo \"$1\" | cut -d'&' -f2  )"
+		;;
+	""|-h|--help) # print usage
+		echo "usage: $(basename $0) MAGNET_URL_OR_HASH"
+		echo
+		exit 0
+		;;
 esac
 
+# check remote file mimetype
+wmime() { curl -XHEAD -s -m2 -w '%{content_type}' "$1" ; }
+#less reliable? wmime() { curl --head --silent --location "$1" | grep -i "content-type:" |  cut -d' ' -f2- ; }
+
+try_download_wget() {
+	wget --max-redirect 0  --accept .torrent -O "${HASH}.torrent"  "$1"
+	[ $? -eq 0 ] && [ -s "$HASH.torrent" ] && exit 0
+}
+
+try_download_curl() {
+	#[ "$( wmime "$1" )" = "text/html" ] && return 1  # html=error page?
+	[ "$( wmime "$1" )" != "application/x-bittorrent" ] && return 1  # html=error page?
+	
+	curl --fail --location --insecure -o "${HASH}.torrent"  "$1"
+	[ $? -eq 0 ] && exit 0
+}
+
+try_download() {
+	echo "$0: trying $1"
+	try_download_curl "$1"   # prefer curl
+	#try_download_wget "$1"   # prefer wget
+}
+
+
+# try HTTP mirrors
+
+try_download  "https://itorrents.org/torrent/$HASH.torrent"
+
+try_download  "http://torrage.info/torrent.php?h=$HASH"
+
+try_download  "http://btcache.me/torrent/$HASH"
+
+try_download  "https://tfiles.org/torrent/dbe/$HASH%.torrent"
+
+# offline:
+# try_download  "http://torcache.to/download/$HASH.torrent"
+# try_download  "http://torrent.cd/$HASH.torrent"
+# try_download  "http://thetorrent.org/$HASH.torrent"
+
+# try downloading via P2P
 #aria2c --bt-metadata-only=true --bt-save-metadate=true 
 aria2c --bt-metadata-only --bt-save-metadata "$@"
 [ $? -eq 0 ] && exit 0
 
-# try HTTP mirrors (less reliable)
-
-wget --max-redirect 0 "https://itorrents.org/torrent/$HASH.torrent"
-[ $? -eq 0 ] && exit 0
-
-wget --max-redirect 0 -O "$HASH.torrent" "http://torrage.info/torrent.php?h=$HASH"
-[ $? -eq 0 ] && exit 0
-
-#wget --max-redirect 0 "http://thetorrent.org/$HASH.torrent"
-#[ $? -eq 0 ] && exit 0
-
-wget --max-redirect 0 "http://torcache.to/download/$HASH.torrent"
-[ $? -eq 0 ] && exit 0
-
-wget --max-redirect 0 "http://btcache.me/torrent/$HASH"
-[ $? -eq 0 ] && exit 0
-# TODO: check if html output
-
-# offline: 
-# "http://torrage.info/torrent.php?h=$HASH"
-# "http://torrent.cd/$HASH.torrent"
-
 # TODO: add common trackers to the downloaded torrent  https://superuser.com/questions/1209290/how-to-change-add-a-tracker-to-a-torrent-file-using-the-command-line
-
 

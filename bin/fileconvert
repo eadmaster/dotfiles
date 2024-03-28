@@ -335,9 +335,12 @@ case $INPUTFILEEXT in
 		exit $?
 		;;
 	zip|rar|7z|arj|bz2|cab|cpio|gz|lzma|lha|lzh|tar|tgz|tbz|wim|iso )
-		# try to detect the input file type according on its extension (useful if file is missing or buggy)
+		patool repack "$INPUTFILE" "$OUTPUTFILE"  # needs tmp extraction https://github.com/wummel/patool/issues/154
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		
+		# else switch on output extension
+		# extract and repack the archive
 		case $OUTPUTFILEEXT in
-			# extract and repack the archive
 			zip|7z|bz2|gz|tar|tgz|tbz )  # https://sevenzip.osdn.jp/chm/general/formats.htm
 				# TODO: via piping: 7z e -so test.zip | 7z a -si test.7z
 				mkdir $TMPDIR/$$_fileconvert

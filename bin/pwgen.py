@@ -45,8 +45,10 @@ if __name__ == "__main__":
 	digits = string.digits
 	special_chars = string.punctuation
 	alphabet = letters + digits + special_chars
+	
+	# TODO: allow passing max lenght, requirements  https://linux.die.net/man/1/pwgen
 
-	# fix password length
+	# fixed password length
 	pwd_length = 12
 	
 	try:

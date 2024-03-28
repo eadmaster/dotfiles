@@ -72,23 +72,26 @@ case $INPUTFILETYPE in
 esac
 
 case $INPUTFILEEXT in
-	gz|xz|bz2|lz ) # untested
+	gz|xz|bz2|lz )
 		zcmp "$INPUTFILE" "$INPUTFILE2"
-		continue
+		exit $?
 		;;
-	zip ) # untested
+	zip )
 		zipcmp "$INPUTFILE" "$INPUTFILE2"
-		continue
+		exit $?
 		;;
-	#TODO: zip|rar|7z )
-	#	# HASH1="$(7z l -slt "$INPUTFILE")"
-	#	# HASH2="$(7z l -slt "$INPUTFILE2")"
-	#   # MEMO: need alphabetic sorting
-	#	#continue
-	#	;;
-	pem ) 
-		HASH1=$(openssl x509 -noout -modulus -in "$INPUTFILE")
-		HASH2=$(openssl x509 -noout -modulus -in "$INPUTFILE2")
+	rar|7z )
+		# using patool (req. full dempression)  https://github.com/wummel/patool
+		patool diff "$INPUTFILE" "$INPUTFILE2" | grep -E '+++ |--- '  # TODO: do not print file contents
+		exit $?
+		# TODO: 7z ver
+		# HASH1="$(7z l -slt "$INPUTFILE" | sort)"
+		# HASH2="$(7z l -slt "$INPUTFILE2" | sort)"
+		# diff ...
+		;;
+	#TODO: pem ) 
+	#	HASH1=$(openssl x509 -noout -modulus -in "$INPUTFILE")
+	#	HASH2=$(openssl x509 -noout -modulus -in "$INPUTFILE2")
 esac
 
 if [ -z "$HASH1" ]; then

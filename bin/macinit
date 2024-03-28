@@ -289,6 +289,7 @@ alias gmail="google mail"
 #alias sendmail=xdg-email
 #alias mailcheck="source myemailcheck"
 #alias checkmail="source myemailcheck"
+
 #alias news="google news"
 #alias calendar="google calendar"
 #alias gcal="google calendar"
@@ -310,12 +311,12 @@ unhide() { mv -v "$1" "${1:1}" ; }
 
 # easier find with fd https://github.com/sharkdp/fd
 if which fdfind >/dev/null 2>&1 ; then
-    alias fd="fdfind --hidden --glob"
-    f() { fdfind --hidden --ignore-case --glob "*$@*" ; }
+    #alias fd=fdfind
+    fd() { fdfind --no-ignore --hidden --ignore-case --glob "*$@*" ; }
 else
     alias fd="find . -xdev -iname"  # 2>/dev/null  -> skip permission denied errors https://unix.stackexchange.com/questions/19430/how-do-i-remove-permission-denied-printout-statements-from-the-find-program
-    alias f=fd
 fi
+alias f=fd
 #alias search=fd
 #alias ff=fd  # also used for firefox
 
@@ -651,9 +652,13 @@ alias httpremove="curl -XDELETE --insecure"
 alias ftpls="curl --list-only ftp://"  # not recursive
 alias ftplsrecursive=ftpfind.py
 wgrep() { wcat "$2" | grep "$1" ; }
+wsize() { curl --head --silent --location "$1" | grep -i "content-length:" |  cut -d' ' -f2 | bytes2human ; }
+wdate() { curl --head --silent --location "$1" | grep -i "last-modified:" |  cut -d' ' -f2- ; }
+wmime() { curl --head --silent --location "$1" | grep -i "content-type:" |  cut -d' ' -f2- ; }
+#wmime() { curl -XHEAD -s -m2 -w '%{content_type}' "$1" ; }  # less reliable?
 alias wget="wget --no-hsts --hsts-file $TMPDIR/wget-hsts"
 #alias wput="curl --upload-file "
-wsize() { curl --head --silent --location "$1" | grep -i "content-length:" |  cut -d' ' -f2 | bytes2human ; }
+
 # TODO: rewrite using --write-out '%{json}' https://daniel.haxx.se/blog/2020/03/17/curl-write-out-json/
 
 alias web2png=webshot
@@ -891,7 +896,15 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	#nointrosearch() { ugrep "$@" -i -I -z -g "$PENDRIVE/Documents/db/datfile/No Intro*.zip" ; }  # TODO: fix
 	nointrosearch() { grep -i -I  "$@" $HOME/datfiles/nointro/*.dat ; }  # TODO: remove
 	scenesearch() { dbgrep "$@" $PENDRIVE/Documents/db/datfile/scene ; }
-
+	comicssearch() { dbgrep "$1" $PENDRIVE/Documents/db/index/comics ; }
+	
+	downloadsearch() { dbgrep "$1" $PENDRIVE/Documents/db/download ; }
+	mangasearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/manga ; }
+	manualsearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/manuals ; }
+	musicsearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/music ; }
+	midisearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/midi ; }
+	# ...
+	
 	psxsearch() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps1/sonyindex_PSone*.txt ; }
 	alias ps1search=psxsearch
 	ps2search() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps2/sonyindex_PS2*.txt ; }
@@ -906,6 +919,7 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	3dssearch() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/3ds/*.json ; }
 	nswsearch() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/nsw/*.json ; }
 	# MEMO: do not quote escaped paths!
+
 fi
 
 # mame aliases   
@@ -944,8 +958,9 @@ alias whoisphone=phoneid
 #alias datessearch=calsearch
 #alias when=calsearch
 
-chemsearch() { dbgrep "$1" $PENDRIVE/Documents/db/chem ; }
+#chemsearch() { dbgrep "$1" $PENDRIVE/Documents/db/chem ; }  # moved in script
 alias elemsearch=chemsearch
+alias additivesearch=chemsearch
 
 #findext() { dbgrep "$1" $PENDRIVE/Documents/db/file/headers.ini ; }
 #findmime() { dbgrep "$1" $PENDRIVE/Documents/db/hist ; }
@@ -1216,6 +1231,7 @@ alias posix-shell=posh
 
 #alias mime="file -bi"
 alias mimeget="file -bi"  # FIX for symlinks: mimeget() { file -bi $(readlink -f "$@") ; }
+alias getmime=mimeget
 #alias type=mimeget  # NO? conflicts with bash builtin
 alias encodingget=mimeget
 mime2ext() { python -m mimetypes -e "$1" ; }
@@ -1495,8 +1511,8 @@ alias saferen=detox
 alias rensafe=detox
 
 alias csv=csvtool
-#alias csvgrep="csvtool grep"
-csvgrep() { head -n 1 "$2" ; grep "$@" ; }  # prints the header and then grep | TODO: replace with rg? https://github.com/BurntSushi/ripgrep/issues/509
+alias csvgrep="csvtool grep"
+#csvgrep() { head -n 1 "$2" ; grep "$@" ; }  # prints the header and then grep | TODO: replace with rg? https://github.com/BurntSushi/ripgrep/issues/509
 alias csvcut="csvtool cut"
 #alias colrm="csvtool col"
 alias histogram="csvtool histogram"
@@ -1552,13 +1568,15 @@ alias certinstall="sudo trust anchor --store"  # MEMO: add in
 alias pdfchecksignature=pdfsig  #-nssdir $HOME/.pki/nssdb/
 #alias pdfsign=...  https://unix.stackexchange.com/questions/85873/how-can-i-add-a-signature-png-to-a-pdf-in-linux
 
-smimesign() { openssl smime -sign -signer $SSL_CERT_FILE -inkey $SSL_CERT_FILE -in "$*" -outform DER -nodetach -out "$@.p7m" ; }
-smimeencrypt() { openssl smime -encrypt $SSL_CERT_FILE -in "$1" -outform DER -nodetach -out "$1.p7m" ;   }
+#if which openssl >/dev/null 2>&1 ; then
+#smimesign() { openssl smime -sign -signer $SSL_CERT_FILE -inkey $SSL_CERT_FILE -in "$*" -outform DER -nodetach -out "$@.p7m" ; }
+#smimeencrypt() { openssl smime -encrypt $SSL_CERT_FILE -in "$1" -outform DER -nodetach -out "$1.p7m" ;   }
 #alias encrypt="openssl enc -e -base64 -aes-256-cbc"  # MEMO: outputs no header
 #alias decrypt="openssl enc -d -base64 -aes-256-cbc"
 #alias aes=encrypt
 
-encrypt() { 7z a -p "$1.zip" "$1" ; }
+encrypt() { 7z a -mhe=on -p "$1.zip" "$1" ; }  # most supported method to distribute symmetric encrypted files
+alias decrypt=filedecrypt
 
 # TODO: cygwin-specific workarounds
 #if [ "$OSTYPE" = "cygwin" ]; then
@@ -1623,6 +1641,8 @@ if which rclone >/dev/null 2>&1 ; then
     alias rclonecp='rclone copy'
     alias rclonerm='rclone delete'
     alias rclonedeltree='rclone purge'
+    alias sync="rclone sync -v --track-renames "  # --size-only  --ignore-times
+    #alias dirdiff="sync --dry-run"
     
     gdrivels() { rclone lsf "gdrive:$1" | { column || cat ; } ; }
     #gdrivelsl() { rclone lsl "gdrive:$1" --max-depth 1 -q ; }  # list files only with size and modtime
@@ -1897,8 +1917,10 @@ alias findbrokensymlinks="find . -xtype l"
 #TODO: symlink2hardlink=find -type l -exec bash -c 'ln -f "$(readlink -m "$0")" "$0"' {} \;
 #  https://stackoverflow.com/questions/8377312/how-to-convert-symlink-to-regular-file
 
+alias finddup=dupfind
 alias findup=dupfind
 #alias fdupes=dupfind
+alias duplicates=dupfind
 
 #if which czkawka >/dev/null 2>&1 ; then
 #findbig() { czkawka big --directories $( pwd ) ; }
@@ -2283,7 +2305,7 @@ alias pyapp=zipapp
 
 if which ir-keytable >/dev/null 2>&1 ; then
 	alias irls=ir-keytable
-	#alias remotels=irls
+	alias remotels=irls
 	#alias remoteset=irset
 	alias irclear="ir-keytable --clear"
 	# ...
@@ -2305,6 +2327,40 @@ alias watchfile="tail -F"  # alternative: less +F
 # alias watchfileschanges="inotifywait --monitor --recursive" # moved in a script
 alias watchdirchanges=watchfileschanges
 alias monitorfilechanges=watchfileschanges
+
+if which fzf >/dev/null 2>&1 ; then
+	# https://github.com/junegunn/fzf/wiki/Examples
+	# https://github.com/beauwilliams/awesome-fzf
+	
+	alias fzfind="fzf -f"
+	
+	# cdf - cd into the directory of the selected file
+	cdf() {
+	   local file
+	   local dir
+	   file=$(fzf +m -q "$1") && dir=$(dirname "$file") && cd "$dir"
+	}
+
+	# fh - repeat history
+	fh() {
+	  print -z $( ([ -n "$ZSH_NAME" ] && fc -l 1 || history) | fzf +s --tac | sed -E 's/ *[0-9]*\*? *//' | sed -E 's/\\/\\\\/g')
+	}
+
+	# fkill - kill processes - list only the ones you can kill. Modified the earlier script.
+	fkill() {
+		local pid 
+		if [ "$UID" != "0" ]; then
+			pid=$(ps -f -u $UID | sed 1d | fzf -m | awk '{print $2}')
+		else
+			pid=$(ps -ef | sed 1d | fzf -m | awk '{print $2}')
+		fi  
+
+		if [ "x$pid" != "x" ]
+		then
+			echo $pid | xargs kill -${1:-9}
+		fi  
+	}
+fi
 
 
 unset THIS_SCRIPT_DIR

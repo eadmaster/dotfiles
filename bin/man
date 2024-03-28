@@ -13,6 +13,8 @@ HTML_URL="http://man.he.net/man1/$1"
 RAW_URL="https://manned.org/raw/$1.1"  # multidistro, more matches
 # ... https://wiki.archlinux.org/title/man_page#Online_man_pages
 
+# TODO: try multiple urls with curl
+
 pandoc -f man -t plain "$RAW_URL" | less
 #wget --quiet -O- "$RAW_URL"  | less  # TODO: | sed -e 's/<[^>]*>//g'
 _ES=$? ; [ $_ES -eq 0 ] && exit $_ES

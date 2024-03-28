@@ -14,7 +14,8 @@ fi
 _QUERY=$( echo "$_QUERY" | sed 's/\./\\\./g; s/\*/\.\*/g; s/?/./g' )
 
 if which ugrep >/dev/null 2>&1 ; then
-	ugrep -i -I -r -z -w --exclude-dir=_\* --exclude=\*.{html,htm,xml,json} -H  "$_QUERY" "$_SEARCHDIR/" | cut -c 1-260  # TODO: exclude more files
+	ugrep -i -I -r -z -w --exclude-dir=_\*  -H  "$_QUERY" "$_SEARCHDIR/" | cut -c 1-500  # TODO: exclude more files --exclude=\*.{html,htm,xml,json}
+	
 else
 	grep -i -I -r --exclude-dir=_\* -H  "$_QUERY" "$_SEARCHDIR/"
 fi

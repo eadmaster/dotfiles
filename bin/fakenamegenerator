@@ -7,3 +7,4 @@ faker -l it_IT  profile  #| pydict2json.py   TODO: pretty json output  https://g
 #[ $? -eq 0 ] && exit 0
 
 # TODO: more alternatives
+# https://github.com/public-apis/public-apis#test-data

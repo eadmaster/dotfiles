@@ -42,7 +42,8 @@ SONGS_BASE_PATH=$XDG_MUSIC_DIR
 [ ! -z "$ANDROID_ROOT" ] && SONGS_BASE_PATH=$HOME/storage/external-1/../../../../Music
 #[ "$(hostname)" = "BOSS2" ] && SONGS_BASE_PATH=$PENDRIVE/Documents/mus
 
-SOURCE_SONGS_PLAYLIST=$PENDRIVE/Documents/fav/songs_gdrive.m3u
+#SOURCE_SONGS_PLAYLIST=$PENDRIVE/Documents/fav/songs_gdrive.m3u
+SOURCE_SONGS_PLAYLIST=$PENDRIVE/Documents/fav/songs_onedrive.m3u
 
 TEMP_PLAYLIST_FILE=$TMPDIR/.$$.m3u
 
@@ -90,7 +91,7 @@ fi
 #find "$SONGS_BASE_PATH" -iname "*${QUERY}*.mp3" -printf '#EXTINF:-1,%P\n%p\n'  >> $TEMP_PLAYLIST_FILE
 #[ $? -ne 0 ] && 
 # fuzzy match, incl. common mispellings
-ugrep --no-group-separator -Z2 -A1 -w -i "$QUERY" "$SOURCE_SONGS_PLAYLIST"  >> $TEMP_PLAYLIST_FILE
+ugrep --no-group-separator  -A1 -w -i "$QUERY" "$SOURCE_SONGS_PLAYLIST"  >> $TEMP_PLAYLIST_FILE  # -Z2
 #[ $? -eq 127 ] && tre-agrep -B -E4 -D1 -d"#EXTINF:-1," -i "$QUERY" "$SOURCE_SONGS_PLAYLIST" >> $TEMP_PLAYLIST_FILE
 [ $? -eq 127 ] && grep -A1 -w -i "$QUERY" "$SOURCE_SONGS_PLAYLIST" >> $TEMP_PLAYLIST_FILE
 

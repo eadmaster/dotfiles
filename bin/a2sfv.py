@@ -100,6 +100,10 @@ class TarFile(object):
 def main():
 	# args check
 	# TODO: use argparse
+	# TODO: add cmdline switch to skip header with datetimes
+	# TODO: add cmdline switch to skip system files like 
+	#  https://github.com/github/gitignore/blob/main/Global/macOS.gitignore
+	#  https://github.com/github/gitignore/blob/main/Global/Windows.gitignore
 	if(len(sys.argv)==1 or sys.argv[1] in ['-h', '--help'] or not os.path.isfile(sys.argv[1])):
 		print("usage: " + PROGRAM_NAME + " file.ext")
 		print("")

@@ -240,6 +240,8 @@ case "$INPUTFILEEXT" in
 
 	# TODO: flatpak (ostree-based)  https://github.com/flatpak/flatpak/issues/126  
 	
+	# TODO: ... https://github.com/xvoland/Extract/blob/master/extract.sh
+	
 	appimage )
 		appimagetool -v "$INPUTFILE" "$OUTPUTDIR"
 		[ $? -eq 0 ] && exit 0
@@ -285,6 +287,9 @@ esac
 [ $? -eq 0 ] && exit 0
 
 7za x -y -o"$OUTPUTDIR" "$INPUTFILE"
+[ $? -eq 0 ] && exit 0
+
+patool extract --outdir "$OUTPUTDIR" "$INPUTFILE"
 [ $? -eq 0 ] && exit 0
 
 rar x "$INPUTFILE" "$OUTPUTDIR"

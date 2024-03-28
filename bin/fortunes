@@ -29,6 +29,10 @@ echo
 
 #echo
 
+# TODO: more api alternatives:
+# https://github.com/public-apis/public-apis#entertainment
+# https://github.com/public-apis/public-apis#personality
+
 #command -p fortune "$@"
 #_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
 

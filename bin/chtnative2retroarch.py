@@ -61,6 +61,10 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 				code_prefix = address[:2]
 				address = address[2:]  # cut 1st 2 digits , used to identify GS code type 
 				
+				if "?" in address:
+					sys.stderr.write("err: unsupported code type (skipped): %s\n" % line)
+					continue
+				
 				if input_sys_str in ["sat", "ss", "saturn"]:
 					# need to apply a custom offset (don't ask me why :-), tested with libretro-yabause only atm
 					address = address[1:]
