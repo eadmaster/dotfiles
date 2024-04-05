@@ -3,7 +3,7 @@
 DIR_TO_MONITOR="$@"
 
 # using inotify-tools
-0inotifywait --monitor --recursive "$DIR_TO_MONITOR"
+inotifywait --monitor --recursive "$DIR_TO_MONITOR"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 

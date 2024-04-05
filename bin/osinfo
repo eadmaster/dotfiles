@@ -96,6 +96,13 @@ inxi -S
 
 echo
 
+neofetch
+
+echo
+
+fastfetch
+
+
 # Android check
 if [ ! -z "$ANDROID_ROOT" ]; then
 	grep ro.build.version.release system/build.prop

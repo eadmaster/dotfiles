@@ -39,9 +39,9 @@ WHISPER_PATH=$HOME/opt/whispercpp
 TMP_FILE=/tmp/rec16.wav
 
 LANGUAGE="auto"
-#LANGUAGE="ja"
+LANGUAGE="ja"
 #LANGUAGE="en"
-LANGUAGE="it"
+#LANGUAGE="it"
 
 #MODEL_FILE=$WHISPER_PATH/models/ggml-model-whisper-base.multi.bin
 MODEL_FILE=$WHISPER_PATH/models/ggml-model-whisper-small-q5_1.bin

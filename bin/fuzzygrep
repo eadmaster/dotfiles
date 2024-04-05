@@ -4,9 +4,8 @@
 ugrep --ignore-binary --ignore-case --hidden -Z2 "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
-# via fzf  https://github.com/junegunn/fzf/wiki/examples#searching-file-contents
-rg --no-binary --hidden --ignore-case --no-heading . | fzf --no-sort -f "$@"   # TODO: without rg + file wildcards? 
-# --nobreak --nonumbers
+# via fzf  https://github.com/junegunn/fzf/discussions/3694
+rg --no-binary --hidden --ignore-case --no-heading . | fzf --no-sort --no-extended -f "$1"  # --nobreak --nonumbers
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 tre-agrep --best-match --max-errors=1 --ignore-case "$@"

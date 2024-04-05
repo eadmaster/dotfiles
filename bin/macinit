@@ -954,6 +954,9 @@ alias phonesearch=contactsearch
 
 alias whocall=phoneid
 alias whoisphone=phoneid
+alias phonenuminfo=phoneid
+alias telnuminfo=phoneid
+alias tel2operator=phoneid
 
 #alias datessearch=calsearch
 #alias when=calsearch
@@ -1510,6 +1513,10 @@ alias sren=detox
 alias saferen=detox
 alias rensafe=detox
 
+alias safefilename=str2filename
+alias sanitizefilename=str2filename
+
+
 alias csv=csvtool
 alias csvgrep="csvtool grep"
 #csvgrep() { head -n 1 "$2" ; grep "$@" ; }  # prints the header and then grep | TODO: replace with rg? https://github.com/BurntSushi/ripgrep/issues/509
@@ -1979,11 +1986,13 @@ if which pip >/dev/null 2>&1 ; then
     alias pipuninstall="pip3 uninstall"
     alias piplist="pip3 list"
     alias pipupdate="pip3 install --upgrade"  # TODO: fix?
+    alias pipselfupdate="pip install --upgrade pip"
     alias pip2install="pip2 install --no-deps --prefer-binary"
     alias pip2uninstall="pip2 uninstall"
     # TODO: pipdeps="pip install --no-install --verbose"   # https://stackoverflow.com/questions/11460681/listing-the-dependencies-of-a-package-using-pip
     
-    alias mkvenv="python3 -m venv . ; source bin/activate"
+    alias venv="python3 -m venv  --system-site-packages  .venv ; source .venv/bin/activate"  # --relocatable 
+    #alias venv='virtualenv --system-site-packages  .venv ; source .venv/local/bin/activate'
 fi
 
 if which go >/dev/null 2>&1 ; then 
@@ -2043,8 +2052,12 @@ alias imghash=mediahash
 alias audiohash=mediahash
 alias videohash=mediahash
 
-alias langdet="polyglot detect"
-alias langrec=langdet
+# NLP
+if which polyglot >/dev/null 2>&1 ; then
+	alias langdet="polyglot detect"
+	alias langrec=langdet
+	alias sentiment="polyglot sentiment"
+fi
 
 alias facerec=camera2facerec.py
 alias motiondetect=camera2facerec.py
@@ -2332,7 +2345,7 @@ if which fzf >/dev/null 2>&1 ; then
 	# https://github.com/junegunn/fzf/wiki/Examples
 	# https://github.com/beauwilliams/awesome-fzf
 	
-	alias fzfind="fzf -f"
+	#alias fzfind="fzf --no-sort --no-extended -f"
 	
 	# cdf - cd into the directory of the selected file
 	cdf() {

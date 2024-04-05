@@ -21,12 +21,7 @@ do
 	fi
 
 	NEWFILENAME="$(basename "$f")"
-	NEWFILENAME="$( echo -n "$NEWFILENAME" | { transliterate || uconv -x 'Any-Latin;Latin-ASCII' || cat ; } )" # convert non-latin chars using my transliterate script OR uconv from the icu-devtools package
-	NEWFILENAME="$( echo -n "$NEWFILENAME" | iconv -f UTF-8 -t ascii//TRANSLIT//IGNORE )"
-	NEWFILENAME="$( echo -n "$NEWFILENAME" | tr -c '[A-Za-z0-9._\-]' '_' \
-		| tr '\[\]' '_' \
-		| sed -e 's/__*/_/g' \
-		| sed -e 's/_\././g' )"
+	NEWFILENAME="$( echo -n "$NEWFILENAME" | str2filename )"
 	# TODO: remove all dots except the last?
 	
 	if [ -f "$(basename $f)/$NEWFILENAME" ]; then

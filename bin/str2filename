@@ -1,0 +1,20 @@
+#!/bin/bash
+
+
+INPUT="$1"
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+
+#NEWFILENAME="$(basename "$INPUT")"
+#NEWFILENAME="$( echo -n "$NEWFILENAME" | { transliterate || uconv -x 'Any-Latin;Latin-ASCII' || cat ; } )" # convert non-latin chars using my transliterate script OR uconv from the icu-devtools package
+#NEWFILENAME="$( echo -n "$NEWFILENAME" | iconv -f UTF-8 -t ascii//TRANSLIT//IGNORE )"
+#NEWFILENAME="$( echo -n "$NEWFILENAME" | tr -c '[A-Za-z0-9._\- ]' '_' \
+#	| tr '\[\]' '_' \
+#	| sed -e 's/__*/_/g' \
+#	| sed -e 's/_\././g' )"
+
+#echo "$NEWFILENAME"
+
+# alt. derived from https://stackoverflow.com/questions/43511508/bash-sanitize-file-name-function
+echo -n "$INPUT" | iconv -f UTF-8 -t ascii//TRANSLIT//IGNORE | perl -pe 's/[\?\[\]\/\\=<>:;,''"&\$#*|~`!{}%+]//g;' -pe 's/[\r\n\t-]+/-/g;'
