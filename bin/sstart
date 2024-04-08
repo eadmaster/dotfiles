@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 firejail --private "$1"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
@@ -52,8 +52,7 @@ if [ $? -eq 0 ] || [ -x "$1" ]; then
 	# the passed file is an executable
 	
 	# puppy linux test
-	grep -q -i puppy /etc/DISTRO_SPECS
-	if [ $? -eq 0 ]; then
+	if grep -q -i puppy /etc/DISTRO_SPECS &> /dev/null ; then
 		#su -c "$@" fido # could not be enabled  http://puppylinux.org/wikka/spot
 		su -p -c "$@" spot
 		exit $?

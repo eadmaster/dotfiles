@@ -274,14 +274,15 @@ case "$INPUTFILETYPE" in
 		exit $?
 		;;
 		
-	text/plain )  # plaintext: check mispelled words
+	text/plain )  # plaintext: check mispelled words, encoding and newlines inconsistencies
 		echo "$(basename $0) info: mispelled words found:" >&2
 		hunspell -l -d en_US,en-US,it-IT "$INPUTFILE"  # -l -L -w 
 		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 		aspell list < "$INPUTFILE"   # --data-dir=$DICPATH --ignore=3 --dont-backup --ignore-case --dont-ignore-case --lang=en
 		#MORE ALTERNATIVES: ispell
 		# TODO: alternative: split text by words and search them in an external dict from /p/Documents/db/dict/*.dic.gz
-		# TODO: check newlines and encoding inconsistencies
+		
+		# TODO: check newlines and encoding inconsistencies  https://stackoverflow.com/questions/56761626/how-to-detect-and-fix-incorrect-character-encoding
 		exit $?
 		;;
 esac

@@ -181,6 +181,11 @@ alias pprint=file2txt
 #alias html2txt=html2text
 #alias ocr=file2txt  # moved in a script
 
+# syntax highlighter
+if which bat >/dev/null 2>&1 ; then
+	alias pprint=file
+fi
+
 alias grepliteral="grep -F"
 #alias agrep=ugrep  # conflicts
 #alias pdfgrep=filegrep
@@ -1237,6 +1242,8 @@ alias mimeget="file -bi"  # FIX for symlinks: mimeget() { file -bi $(readlink -f
 alias getmime=mimeget
 #alias type=mimeget  # NO? conflicts with bash builtin
 alias encodingget=mimeget
+alias suggestext="file --extension"
+alias checkext="file --extension"
 mime2ext() { python -m mimetypes -e "$1" ; }
 
 niceget() { ps -o nice -p $(pidof -s $1); }
@@ -1820,7 +1827,9 @@ alias smbmount="mkdir /tmp/smb/ service smb start ; smbnetfs /tmp/smb "  # TODO:
 alias sambamount=smbmount
 
 portgrep() { grep -i $1 /etc/services ; }  # ALTERNATIVE: getent services $1
-#findservice=findport
+whatportis=portgrep  # https://github.com/ncrocfer/whatportis
+alias findport=portgrep
+
 portcheck() { sudo fuser -v -n udp $1 ; sudo fuser -v -n tcp $1 ; [ $? -ne 0 ] && echo "portcheck: no process found" ; }
 alias wholisten=portcheck
 alias portsopenls="sudo netstat -plnt"
@@ -1829,18 +1838,23 @@ freeportudp() { fuser -ivk $1/udp ; }
 freeporttcp() { fuser -ivk $1/tcp ; }
 alias fdls=lsof
 
-alias nmap="nmap --top-ports 20 --exclude 127.0.0.1"  # --privileged # TODO: move in user config file?
-alias portscan="nmap -v"
-alias osscan="sudo nmap -O"
-alias servicescan="nmap --script http-enum"
-alias lanservicescan="servicescan 192.168.1.*"
-#alias lancamerascan="nmap --script rtsp-url-brute 192.168.1.*"  # TODO: more protocols
-#alias camerascan=onvif-audit  # moved in a script
-#alias netbiosscan="nbtscan 192.168.1/16 || nmap --script smb-os-discovery -p 445 192.168.1.*"
-#alias neighboursls="ip neigh | grep REACHABLE"
-alias subdomainsls="nmap -v --script dns-brute"
-#alias wls="nmap -v script http-sitemap-generator "
-alias mdnsinfo="nmap --script upnp-info.nse -p 1900"
+# nmap-only aliases
+if which nmap >/dev/null 2>&1 ; then
+	alias nmap="nmap --top-ports 20 --exclude 127.0.0.1"  # --privileged # TODO: move in user config file?
+	alias portscan="nmap -v"
+	alias osscan="sudo nmap -O"
+	alias servicescan="nmap --script http-enum"
+	alias lanservicescan="servicescan 192.168.1.*"
+	#alias lancamerascan="nmap --script rtsp-url-brute 192.168.1.*"  # TODO: more protocols
+	#alias camerascan=onvif-audit  # moved in a script
+	#alias netbiosscan="nbtscan 192.168.1/16 || nmap --script smb-os-discovery -p 445 192.168.1.*"
+	#alias neighboursls="ip neigh | grep REACHABLE"
+	alias subdomainsls="nmap -v --script dns-brute"
+	#alias wls="nmap -v script http-sitemap-generator "
+	alias mdnsinfo="nmap --script upnp-info.nse -p 1900"
+	#alias defaultpassword="nmap --script http-default-accounts"  # https://github.com/nnposter/nndefaccts
+fi
+
 alias mdnsscan="avahi-browse -a --ignore-local --terminate ; mdns-scan"
 alias mdnsresolve="avahi-resolve --name"
 alias resolve="getent hosts"  # generic system resolver
@@ -2055,8 +2069,12 @@ alias videohash=mediahash
 # NLP
 if which polyglot >/dev/null 2>&1 ; then
 	alias langdet="polyglot detect"
-	alias langrec=langdet
 	alias sentiment="polyglot sentiment"
+	# MEMO: read text from stdin
+fi
+if which tika >/dev/null 2>&1 ; then  # Apache Tika app https://github.com/apache/tika
+	alias langdet="tika --text --language"
+	#alias mimeget2="tika --text --detect"
 fi
 
 alias facerec=camera2facerec.py
@@ -2229,6 +2247,7 @@ alias emoticon=emoji
 
 alias regexbuilder=grex
 alias mkregex=grex
+alias suggestregex=grex
 
 alias audiocut=mediacut
 alias videocut=mediacut

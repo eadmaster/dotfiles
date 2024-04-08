@@ -75,9 +75,7 @@ if __name__ == "__main__":
 		infile = open(args.infile)
 
 	input_ass_str = infile.read()
-	
-	args.outfile.write("[by:eadmaster (automatic transliteration, may contain errors)]\n\n")
-	 
+		 
 	line_no = 0
 	header_fields_no = 0
 	
@@ -87,7 +85,7 @@ if __name__ == "__main__":
 		line_no += 1
 		if not line.startswith("Dialogue:"):
 			# keep unchanged
-			print(line)
+			args.outfile.write(line + "\n")
 			continue
 		
 		# TODO: handle commas in the text?

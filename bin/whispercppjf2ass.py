@@ -21,11 +21,16 @@ if __name__ == "__main__":
 		import codecs
 		infile = codecs.getreader("utf-8")(infile)
 	else:
-		infile = open(args.infile)
+		infile = open(args.infile, errors="ignore")
 		#infile = codecs.getreader("utf-8")(infile)
 
-	input_json_str = infile.read()
-		
+	# NO? won't ignore decoding erorrs
+	# input_json_str = infile.read()
+	
+	input_json_str = ""
+	for line in infile:
+		input_json_str += line+"\n"
+	
 	parsed_json = json.loads(input_json_str) # TODO: better handle decoding errors (create a custom JSONDecoder?)
 	
 	# header
@@ -71,9 +76,14 @@ if __name__ == "__main__":
 		for t in tokens_list:
 			token_text = t["text"].strip()
 			
-			if ord(token_text[0]) > 127:
-				# not ascii
+			try:
+				token_text[0]
+			except:
 				continue
+
+			#if ord(token_text[0]) > 127:
+			#	# not ascii
+			#	continue
 			if token_text in [ "ª", "â" ] or token_text.startswith(("[", "âª")):
 				continue
 			

@@ -13,7 +13,7 @@ if [ ! -z "$ANDROID_ROOT" ]; then
 fi
 
 ## Puppy-linux dection
-#if grep -q -i puppy /etc/DISTRO_SPECS; then
+#if grep -q -i puppy /etc/DISTRO_SPECS &> /dev/null ; then
 #	extractrun firefox "$@"
 #	[ $? -ne 127 ] && exit $?
 #fi

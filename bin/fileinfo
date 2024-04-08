@@ -355,6 +355,16 @@ case $INPUTFILETYPE in
 		#echo -n "lines: " ; wc -l "$INPUTFILE" | cut -d' ' -f1au
 		echo
 
+		# detect encoding via encguess (part of perl) 
+		encguess "$INPUTFILE"
+		# detect encoding via  https://www.freedesktop.org/wiki/Software/uchardet/
+		uchardet "$INPUTFILE"
+		# detect encoding and newlines via  https://github.com/nijel/enca
+		enca -L none "$INPUTFILE"
+		# detect encoding via  https://github.com/chardet/chardet
+		chardet "$INPUTFILE" || chardetect "$INPUTFILE"
+		# ... https://stackoverflow.com/questions/805418/how-can-i-find-encoding-of-a-file-via-a-script-on-linux
+		
 		exit $?
 		;;
 
@@ -382,10 +392,12 @@ esac
 if [ "$(stat -c'%s' "$INPUTFILE")" -lt 1000000000 ]; then
 	#rhash --bsd --all "$INPUTFILE"
 	#[ $? -eq 127 ] && md5sum "$INPUTFILE"
-	binwalk --entropy --fast --nplot "$INPUTFILE"
+	
+	#binwalk --entropy --fast --nplot "$INPUTFILE"
+	
 	# try subfile searching
-	binwalk --signature "$INPUTFILE"
-	# foremost -v -w -o $TMPDIR/$RANDOM -i "$INPUTFILE"  # TODO: no output
+	hachoir-subfile "$INPUTFILE"
+	binwalk --signature "$INPUTFILE"   # https://github.com/ReFirmLabs/binwalk/wiki/Usage
 fi
 
 #echo "$(basename $0): extension \"$INPUTFILEEXT\" not supported, redirecting to file:" >&2
@@ -393,8 +405,11 @@ file -i "$@"
 file "$@"
 #file -z -k "$@"
 
-# also try with extract from libextractor
+# try with libextractor
 extract "$INPUTFILE"
+
+# try with tika  https://github.com/apache/tika
+tika --text --metadata  "$INPUTFILE"
 
 # also try with fq https://github.com/wader/fq/
 fq . "$INPUTFILE"

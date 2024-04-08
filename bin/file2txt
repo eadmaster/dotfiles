@@ -292,19 +292,23 @@ case $INPUTFILETYPE in
 		;;
 esac
 
+# try with tika (lot of supported formats) https://github.com/apache/tika
+tika --text "$INPUTFILE"
+[ $? -ne 127 ] && exit $?
+
 # else try with fileconvert
-OUTPUTFILE="$TMPDIR/$INPUTFILENAME.txt"
-fileconvert "$INPUTFILE" "$OUTPUTFILE"
-if [ $? -eq 0 ]; then
-	cat "$OUTPUTFILE"
-	exit $?
-fi
-OUTPUTFILE="$TMPDIR/$INPUTFILENAME.csv"
-fileconvert "$INPUTFILE" "$OUTPUTFILE"
-if [ $? -eq 0 ]; then
-	cat "$OUTPUTFILE"
-	exit $?
-fi
+#OUTPUTFILE="$TMPDIR/$INPUTFILENAME.txt"
+#fileconvert "$INPUTFILE" "$OUTPUTFILE"
+#if [ $? -eq 0 ]; then
+#	cat "$OUTPUTFILE"
+#	exit $?
+#fi
+#OUTPUTFILE="$TMPDIR/$INPUTFILENAME.csv"
+#fileconvert "$INPUTFILE" "$OUTPUTFILE"
+#if [ $? -eq 0 ]; then
+#	cat "$OUTPUTFILE"
+#	exit $?
+#fi
 
 # else
 echo "$(basename $0) error: filetype not supported: $INPUTFILE ($INPUTFILETYPE)" >&2
