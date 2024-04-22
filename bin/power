@@ -132,7 +132,12 @@ status|check )
 			broadlink_cli $BROADLINK_SP2_PARAMS --energy
 			exit $?
 		;;
-			
+		
+		#powerpluga )
+		#	broadlink_cli $BROADLINK_RM4PRO_PARAMS  ... https://github.com/mjg59/python-broadlink/issues/800
+		#	exit $?
+		#;;
+		
 		* ) # default case
 			TARGET=$2
 			ping -c 3 $TARGET

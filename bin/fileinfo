@@ -365,7 +365,7 @@ case $INPUTFILETYPE in
 		chardet "$INPUTFILE" || chardetect "$INPUTFILE"
 		# ... https://stackoverflow.com/questions/805418/how-can-i-find-encoding-of-a-file-via-a-script-on-linux
 		
-		exit $?
+		#exit $?
 		;;
 
 	application/x-sharedlib )
@@ -396,8 +396,9 @@ if [ "$(stat -c'%s' "$INPUTFILE")" -lt 1000000000 ]; then
 	#binwalk --entropy --fast --nplot "$INPUTFILE"
 	
 	# try subfile searching
-	hachoir-subfile "$INPUTFILE"
-	binwalk --signature "$INPUTFILE"   # https://github.com/ReFirmLabs/binwalk/wiki/Usage
+	#hachoir-subfile "$INPUTFILE"
+	#binwalk --signature "$INPUTFILE"
+	subfilesearch "$INPUTFILE"
 fi
 
 #echo "$(basename $0): extension \"$INPUTFILEEXT\" not supported, redirecting to file:" >&2
@@ -405,8 +406,14 @@ file -i "$@"
 file "$@"
 #file -z -k "$@"
 
+# try with exiftool
+exiftool "$INPUTFILE"
+
 # try with libextractor
 extract "$INPUTFILE"
+
+# try with hachoir
+hachoir-metadata "$INPUTFILE"
 
 # try with tika  https://github.com/apache/tika
 tika --text --metadata  "$INPUTFILE"

@@ -22,6 +22,10 @@ if [ "$1" = "-m" ]; then
 	php -r "print(urldecode(\"$INPUT\") . \"\n\");"
 	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 	
+	# https://github.com/abhimanyu003/sttr
+	sttr url-decode "$INPUT"
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+	
 else
 
 	python3 -c "import urllib.parse; print(urllib.parse.unquote(\"$INPUT\"));"

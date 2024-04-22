@@ -15,7 +15,7 @@ echo "$(basename $0): serving $DIR_SERVED at ftp://$_MYIP:2121/ or ftp://${_HOST
 echo "$(basename $0): press CTRL+C to abort"
 
 # using rclone v>1.44  https://rclone.org/commands/rclone_serve_ftp/
-rclone serve ftp --addr :$PORT "$DIR_SERVED"
+rclone serve ftp --vfs-cache-mode off --addr :$PORT "$DIR_SERVED"
 [ $? -eq 0 ] && exit 0
 
 # using sfk http://stahlworks.com/dev/index.php?tool=ftpserv

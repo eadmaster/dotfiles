@@ -16,7 +16,7 @@ echo "$(basename $0): press CTRL+C to abort"
 
 # using rclone  https://rclone.org/commands/rclone_serve_http/
 # rclone serve http --addr :$PORT "$DIR_SERVED"
-rclone serve webdav --addr :$PORT "$DIR_SERVED"  # webdav supports file uploads  https://rclone.org/commands/rclone_serve_webdav/
+rclone serve webdav --etag-hash auto --vfs-cache-mode off  --addr :$PORT "$DIR_SERVED"  # webdav supports file uploads  https://rclone.org/commands/rclone_serve_webdav/
 [ $? -eq 0 ] && exit 0
 
 # using sfk (supports file upload, dir listing) http://stahlworks.com/dev/?tool=httpserv

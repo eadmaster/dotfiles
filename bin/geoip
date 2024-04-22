@@ -11,6 +11,9 @@ geoiplookup $1
 
 echo
 
+# TODO: from https://github.com/fujiapple852/trippy
+# trip $1 --geoip-mmdb-file GeoLite2-City.mmdb --tui-geoip-mode short
+
 # from public web apis
 wget -q -O-  http://ip-api.com/json/$1 | python -m json.tool
 

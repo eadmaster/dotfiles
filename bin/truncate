@@ -3,10 +3,13 @@
 command -p truncate "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
-extractrun truncate "$@"
+coreutils truncate "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 busybox truncate "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+extractrun truncate "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 # else

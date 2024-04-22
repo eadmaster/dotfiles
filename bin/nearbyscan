@@ -73,6 +73,7 @@ else
 	echo "$(basename $0) info: scanning BT devices..." >&2
 	#NO(TOO VERBOSE)? btscan
 	hcitool scan --info --oui --class
+	# BLE scan
 	sudo timeout -sINT 5s hcitool lescan
 fi
 
@@ -86,3 +87,8 @@ else
 	radioscan
 fi
 
+# python-broadlink  https://github.com/mjg59/python-broadlink/tree/master/cli
+broadlink_discovery #--timeout 10
+
+# tinytuya  https://github.com/jasonacox/tinytuya
+python -m tinytuya scan 10  # 10=MAX_TIME

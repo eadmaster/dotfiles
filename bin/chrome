@@ -19,6 +19,9 @@ if [ ! -z "$ANDROID_ROOT" ]; then
 	exit $?
 fi
 
+#thorium $CHROMIUM_FLAGS "$@"
+#[ $? -ne 127 ] && exit $?
+
 google-chrome $CHROMIUM_FLAGS "$@"
 [ $? -ne 127 ] && exit $?
 

@@ -1,3 +1,14 @@
 
 
 # TODO: mount cd/hdd images, archives, etc.
+
+# for iso
+#mount -o loop IMAGE.ISO /MY/MOUNTPATH  # OLD
+#udisksctl loop-setup -r -f IMAGE.ISO  # NEW, creates a loop device
+
+# file system images
+# mount a filesystem image as read only + allow executing binaries
+mount -t ext2 -o loop,ro,exec myimage.img /tmp/mountPoint
+	
+# for archives:
+# use Ratarmount  https://github.com/mxmlnkn/ratarmount

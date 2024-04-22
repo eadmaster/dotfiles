@@ -183,7 +183,7 @@ alias pprint=file2txt
 
 # syntax highlighter
 if which bat >/dev/null 2>&1 ; then
-	alias pprint=file
+	alias pprint=bat
 fi
 
 alias grepliteral="grep -F"
@@ -357,6 +357,8 @@ alias fuserumount="fusermount -u"
 alias lsdsk=drives
 alias disksls=drives
 alias mountsls=findmnt
+mountintmp() { mkdir /tmp/$1 ; sudo mount $1 /tmp/$1 && echo "$0: mounted in /tmp/$1/" ; }  # TODO: add some -o
+alias tmpmount=mountintmp
 
 # qemu aliases
 if which qemu-system-i386 >/dev/null 2>&1 ; then
@@ -563,6 +565,10 @@ if which imconvert >/dev/null 2>&1 ; then
 	imgresize() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE 00%|pixel_width[x00%|pixel_height]" && return;  imconvert "$1" -resize $2 "$2_$1" ; }
 	imgsetdpi() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE NEW_DPI" && return;  imconvert -units PixelsPerInch "$1" -density $2 "$2dpi_$1" ; }
 	imgs2pdf() { imconvert "*.{png,jpg,jpeg}" -quality 100 outfile.pdf ; }
+	imgcolormostused() { imconvert "$@" -colors 1 -unique-colors txt:- ; }  # https://www.imagemagick.org/discourse-server/viewtopic.php?t=12818
+	#TODO: imgcolorbg() { ...  https://pypi.org/project/colorific/
+	imgcolortopleft() { imconvert "$@" -format "%[pixel:u.p{0,0}]" info:  ; }  # https://legacy.imagemagick.org/discourse-server/viewtopic.php?t=36208
+	#imgcolorreplace() { ...
 fi
 
 if which oiiotool >/dev/null 2>&1 ; then
@@ -646,31 +652,33 @@ saydate() { say "today is $(date '+%A %d %B 20 %y')" ; }
 alias lynx=links
 
 #alias geturl=wget
-alias get=wget
+#alias get=wget
+alias wget="wget --no-hsts --hsts-file $TMPDIR/wget-hsts"  # default options
+#alias wput="wget ..."
+
+alias curl="curl --insecure --fail --show-error --location --remote-time "  # default options
 #alias put="curl -XPUT --insecure --data-binary"
 #alias post="curl -XPOST --insecure --data-binary"
 #alias post="curl -XPOST --insecure -d"  # ALTERNATIVE
-#alias upload="curl --upload-file"
-alias httpdelete="curl -XDELETE --insecure"
-alias httpremove="curl -XDELETE --insecure"
-#alias ftpls="curl --list-only ftp://"  # not recursive
-alias ftpls="curl --list-only ftp://"  # not recursive
-alias ftplsrecursive=ftpfind.py
+alias curlupload="curl --upload-file"
+#alias httpdelete="curl -XDELETE"
+#alias httpremove="curl -XDELETE"
 wgrep() { wcat "$2" | grep "$1" ; }
 wsize() { curl --head --silent --location "$1" | grep -i "content-length:" |  cut -d' ' -f2 | bytes2human ; }
 wdate() { curl --head --silent --location "$1" | grep -i "last-modified:" |  cut -d' ' -f2- ; }
 wmime() { curl --head --silent --location "$1" | grep -i "content-type:" |  cut -d' ' -f2- ; }
 #wmime() { curl -XHEAD -s -m2 -w '%{content_type}' "$1" ; }  # less reliable?
-alias wget="wget --no-hsts --hsts-file $TMPDIR/wget-hsts"
-#alias wput="curl --upload-file "
-
-# TODO: rewrite using --write-out '%{json}' https://daniel.haxx.se/blog/2020/03/17/curl-write-out-json/
+alias curlstreamingget="curl --no-buffer"
+alias curljson="curl -H \"Content-Type: application/json\""
+# ftp shortcuts
+alias ftpls="curl --list-only "  # not recursive
+alias ftplsrecursive=ftpfind.py
+# webdav shortcuts https://gist.github.com/stokito/cf82ce965718ce87f36b78f7501d7940
+alias webdavls="curl -X PROPFIND -H 'Depth: 1'"
+alias webdavmkdir="curl -X MKCOL"
 
 alias web2png=webshot
 alias web2pdf=webshot
-
-alias curlstreaming="curl --no-buffer"
-alias curljson="curl -H \"Content-Type: application/json\""
 
 alias wfinger=webfinger
 alias hostinfo=whois
@@ -835,6 +843,7 @@ alias pastefile=pbpastefile
 #alias ipget="ifconfig || ip addr"  # moved in script
 #alias resolve=ipget
 #alias ipaddr="ip addr"
+alias getip=ipget
 macaddrouigrep() { grep -s "$@" /var/lib/ieee-data/oui.txt  /usr/share/ieee-data/oui.txt  /usr/share/nmap/nmap-mac-prefixes  /usr/share/misc/oui.txt ; }  # https://www.poftut.com/how-to-lookup-oui-organizationally-unique-identifier-in-linux/
 isprivateip() { python3 -c "import ipaddress ; print(ipaddress.ip_address(\"$1\").is_private)" ; }
 ispublicip() { python3 -c "import ipaddress ; print(not ipaddress.ip_address(\"$1\").is_private)" ; }
@@ -947,6 +956,10 @@ alias langsearch=geosearch
 #alias human2gps=geocode
 alias gps2human=geocode
 alias geolocate=geocode
+
+geoview() { [ -z "$2" ] && echo "usage: $0 LAT LON" || { xdg-open "https://www.google.com/maps/place/${1},${2}" ; } ; }  # https://stackoverflow.com/questions/1801732/how-do-i-link-to-google-maps-with-a-particular-longitude-and-latitude
+alias maps=geoview
+alias gmaps=geoview
 
 alias ipgeolocate=geoip
 alias ipinfo=geoip
@@ -1323,7 +1336,7 @@ alias ratio=percentage
 #alias increment=percentage
 
 ## set operations using files (1 line=1 element) https://catonmat.net/set-operations-in-unix-shell  https://catonmat.net/ftp/setops.txt
-alias sumlines=sum
+#alias sumlines=sum  # conflicts with /usr/bin/sum
 #if which setop >/dev/null 2>&1 ; then
 #	alias equalset="setop --equal"
 #	alias setsize="setop --count"
@@ -1610,8 +1623,8 @@ alias unicode2name="unicode -i utf-8 -C USE_COLOUR"
 # alt.: https://github.com/pemistahl/chr/
 
 # mqtt aliases
-mqttpostlocalhost() { 'curl -d "$1" mqtt://localhost/test' ; }
-# TODO: mqttsuballtopics() { } https://github.com/curl/curl/discussions/10807
+mqttpostlocalhost() { curl -d "$1" 'mqtt://localhost/test' ; }
+mqttsuballtopics() { curl 'mqtt://localhost/%23' ; } # https://github.com/curl/curl/discussions/10807
 if which mosquitto_sub >/dev/null 2>&1 ; then
 	alias mqttsuballtopics='mosquitto_sub -v -t "#"'
 	alias mqttpublish='mosquitto_pub -t "test" -m'
@@ -1705,7 +1718,7 @@ if which adb >/dev/null 2>&1 ; then
     alias androidgetdownloads="adb pull /sdcard/Download"
     alias androidgetphotos="adb pull /sdcard/Download"
     alias androidphotostransfter=androidgetphotos
-    androidput() { DESTINATION=/sdcard/Download; [ ! -z "$2" ] && DESTINATION="$2";  adb push "$1" "$DESTINATION" ; }
+    #androidput() { DESTINATION=/sdcard/Download; [ ! -z "$2" ] && DESTINATION="$2";  adb push "$1" "$DESTINATION" ; }
     alias androidpush=androidput
     alias androidcp=androidput
     alias androidls="adb shell ls"
@@ -1827,8 +1840,9 @@ alias smbmount="mkdir /tmp/smb/ service smb start ; smbnetfs /tmp/smb "  # TODO:
 alias sambamount=smbmount
 
 portgrep() { grep -i $1 /etc/services ; }  # ALTERNATIVE: getent services $1
-whatportis=portgrep  # https://github.com/ncrocfer/whatportis
-alias findport=portgrep
+alias whatportis=portgrep  # https://github.com/ncrocfer/whatportis
+#alias findport=portgrep
+alias portinfo=portgrep
 
 portcheck() { sudo fuser -v -n udp $1 ; sudo fuser -v -n tcp $1 ; [ $? -ne 0 ] && echo "portcheck: no process found" ; }
 alias wholisten=portcheck
@@ -1840,8 +1854,8 @@ alias fdls=lsof
 
 # nmap-only aliases
 if which nmap >/dev/null 2>&1 ; then
-	alias nmap="nmap --top-ports 20 --exclude 127.0.0.1"  # --privileged # TODO: move in user config file?
-	alias portscan="nmap -v"
+	alias nmap="nmap --top-ports 20 --exclude 127.0.0.1 "  # --privileged # TODO: move in user config file?
+	alias portscan="nmap -v --open"
 	alias osscan="sudo nmap -O"
 	alias servicescan="nmap --script http-enum"
 	alias lanservicescan="servicescan 192.168.1.*"
@@ -1858,7 +1872,6 @@ fi
 alias mdnsscan="avahi-browse -a --ignore-local --terminate ; mdns-scan"
 alias mdnsresolve="avahi-resolve --name"
 alias resolve="getent hosts"  # generic system resolver
-
 
 # docker-only aliases
 if which docker >/dev/null 2>&1 ; then
@@ -2005,8 +2018,8 @@ if which pip >/dev/null 2>&1 ; then
     alias pip2uninstall="pip2 uninstall"
     # TODO: pipdeps="pip install --no-install --verbose"   # https://stackoverflow.com/questions/11460681/listing-the-dependencies-of-a-package-using-pip
     
-    alias venv="python3 -m venv  --system-site-packages  .venv ; source .venv/bin/activate"  # --relocatable 
-    #alias venv='virtualenv --system-site-packages  .venv ; source .venv/local/bin/activate'
+    alias venvinit="python3 -m venv  --system-site-packages  .venv ; source .venv/bin/activate"  # --relocatable 
+    #alias venvinit='virtualenv --system-site-packages  .venv ; source .venv/local/bin/activate'
 fi
 
 if which go >/dev/null 2>&1 ; then 
@@ -2067,15 +2080,12 @@ alias audiohash=mediahash
 alias videohash=mediahash
 
 # NLP
-if which polyglot >/dev/null 2>&1 ; then
-	alias langdet="polyglot detect"
-	alias sentiment="polyglot sentiment"
-	# MEMO: read text from stdin
-fi
 if which tika >/dev/null 2>&1 ; then  # Apache Tika app https://github.com/apache/tika
 	alias langdet="tika --text --language"
-	#alias mimeget2="tika --text --detect"
+	#alias mimeget="tika --text --detect"
 fi
+#TODO: alias sentiment="polyglot sentiment"
+#TODO: alias categories,topics=opennlp ..."
 
 alias facerec=camera2facerec.py
 alias motiondetect=camera2facerec.py
@@ -2169,10 +2179,14 @@ alias findmydevices="xdg-open https://myaccount.google.com/find-your-phone"  # T
 #alias findmycar="xdg-open https://www.unipolsai.it/myportal/area_riservata/telematica-mobilita" # TODO: move in a script
 #alias whereismycar=findmycar
 
-#alias wine=wine32
-alias winecmd="wine cmd"
-alias japwine="LANG='ja_JP.Shift_JIS' wine32"
-alias wine64tricks='WINEARCH="win64" WINEPREFIX=~/.wine64 winetricks'
+if which wine >/dev/null 2>&1 ; then
+	#alias wine=wine32
+	alias winecmd="wine cmd"
+	alias japwine="LANG='ja_JP.Shift_JIS' wine32"
+	alias wine64tricks='WINEARCH="win64" WINEPREFIX=~/.wine64 winetricks'
+	alias wineuninstaller='wine uninstaller'
+fi
+
 alias setlibrarypath2cwd="export LD_LIBRARY_PATH=."
 
 alias startnointernet="unshare -n -r"  # https://unix.stackexchange.com/questions/252714/is-it-possible-to-run-unshare-n-program-as-an-unprivileged-user
@@ -2394,5 +2408,6 @@ if which fzf >/dev/null 2>&1 ; then
 	}
 fi
 
+alias uptimepretty="uptime -p || date -u -d @$(cat /proc/uptime | cut -f1 -d' ') +'%T'"  # https://unix.stackexchange.com/questions/34017/convert-linux-sysuptime-to-well-format-date/774374#774374
 
 unset THIS_SCRIPT_DIR

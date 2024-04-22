@@ -1,5 +1,5 @@
 
-
+# https://github.com/ReFirmLabs/binwalk/wiki/Usage
 binwalk --verbose --extract --signature --carve "$@"
 # WANTED: better magic file: --magic=/usr/share/misc/magic.mgc
 

@@ -12,6 +12,10 @@ _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 shred --iterations=1 --zero --verbose --force --remove=unlink  "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
+# https://github.com/uutils/coreutils/
+coreutils shred --iterations=1 --zero --verbose --force --remove "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
 #toybox wipe "$@"
 #_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 

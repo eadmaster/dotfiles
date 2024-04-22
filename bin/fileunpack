@@ -301,7 +301,7 @@ rar x "$INPUTFILE" "$OUTPUTDIR"
 #_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 # try with Apache Tika app https://github.com/apache/tika
-tika --text --extract --extract-dir="$OUTPUTDIR"  "$INPUTFILE" 
+tika --extract --extract-dir="$OUTPUTDIR"  "$INPUTFILE" 
 [ $? -eq 0 ] && exit 0
 
 binwalk --extract --rm --dd='.*' --directory="$OUTPUTDIR"  "$INPUTFILE" 

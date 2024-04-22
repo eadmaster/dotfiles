@@ -410,7 +410,7 @@ case $INPUTFILEEXT in
 		# TODO: more alternatives
 		exit $?
 		;;
-	srt|sub|ass|smi|sub )  # subtitles
+	srt|sub|ass|smi|sub|lrc )  # subtitles
 		# using SubtitleEdit  https://github.com/SubtitleEdit/subtitleedit
 		SubtitleEdit  /convert "$INPUTFILE" $OUTPUTFILEEXT  /outputfolder:"$OUTPUTFILEDIR"
 		exit $?
