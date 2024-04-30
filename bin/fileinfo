@@ -143,7 +143,9 @@ case $INPUTFILEEXT in
 	
 	torrent )
 		aria2 --dry-run=true --show-files=true "$INPUTFILE"
+		[ $? -ne 127 ] && exit 0
 		aria2c --dry-run=true --show-files=true "$INPUTFILE"
+		[ $? -ne 127 ] && exit 0
 		ctorrent -x "$INPUTFILE"
 		exit $?
 		;;

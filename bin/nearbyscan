@@ -91,4 +91,4 @@ fi
 broadlink_discovery #--timeout 10
 
 # tinytuya  https://github.com/jasonacox/tinytuya
-python -m tinytuya scan 10  # 10=MAX_TIME
+#python -m tinytuya scan 10  # 10=MAX_TIME  # TODO: disable saving snapshot.json

@@ -1,0 +1,49 @@
+
+# derived from https://www.angelrojasjr.com/2021/10/30/using-an-android-device-with-klipperscreen/
+#  https://unix.stackexchange.com/questions/595337/how-to-use-an-android-device-as-additional-display-on-linux
+
+PORT_USED=6100
+
+# check free ports
+if fuser $PORT_USED/tcp ; then
+    echo "$0: port $PORT_USED is in use, make sure it is not already started..."
+    exit 1
+fi
+
+androidunlock
+
+# try to setup adb connection
+adb forward tcp:6100 tcp:6000
+
+# increase brightness
+adb shell settings put system screen_brightness 150
+
+# disable auto rotation
+adb shell content insert --uri content://settings/system --bind name:s:accelerometer_rotation --bind value:i:0
+# set forced landscape mode
+adb shell content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1
+
+# disable lockscreen  https://android.stackexchange.com/questions/233921/adb-bypass-lock-screen
+adb shell settings put secure lockscreen.disabled 1
+
+# start XServer XSDL https://play.google.com/store/apps/details?id=x.org.server
+adb shell monkey -p x.org.server 1
+#adb shell am start x.org.server/.MainActivity
+
+xset -display :100  s off  # -dpms
+
+export DISPLAY=:100
+x2x -to :100 -west
+
+echo "$(basename $0): set DISPLAY=:100  to start an app on the secondary display"
+echo "$(basename $0): press ENTER to quit"
+read
+
+adb forward --remove tcp:6100
+
+# restore low brightness
+adb shell settings put system screen_brightness 0
+
+# lock again
+adb shell input keyevent 26
+

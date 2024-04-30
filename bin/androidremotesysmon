@@ -1,0 +1,50 @@
+#!/bin/bash
+
+PORT_USED=61208
+
+# check free ports
+if fuser $PORT_USED/tcp ; then
+    echo "$0: port $PORT_USED is in use, make sure it is not already started..."
+    exit 1
+fi
+
+androidunlock
+
+# start service https://glances.readthedocs.io/en/latest/quickstart.html#web-server-mode
+nohup glances -w >/dev/null 2>&1  &  # disable nohup.out creation
+echo "$(basename $0): server started on http://localhost:$PORT_USED/"
+
+# https://stackoverflow.com/questions/9887621/accessing-localhost-of-pc-from-usb-connected-android-mobile-device
+# https://stackoverflow.com/questions/4779963/how-can-i-access-my-localhost-from-my-android-device#46795769
+adb reverse tcp:$PORT_USED tcp:$PORT_USED
+
+# increase brightness
+adb shell settings put system screen_brightness 150
+
+# Disable auto rotation
+adb shell content insert --uri content://settings/system --bind name:s:accelerometer_rotation --bind value:i:0
+# set forced portrait mode
+adb shell content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:0
+
+# disable lockscreen  https://android.stackexchange.com/questions/233921/adb-bypass-lock-screen
+adb shell settings put secure lockscreen.disabled 1
+# adb shell settings put system screen_off_timeout ...
+
+sleep 3
+
+# open browser url
+adb shell am start -a android.intent.action.VIEW -d "http://localhost:$PORT_USED#processlist-plugin"
+
+echo "$(basename $0): press ENTER to quit"
+read
+
+killall -v  glances
+
+adb forward --remove tcp:$PORT_USED
+
+# restore low brightness
+adb shell settings put system screen_brightness 0
+
+# lock again
+adb shell input keyevent 26
+

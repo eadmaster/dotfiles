@@ -418,6 +418,8 @@ case "$1" in
 
 		rpm -qa "$PACKAGE_NAME"
 		
+		conda search "$PACKAGE_NAME"
+		
 		#TODO: echo "$0: maven:"
 		# NO? using sbt-search-maven-plugin  https://stackoverflow.com/questions/14465721/maven-browse-central-repository-via-command-line-client
 		#sbt "searchMaven log4j"

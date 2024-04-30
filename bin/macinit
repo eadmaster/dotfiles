@@ -184,6 +184,7 @@ alias pprint=file2txt
 # syntax highlighter
 if which bat >/dev/null 2>&1 ; then
 	alias pprint=bat
+	alias pretty=bat
 fi
 
 alias grepliteral="grep -F"
@@ -201,6 +202,8 @@ alias tag=filetag
 alias tags=filetag
 gettag() { filetag -$1 "$2" ; }
 alias settag=filetag
+filetaggrep() { export QUERY="$1" ; shift ; for f in "$@"; do exiftool -csv "$f" | grep -i "$QUERY"; done ; }
+alias id3grep=filetaggrep
 
 alias flush=sync
 #alias commit=sync
@@ -1103,6 +1106,7 @@ if which snap >/dev/null 2>&1 ; then
     alias snapinstall="sudo snap install --classic"
     alias snapuninstall="sudo snap remove"
     alias snapupdate="sudo snap refresh"
+    alias snapdownload="snap download"  # https://forum.snapcraft.io/t/download-snaps-and-install-offline/15713
 fi
 
 # gem (ruby package manager) aliases
@@ -1730,13 +1734,13 @@ if which adb >/dev/null 2>&1 ; then
     alias androidrm="adb shell rm"
     alias androidvibrate='adb shell "echo 200 > /sys/devices/virtual/timed_output/vibrator/enable"'  # req. root. source: https://a3nm.net/blog/android_cli.html
     #alias androidpowerbutton="adb shell input keyevent 26"
-    alias androidswitchscreen="adb shell input keyevent 26"
-    alias androidturnonscreen=androidswitchscreen
+    alias androidscreenoff="adb shell input keyevent 26"
     alias androidmute="adb shell input keyevent 164"
     androidtype() { adb shell input text $(echo "$@" | sed 's/ /%s/g') ; }
     alias androidappsls="adb shell pm list packages"  # TODO: list app names
     alias androidappinfo="adb shell pm dump"
     androidrun() { APPNAME=$(adb shell pm list packages | grep -i -m1 "$1" | cut -d: -f2 | tr -d '\r') ; echo "$0: launching $APPNAME..." ; adb shell monkey -p "$APPNAME" 1 ; }  # https://stackoverflow.com/questions/4567904/how-to-start-an-application-using-android-adb-tools
+    alias androidappstart=androidrun
     #NO? androidopen() { adb shell am start -d "file://$1" -a android.intent.action.VIEW ; }
     androidshot() { TARGET="$1"; [ -z "$1" ] && TARGET="$RAMDRIVE/`date +%Y%m%S%d%H%M`.png" ; adb exec-out screencap -p > $TARGET ; echo "$0: saved $TARGET" ; }
     alias androidrecordaudio="androidtermuxshell termux-microphone-record -d"  # https://wiki.termux.com/wiki/Termux-microphone-record
@@ -1752,16 +1756,16 @@ if which adb >/dev/null 2>&1 ; then
     alias androidlogs="adb logcat -t1000"
     alias androidsettingsls="(adb shell settings list secure ; adb shell settings list system ; adb shell settings list global) 2>& 1"  # ALTERNATIVE: adb shell content query --uri content://settings/system
     #alias androidsetairplanemode="adb shell settings put global airplane_mode_on 1"
-    #alias androidturnonwifi="adb shell settings put global wifi_on 1"
-    alias androidturnoffwifi="adb shell settings put global wifi_on 0"
+    alias androidwifion="adb shell settings put global wifi_on 1"
+    alias androidwifioff="adb shell settings put global wifi_on 0"
     #alias androidsetbluetoothdiscoverable="adb shell am start -a android.bluetooth.adapter.action.REQUEST_DISCOVERABLE"
     #alias androidsetbrightness="adb shell settings put system screen_brightness"
     #alias androidsetscreenofftimeout="adb shell settings put system screen_off_timeout"
     #alias androidclipboardget="androidtermuxshell termux-clipboard-get"
     #alias androidclipboardset="androidtermuxshell termux-clipboard-set"  https://android.stackexchange.com/questions/19710/is-it-possible-to-write-to-a-devices-clipboard-using-adb
-    #androidturnredled() { adb shell "echo $1 > /sys/class/leds/red/brightness" ; }
-    #androidturngreenled() { adb shell "echo $1 > /sys/class/leds/green/brightness" ; }
-    alias androidturnflashlight="androidtermuxshell termux-torch"  #  /sys/class/flashlightdrv/kd_camera_flashlight
+    #androidredled() { adb shell "echo $1 > /sys/class/leds/red/brightness" ; }
+    #androidgreenled() { adb shell "echo $1 > /sys/class/leds/green/brightness" ; }
+    alias androidflashlight="androidtermuxshell termux-torch"  #  /sys/class/flashlightdrv/kd_camera_flashlight
     alias androidsettethering="adb shell svc usb setFunction rndis"  # TODO: not supported by all smartphones https://android.stackexchange.com/questions/29954/is-it-possible-to-activate-the-usb-tethering-android-setting-from-the-command
     alias androidwifiscan="androidtermuxshell termux-wifi-scaninfo"
     #alias androidbtscan="androidtermuxshell termux-bluetooth-scaninfo"  # https://github.com/StevenSalazarM/Termux-api-bluetooth
@@ -1773,9 +1777,9 @@ if which adb >/dev/null 2>&1 ; then
     alias androidinfo="adb shell getprop"
     alias androidcpuinfo="adb shell cat /proc/cpuinfo ; adb shell getprop | grep -i cpu"
     #alias androidsetsilent="adb shell settings put global mode_ringer 0"  # set RINGER MODE=SILENT TODO: https://android.stackexchange.com/questions/186925/android-phone-shell-command-silent-mode
-    alias androidnotificationsls="adb shell dumpsys notification | grep ticker | cut -d= -f2"
-    alias androidalertsls=androidnotificationsls
-    alias androidunlock=myandroidunlock
+    alias androidnotifications="adb shell dumpsys notification | grep ticker | cut -d= -f2"
+    alias androidalerts=androidnotifications
+    alias androidlock="adb shell input keyevent 26"
     alias androidphotostransfer="androidget sdcard/DCIM"  # "storage/sdcard1/DCIM/Camera" if using SD card
     alias androidremountsystemrw="adb root ; adb remount"  # TODO: reconnect before the 2nd command if necessary...  https://android.stackexchange.com/questions/60446/cant-remount-system-in-rw
     #TODO: alias androidassistantquery="adb shell am start-activity com.google.android.apps.googleassistant/.AssistantActivity"
@@ -1846,7 +1850,7 @@ alias portinfo=portgrep
 
 portcheck() { sudo fuser -v -n udp $1 ; sudo fuser -v -n tcp $1 ; [ $? -ne 0 ] && echo "portcheck: no process found" ; }
 alias wholisten=portcheck
-alias portsopenls="sudo netstat -plnt"
+alias openportsnls="sudo netstat -plnt"
 alias connectionsls="netstat -vtu"
 freeportudp() { fuser -ivk $1/udp ; }
 freeporttcp() { fuser -ivk $1/tcp ; }
@@ -2057,7 +2061,7 @@ fi
 #alias g="grep -I -n --exclude \*.min.js --color=always --devices=skip"
 
 if which rg >/dev/null 2>&1 ; then
-    alias rg="rg --max-columns 200 --no-binary --hidden --ignore-case"
+    alias rg="rg --max-columns 200 --no-binary --no-ignore --hidden --ignore-case --fixed-strings "
     # --glob '!*.min.*'"  # exclude minified code
     # ... https://github.com/BurntSushi/ripgrep/
 else
@@ -2126,6 +2130,7 @@ if which git >/dev/null 2>&1 ; then
     alias gitunpushed=gitlspendingcommits
     alias gitmelddiff="git difftool"
     alias gitdifftool="git difftool"
+    alias gitclonerecursive="git clone --recursive"
     alias gitclonemin="git clone --recursive --depth 1 -b master"  # https://stackoverflow.com/questions/29368837/copy-a-git-repo-without-history
     alias gitclonedir=gitget
     alias gitbranchesls="git branch | cat"
@@ -2363,6 +2368,7 @@ if which minimodem >/dev/null 2>&1 ; then
 	alias audio2ascii="minimodem --rx --ascii 300"
 	alias ascii2flac="minimodem --tx --ascii 300 --file"
 fi
+# TODO: replace with https://github.com/ggerganov/ggwave/tree/master/examples/ggwave-cli
 
 alias media2subs=transcribe
 
@@ -2409,5 +2415,6 @@ if which fzf >/dev/null 2>&1 ; then
 fi
 
 alias uptimepretty="uptime -p || date -u -d @$(cat /proc/uptime | cut -f1 -d' ') +'%T'"  # https://unix.stackexchange.com/questions/34017/convert-linux-sysuptime-to-well-format-date/774374#774374
+
 
 unset THIS_SCRIPT_DIR
