@@ -38,6 +38,9 @@ adb shell am start -n com.android.chrome/com.google.android.apps.chrome.Main -d 
 echo "$(basename $0): press ENTER to quit"
 read
 
+# close the browser tab with the back button  https://stackoverflow.com/questions/57631090/send-ctrl-t-over-adb-using-sendevent-or-input-keyevent
+adb shell input keyevent KEYCODE_BACK
+
 killall -v weylus
 
 adb forward --remove tcp:1701

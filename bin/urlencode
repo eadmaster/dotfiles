@@ -47,6 +47,10 @@ else
 	#js -e "console.log(encodeURI(\"$INPUT\"))"  # do not encode ":"
 	js -e "console.log(encodeURIComponent(\"$INPUT\"))"
 	_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+	
+	# https://github.com/dhondta/python-codext
+	echo -en "$INPUT" | codext encode url
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 	#MORE ALTERNATIVES:
 	#perl -p -e 's/([^A-Za-z0-9])/sprintf("%%%02X", ord($1))/seg' 

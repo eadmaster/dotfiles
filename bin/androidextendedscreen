@@ -1,6 +1,7 @@
 
 # derived from https://www.angelrojasjr.com/2021/10/30/using-an-android-device-with-klipperscreen/
 #  https://unix.stackexchange.com/questions/595337/how-to-use-an-android-device-as-additional-display-on-linux
+#  TODO: try other methods https://askubuntu.com/questions/28608/how-do-you-use-an-android-tablet-as-a-second-display
 
 PORT_USED=6100
 
@@ -38,6 +39,9 @@ x2x -to :100 -west
 echo "$(basename $0): set DISPLAY=:100  to start an app on the secondary display"
 echo "$(basename $0): press ENTER to quit"
 read
+
+# close the app 
+adb shell am force-stop x.org.server
 
 adb forward --remove tcp:6100
 

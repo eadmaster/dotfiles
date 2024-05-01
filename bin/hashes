@@ -5,6 +5,12 @@ INPUT="$1"
 [ -f "$1" ] && INPUT=$(cat "$1")
 [ ! -f "$1" ] && INPUT=$(wget -q -U Firefox -O - "$1")
 
+# Torrent Merkle Root hash https://github.com/kovalensky/tmrr
+if [ -f "$1" ]; then  # does not support piping
+	echo -n " Torrent Merkle Root: "
+	tmrr c "$1"
+fi
+
 #echo "$INPUT" | rhash --printf "%p\n CRC32: %C\n MD5: %M\n SHA1: %H\n ED2K: %E" -
 echo "$INPUT" | rhash --bsd --all  -
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
@@ -12,7 +18,7 @@ _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 echo
 
 echo "$INPUT" | jacksum -a all -F "#ALGONAME{i} (#FILENAME) = #CHECKSUM{i}" -
-
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 echo
 
 # alternative:
@@ -26,3 +32,4 @@ echo -n " SHA256: "
 echo "$INPUT" | sha256sum
 echo -n " ED2K: "
 echo "$INPUT" | ed2k_hash
+

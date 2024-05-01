@@ -37,6 +37,9 @@ adb shell am start -a android.intent.action.VIEW -d "http://localhost:$PORT_USED
 echo "$(basename $0): press ENTER to quit"
 read
 
+# close the browser tab with the back button  https://stackoverflow.com/questions/57631090/send-ctrl-t-over-adb-using-sendevent-or-input-keyevent
+adb shell input keyevent KEYCODE_BACK
+
 adb forward --remove tcp:$PORT_USED
 
 killall -v  sunamu

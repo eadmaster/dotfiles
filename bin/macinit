@@ -1740,8 +1740,9 @@ if which adb >/dev/null 2>&1 ; then
     alias androidappsls="adb shell pm list packages"  # TODO: list app names
     alias androidappinfo="adb shell pm dump"
     androidrun() { APPNAME=$(adb shell pm list packages | grep -i -m1 "$1" | cut -d: -f2 | tr -d '\r') ; echo "$0: launching $APPNAME..." ; adb shell monkey -p "$APPNAME" 1 ; }  # https://stackoverflow.com/questions/4567904/how-to-start-an-application-using-android-adb-tools
-    alias androidappstart=androidrun
+    alias androidstartapp=androidrun
     #NO? androidopen() { adb shell am start -d "file://$1" -a android.intent.action.VIEW ; }
+    androidkillapp() { APPNAME=$(adb shell pm list packages | grep -i -m1 "$1" | cut -d: -f2 | tr -d '\r') ; echo "$0: killing $APPNAME..." ; adb shell am force-stop"$APPNAME" ; }  # https://stackoverflow.com/questions/3117095/stopping-an-android-app-from-console
     androidshot() { TARGET="$1"; [ -z "$1" ] && TARGET="$RAMDRIVE/`date +%Y%m%S%d%H%M`.png" ; adb exec-out screencap -p > $TARGET ; echo "$0: saved $TARGET" ; }
     alias androidrecordaudio="androidtermuxshell termux-microphone-record -d"  # https://wiki.termux.com/wiki/Termux-microphone-record
     #2FIX: androidrecordscreen() { TARGET="$1"; [ -z "$1" ] && TARGET="/sdcard/Movies/`date +%Y%m%S%d%H%M`.mp4" ; adb shell screenrecord $TARGET & ; PID=$! ; read -p "$0: press ENTER to stop recording..." ; kill $PID ; sleep 3 ; adb pull $TARGET ; adb shell rm $TARGET ; }  #TODO: via piping -- source: https://adventuresinqa.com/2015/02/04/android-screen-recording-using-adb/

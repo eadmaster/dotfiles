@@ -43,6 +43,10 @@ else
 	#js -e "console.log(decodeURI(\"$INPUT\"))"
 	js -e "console.log(decodeURIComponent(\"$INPUT\"))"
 	_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+	
+	# https://github.com/dhondta/python-codext
+	echo -en "$INPUT" | codext decode url
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 fi
 
 # else sed alternative
