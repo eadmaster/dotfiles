@@ -1,7 +1,8 @@
 #!/bin/sh
 
 # via ugrep
-ugrep --ignore-binary --ignore-case --hidden -Z2 "$@"
+#ugrep --ignore-binary --ignore-case --hidden -Z2 "$@"
+ugrep -F -i -I -r -z -Z2 -w   -H  -O '^css' "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 # via fzf  https://github.com/junegunn/fzf/discussions/3694

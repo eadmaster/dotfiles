@@ -1,26 +1,36 @@
 #!/bin/sh
 
-#sudo apt install v4l2loopback-dkms
+#REQ.:
+# sudo apt install v4l2loopback-dkms
+
+PORT_USED=8082
+
+# check free ports
+if fuser $PORT_USED/tcp ; then
+    echo "$0: port $PORT_USED is in use, make sure it is not already started..."
+    exit 1
+fi
+
 
 # start IP Webcam app
 adb shell monkey -p com.pas.webcam -c android.intent.category.LAUNCHER 1
 # TODO: autostart server
 
 # forward streaming port local (pc)->remote (android)
-adb forward tcp:8082 tcp:8080
+adb forward tcp:$PORT_USED tcp:8080
 
 # create fake camera on /dev/video9 https://github.com/umlaeute/v4l2loopback
 sudo modprobe -r v4l2loopback
 sudo modprobe v4l2loopback video_nr=9
 
-echo "$0 tip: HTTP interface on http://localhost:8082"
-echo "$0 tip: mjpeg camera streaming on http://localhost:8082/video"
-echo "$0 tip: sensor readings on http://localhost:8082/sensors.json"
+echo "$0 tip: HTTP interface on http://localhost:$PORT_USED"
+echo "$0 tip: mjpeg camera streaming on http://localhost:$PORT_USED/video"
+echo "$0 tip: sensor readings on http://localhost:$PORT_USED/sensors.json"
 
 echo "press Enter to start streaming on fake local camera on /dev/video9 or Ctrl-C to abort..."
 read
 
 # stream to the fake camera  https://superuser.com/questions/751568/use-a-ip-camera-as-a-virtual-camera
-ffmpeg -re -f mjpeg -i "http://localhost:8082/video" -pix_fmt yuv420p  -f v4l2 /dev/video9 
+ffmpeg -re -f mjpeg -i "http://localhost:$PORT_USED/video" -pix_fmt yuv420p  -f v4l2 /dev/video9 
 
 

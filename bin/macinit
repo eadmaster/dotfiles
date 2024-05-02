@@ -920,7 +920,10 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	manualsearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/manuals ; }
 	musicsearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/music ; }
 	midisearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/midi ; }
-	# ...
+	electsearch() { dbgrep "$1" $PENDRIVE/Documents/db/elect ; }
+	electart() { find $PENDRIVE/Documents/db/elect/schem/asciiart -iname "*$1*"  -exec cat {} \; ; }
+	alias schematic=electart
+	alias pinout=electart
 	
 	psxsearch() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps1/sonyindex_PSone*.txt ; }
 	alias ps1search=psxsearch
