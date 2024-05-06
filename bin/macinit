@@ -717,6 +717,7 @@ complete -W "$(ls $HOME/Documents/NEW | grep -v / | rev | cut -f 2- -d "." | rev
 
 alias findnote=notegrep
 alias notesearch=notegrep
+alias notesearchexact="notegrep -Z0"
 
 [ -f "$THIS_SCRIPT_DIR/gamma" ] || alias gamma="xgamma -gamma"
 # NO(for laptops only)? alias brightness=xdotool key XF86MonBrightnessUp|XF86MonBrightnessDown
