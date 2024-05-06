@@ -193,16 +193,16 @@ esac
 # MORE ALTERNATIVES
 
 # workaround for freedesktop's xdg-open not detecting TDE
-if [ "$(hostname)" = "BOSS3" ] || [ "$(hostname)" = "BOSS2" ] ; then
-	#export KDE_FULL_SESSION = "true"
-	#export XDG_CURRENT_DESKTOP = "KDE"
-	kfmclient exec "$1"
-	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-fi
+#if [ "$(hostname)" = "BOSS3" ] || [ "$(hostname)" = "BOSS2" ] ; then
+#	#export KDE_FULL_SESSION = "true"
+#	#export XDG_CURRENT_DESKTOP = "KDE"
+#	kfmclient exec "$1"
+#	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+#fi
 
-command -p xdg-open "$ARGS"
+command -p xdg-open "$ARGS"  &> /dev/null   # avoid stdout/err on console https://stackoverflow.com/questions/21084457/alter-behavior-of-xdg-open
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-
+exit 1
 gnome-open "$ARGS"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 

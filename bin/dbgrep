@@ -1,22 +1,25 @@
 
-_QUERY="$1"
-_SEARCHDIR="$2"
 
-if [ ! -d "$_SEARCHDIR" ]; then
-	echo "$(basename $0) error: dir not found: $_SEARCHDIR" >&2
-	exit 1
-fi
+#if [ ! -d "$_SEARCHDIR" ]; then
+#	echo "$(basename $0) error: dir not found: $_SEARCHDIR" >&2
+#	exit 1
+#fi
 
 #echo "$(basename $0): searching in $_SEARCHDIR for $_QUERY ..." >&2
 
-# convert wildcards to regexpr
-#_QUERY=$( echo "$_QUERY" | tr '*' '\.*' | tr '\.' '\\\.'  | tr '?' '\.' )
-_QUERY=$( echo "$_QUERY" | sed 's/\./\\\./g; s/\*/\.\*/g; s/?/./g' )
-
 if which ugrep >/dev/null 2>&1 ; then
-	ugrep -F -i -I -r -z -Z2 -w --exclude-dir='_*' -g '^_*' -O '^css' -O '^py' -H  "$_QUERY" "$_SEARCHDIR/" | cut -c 1-500 
-	#fuzzygrep  "$_QUERY" "$_SEARCHDIR/"
+
+	#ugrep -F -i -I -r -z -Z2 -w --exclude-dir='_*' -g '^_*' -O '^css' -O '^py' -H  "$_QUERY" "$_SEARCHDIR/" | cut -c 1-500 
+	fuzzygrep --exclude-dir='_*' -O ^css -O ^svg -O ^py -O ^ipynb  "$@"
+
 else
+
+	# use plain grep
+	_QUERY="$1"
+	_SEARCHDIR="$2"
+	# convert wildcards to regexpr
+	#_QUERY=$( echo "$_QUERY" | tr '*' '\.*' | tr '\.' '\\\.'  | tr '?' '\.' )
+	_QUERY=$( echo "$_QUERY" | sed 's/\./\\\./g; s/\*/\.\*/g; s/?/./g' )
 	grep -i -I -r --exclude-dir=_\* -H  "$_QUERY" "$_SEARCHDIR/"
 fi
 [ $? -eq 1 ] && echo "$(basename $0): nothing found" >&2

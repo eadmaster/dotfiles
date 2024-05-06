@@ -142,8 +142,8 @@ case $INPUTFILEEXT in
 		;;
 	
 	torrent )
-		tmrr e  "$INPUTFILE"  # only works with v2 torrents
-		#[ $? -ne 1 ] && exit 0  # https://github.com/kovalensky/tmrr/issues/7
+		tmrr e  "$INPUTFILE"  # print file hashes, only works with v2 torrents  https://github.com/kovalensky/tmrr/
+		#[ $? -ne 1 ] && exit 0
 		aria2 --dry-run=true --show-files=true "$INPUTFILE"
 		[ $? -ne 127 ] && exit 0
 		aria2c --dry-run=true --show-files=true "$INPUTFILE"

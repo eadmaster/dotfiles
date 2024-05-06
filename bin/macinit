@@ -920,10 +920,15 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	manualsearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/manuals ; }
 	musicsearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/music ; }
 	midisearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/midi ; }
-	electsearch() { dbgrep "$1" $PENDRIVE/Documents/db/elect ; }
-	electart() { find $PENDRIVE/Documents/db/elect/schem/asciiart -iname "*$1*"  -exec cat {} \; ; }
-	alias schematic=electart
-	alias pinout=electart
+	
+	electsearch() { dbgrep -Z0 "$1" $PENDRIVE/Documents/db/elect ; }
+	pinouts() { find $PENDRIVE/Documents/db/elect/schem -type f -not -name "*.txt" -not -name "*.md" -iname "*$1*" -print -exec xdg-open {} \; ; }
+	fzfpinouts() { find $PENDRIVE/Documents/db/elect/schem/ -type f -not -name "*.txt" -not -name "*.md" | fzf --exact --no-extended | xargs xdg-open ; }
+	alias schematic=pinouts
+	aapinouts() { find $PENDRIVE/Documents/db/elect/schem/asciiart -iname "*$1*" -print | xargs cat | ( aapinouts_prettyprint.sed || cat) ; }
+	#alias pinout=electart
+	#fzfasciifromzip() {  unzip -Z1 "$1" | fzf --exact --no-extended | xargs unzip -p "$1" ; } # select a file inside a zipped archive and print it
+	#electfzf() { export FZF_DEFAULT_COMMAND="find  $PENDRIVE/Documents/db/elect -iname '*.txt' -o -name '*.md' " ; fzf --exact --no-extended | xargs cat  ; }
 	
 	psxsearch() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps1/sonyindex_PSone*.txt ; }
 	alias ps1search=psxsearch
@@ -1172,16 +1177,16 @@ fi
 alias pls=psls
 alias psl=psls
 alias psi=psinfo
-alias pss=psuspend
-alias psr=psresume
+#alias pss=pssuspend
+#alias psr=psresume
 
 #alias pstree="pstree -C age -p"
 enable -n suspend  # disable the conflicting shell builtin command
-alias suspend=psuspend
+alias suspend=pssuspend
 alias resume=psresume
 #alias pmonitor=psinfo
-#[ -f "$THIS_SCRIPT_DIR/psuspend" ] || alias suspend="pkill -STOP"
-#alias pspause=psuspend
+#[ -f "$THIS_SCRIPT_DIR/pssuspend" ] || alias suspend="pkill -STOP"
+#alias pspause=pssuspend
 #[ -f "$THIS_SCRIPT_DIR/psresume" ] || alias resume="pkill -CONT"
 #alias terminate="pkill -9"
 alias detach=psdetach

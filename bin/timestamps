@@ -54,7 +54,6 @@ echo
 echo "$(basename $0): remote time (web):" >&2
 wget -q -O- -T2 http://worldclockapi.com/api/json/cet/now | grep -Po '"'"currentDateTime"'"\s*:\s*"\K([^"]*)'
 #[ $? -ne 0 ] && wget -q -O- -T2 https://timezoneapi.io/api/ip | grep -Po '"'"date_time_wti"'"\s*:\s*"\K([^"]*)' | tr -d '/'  # MEMO: grep "-P" switch req. PCRE support
-#[ $? -ne 0 ] && wget -q -O- -T2 'https://query.yahooapis.com/v1/public/yql?q=SELECT%20*%20FROM%20weather.forecast%20WHERE%20woeid=721943' | grep -oPm1 "(?<=<lastBuildDate>)[^<]+"   # MEMO: grep "-P" switch req. PCRE support
 # TODO: more web APIs: https://stackoverflow.com/questions/13240530/free-rest-api-to-get-current-time-as-string-timezone-irrelevant
 # https://www.programmableweb.com/category/time/api
 

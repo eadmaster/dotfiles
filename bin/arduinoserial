@@ -4,7 +4,9 @@
 # sudo usermod -a -G dialout $USER
 
 #SPEED=9600
-SPEED=115200
+#SPEED=115200
+SPEED=57600
+#  The general observation is that the 3.3V devices usually run at 57600 whereas the 5V devices usually run on 115200 
 
 [ -c /dev/ttyUSB0 ] && SERIAL_DEV=/dev/ttyUSB0
 [ -c /dev/ttyUSB1 ] && SERIAL_DEV=/dev/ttyUSB1
@@ -40,7 +42,7 @@ echo "arduino-serial: starting terminal mode, press ctrl-x to exit..."
 
 # TODO: enable stdin redirection  https://stackoverflow.com/questions/3918032/bash-serial-i-o-and-arduino
 
-busybox microcom -s $SPEED $SERIAL_DEV
+sudo busybox microcom -s $SPEED $SERIAL_DEV
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 screen $SERIAL_DEV $SPEED
