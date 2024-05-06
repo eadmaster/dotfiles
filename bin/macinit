@@ -717,7 +717,7 @@ complete -W "$(ls $HOME/Documents/NEW | grep -v / | rev | cut -f 2- -d "." | rev
 
 alias findnote=notegrep
 alias notesearch=notegrep
-alias notesearchexact="notegrep -Z0"
+#TODO: alias notesearchexact="notegrep -Z0"
 
 [ -f "$THIS_SCRIPT_DIR/gamma" ] || alias gamma="xgamma -gamma"
 # NO(for laptops only)? alias brightness=xdotool key XF86MonBrightnessUp|XF86MonBrightnessDown
@@ -923,10 +923,10 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	midisearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/midi ; }
 	
 	electsearch() { dbgrep -Z0 "$1" $PENDRIVE/Documents/db/elect ; }
-	pinouts() { find $PENDRIVE/Documents/db/elect/schem -type f -not -name "*.txt" -not -name "*.md" -iname "*$1*" -print -exec xdg-open {} \; ; }
-	fzfpinouts() { find $PENDRIVE/Documents/db/elect/schem/ -type f -not -name "*.txt" -not -name "*.md" | fzf --exact --no-extended | xargs xdg-open ; }
+	pinouts() { find $PENDRIVE/Documents/db/elect/pinout -type f -not -name "*.txt" -not -name "*.md" -iname "*$1*" -print -exec xdg-open {} \; ; }
+	fzfpinouts() { find $PENDRIVE/Documents/db/elect/pinout/ -type f -not -name "*.txt" -not -name "*.md" | fzf --exact --no-extended | xargs xdg-open ; }
 	alias schematic=pinouts
-	aapinouts() { find $PENDRIVE/Documents/db/elect/schem/asciiart -iname "*$1*" -print | xargs cat | ( aapinouts_prettyprint.sed || cat) ; }
+	aapinouts() { find $PENDRIVE/Documents/db/elect/pinout/asciiart -iname "*$1*" -print | xargs cat | ( aapinouts_prettyprint.sed || cat) ; }
 	#alias pinout=electart
 	#fzfasciifromzip() {  unzip -Z1 "$1" | fzf --exact --no-extended | xargs unzip -p "$1" ; } # select a file inside a zipped archive and print it
 	#electfzf() { export FZF_DEFAULT_COMMAND="find  $PENDRIVE/Documents/db/elect -iname '*.txt' -o -name '*.md' " ; fzf --exact --no-extended | xargs cat  ; }
