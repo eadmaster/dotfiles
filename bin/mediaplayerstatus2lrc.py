@@ -23,7 +23,8 @@ logging.getLogger().setLevel(logging.DEBUG)
 lrc_control_str = ''
 
 LYRICS_DISPLAY=True
-#UNUSED: LRC_SEARCH_PATH="/home/andy/lyrics"  # TODO: expand $HOME
+#UNUSED:
+LRC_SEARCH_PATH="/home/andy/lyrics"  # TODO: expand $HOME
 LYRICS_TIME_OFFSET=0  # show the lyrics 1 second earlier (good for karaok)
 
 
@@ -43,6 +44,7 @@ def update_lyrics_line(full_lrc_line):
 	schedule_next_lyrics_line()
 	# output lrc_line
 	print(lrc_line_escaped.replace("\n",""))
+	sys.stdout.flush()  # needed for correct piping
 # end of update_lyrics_line
 
 def schedule_next_lyrics_line():
