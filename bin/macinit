@@ -922,7 +922,8 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	musicsearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/music ; }
 	midisearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/midi ; }
 	
-	electsearch() { dbgrep -Z0 "$1" $PENDRIVE/Documents/db/elect ; }
+	#electsearch() { dbgrep -Z0 "$1" $PENDRIVE/Documents/db/elect ; }
+	electfind() { find $PENDRIVE/Documents/db/elect -type f  -iname "*$1*" -print  ; }
 	pinouts() { find $PENDRIVE/Documents/db/elect/pinout -type f -not -name "*.txt" -not -name "*.md" -iname "*$1*" -print -exec xdg-open {} \; ; }
 	fzfpinouts() { find $PENDRIVE/Documents/db/elect/pinout/ -type f -not -name "*.txt" -not -name "*.md" | fzf --exact --no-extended | xargs xdg-open ; }
 	alias schematic=pinouts
@@ -946,6 +947,10 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	nswsearch() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/nsw/*.json ; }
 	# MEMO: do not quote escaped paths!
 
+fi
+
+if [ -d $PENDRIVE/Documents/book ]; then
+	bookfind() { find $PENDRIVE/Documents/book -type f  -iname "*$1*" -print  ; }  # -not -name "*.txt" -not -name "*.md"  -exec xdg-open {} \;
 fi
 
 # mame aliases   

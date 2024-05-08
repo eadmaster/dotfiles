@@ -66,7 +66,7 @@ class SerialVFD:
 			#self.serial_conn.write(SerialVFD.SET_BRIGHTNESS)
 			#self.serial_conn.write(bytearray(value.to_bytes(1, byteorder='big')))
 			#time.sleep(1)
-			self.serial_conn.write(SerialVFD.SET_BRIGHTNESS_LOW)
+			self.serial_conn.write(bytes([0xfe,0x99,0x64]))
 		except serial.serialutil.SerialException as e:
 			self.serial_conn = serial_connect(self.serial_port)
 
@@ -95,8 +95,8 @@ class MessageFormatter:
 import sys
 
 
-line_1_message = ""
-line_2_message = ""
+line_1_message = "lines2vfd"
+line_2_message = "init OK"
 
 
 
@@ -110,8 +110,9 @@ def refresh_screen_thread_main():
 	global line_2_message
 	
 	vfd = SerialVFD('/dev/ttyUSB0')
-	time.sleep(1)
+	time.sleep(0.5)
 	vfd.set_brightness(10)
+	time.sleep(0.5)
 	
 	while True:
 		
