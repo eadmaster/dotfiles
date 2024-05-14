@@ -927,6 +927,7 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	pinouts() { find $PENDRIVE/Documents/db/elect/pinout -type f -not -name "*.txt" -not -name "*.md" -iname "*$1*" -print -exec xdg-open {} \; ; }
 	fzfpinouts() { find $PENDRIVE/Documents/db/elect/pinout/ -type f -not -name "*.txt" -not -name "*.md" | fzf --exact --no-extended | xargs xdg-open ; }
 	alias schematic=pinouts
+	alias pins=pinouts
 	aapinouts() { find $PENDRIVE/Documents/db/elect/pinout/asciiart -iname "*$1*" -print | xargs cat | ( aapinouts_prettyprint.sed || cat) ; }
 	#alias pinout=electart
 	#fzfasciifromzip() {  unzip -Z1 "$1" | fzf --exact --no-extended | xargs unzip -p "$1" ; } # select a file inside a zipped archive and print it
@@ -951,6 +952,9 @@ fi
 
 if [ -d $PENDRIVE/Documents/book ]; then
 	bookfind() { find $PENDRIVE/Documents/book -type f  -iname "*$1*" -print  ; }  # -not -name "*.txt" -not -name "*.md"  -exec xdg-open {} \;
+	alias docfind=bookfind
+	alias docsfind=bookfind
+	alias rtfd=bookfind
 fi
 
 # mame aliases   
@@ -2431,5 +2435,11 @@ fi
 
 alias uptimepretty="uptime -p || date -u -d @$(cat /proc/uptime | cut -f1 -d' ') +'%T'"  # https://unix.stackexchange.com/questions/34017/convert-linux-sysuptime-to-well-format-date/774374#774374
 
+if which go >/dev/null 2>&1 ; then
+	alias gobuildwin64="env GOOS=windows GOARCH=amd64 go build"  # https://stackoverflow.com/questions/65843413/cross-compile-a-shared-library-under-linux-for-windows?rq=3
+	# ...
+fi
+
+alias igo=gore  # https://github.com/x-motemen/gore/
 
 unset THIS_SCRIPT_DIR

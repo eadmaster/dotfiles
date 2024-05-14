@@ -119,7 +119,7 @@ case $INPUTFILEEXT in
 		vbox-img info --filename "$INPUTFILE"
 		echo
 		aaru image info "$INPUTFILE"
-		aaru fs list "$INPUTFILE"
+		#aaru fs list "$INPUTFILE"
 		echo
 		file "$INPUTFILE"
 		exit $?

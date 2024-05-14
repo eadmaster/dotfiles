@@ -66,7 +66,9 @@ class SerialVFD:
 			#self.serial_conn.write(SerialVFD.SET_BRIGHTNESS)
 			#self.serial_conn.write(bytearray(value.to_bytes(1, byteorder='big')))
 			#time.sleep(1)
-			self.serial_conn.write(bytes([0xfe,0x99,0x64]))
+			#self.serial_conn.write(bytes([0xFE,0xCA,0xF5,0xA0,0x00]))
+			#self.serial_conn.write(bytes([0xFE,0xCB,0xF5,0xA0,0x00]))
+			self.serial_conn.write(bytes([0xfe,0x99,0x10]))
 		except serial.serialutil.SerialException as e:
 			self.serial_conn = serial_connect(self.serial_port)
 
@@ -110,9 +112,9 @@ def refresh_screen_thread_main():
 	global line_2_message
 	
 	vfd = SerialVFD('/dev/ttyUSB0')
-	time.sleep(0.5)
-	vfd.set_brightness(10)
-	time.sleep(0.5)
+	#time.sleep(0.5)
+	#vfd.set_brightness(10)
+	#time.sleep(0.5)
 	
 	while True:
 		
@@ -151,9 +153,6 @@ def main():
 			print(line_2_message)
 		
 
-
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     main()
 

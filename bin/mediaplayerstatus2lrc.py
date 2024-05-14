@@ -323,11 +323,15 @@ if __name__ == '__main__':
 		def find_media_players(session_bus):
 			players = []
 			for service in session_bus.list_names():
+				# skip Chrome/Chromium
+				if "chrom" in service:
+					continue
 				if service.startswith("org.mpris.MediaPlayer2."):
 					players.append(service)
 			return players
 
 		players = find_media_players(session_bus)
+		
 		if not players:
 			print("No MPRIS-compliant media players found.")
 			exit()
@@ -358,6 +362,7 @@ if __name__ == '__main__':
 		metadata = player_props.Get("org.mpris.MediaPlayer2.Player", "Metadata", dbus_interface="org.freedesktop.DBus.Properties")	
 		#global last_time_update
 		try:
+			print(metadata)
 			url = metadata['xesam:url']
 			print_song_metadata()
 			song_change_event_event_handler(url)

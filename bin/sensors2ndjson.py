@@ -29,6 +29,7 @@ if __name__ == '__main__':
 			d = get_curr_sensors_dict()
 
 			print(json.dumps(d))
+			sys.stdout.flush()  # needed for correct piping
 			
 			sleep(3)
 

@@ -10,7 +10,7 @@
 if which ugrep >/dev/null 2>&1 ; then
 
 	#ugrep -F -i -I -r -z -Z2 -w --exclude-dir='_*' -g '^_*' -O '^css' -O '^py' -H  "$_QUERY" "$_SEARCHDIR/" | cut -c 1-500 
-	fuzzygrep --exclude-dir='_*' -O ^css -O ^svg -O ^py -O ^ipynb  "$@"
+	fuzzygrep -Z1 --exclude-dir='_*' -O ^css -O ^svg -O ^py -O ^ipynb  "$@"
 
 else
 
