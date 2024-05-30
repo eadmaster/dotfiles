@@ -12,6 +12,10 @@ elif [ -z "$1" ] || [ "$1" = "-" ]; then
 elif [ ! -f "$1" ]; then
 	echo "$(basename $0) error: file does not exist: $1" >&2
 	exit 1
+else
+	INPUTFILE="$1"
+	#stat "$INPUTFILE"
+	echo
 fi
 
 INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
@@ -26,50 +30,61 @@ INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
 #esac
 
 # look for a specific tool in the system (e.g. pdfcrack, etc. )
-CUSTOMINFOPATH=$( find $(echo -n $PATH|sed 's/:/ /g') -type f -perm /u=x,g=x,o=x  -name $( printf "%scrack" $INPUTFILEEXT ) 2> /dev/null | head -n1 )
-#[ -z "$CUSTOMINFOPATH" ] && CUSTOMINFOPATH=$( find $(echo -n $PATH|sed 's/:/ /g') -type f -perm /u=x,g=x,o=x  -name $( printf "%sdump" $INPUTFILEEXT ) 2> /dev/null | head -n1 )
-if [ ! -z "$CUSTOMINFOPATH" ]; then
-	$CUSTOMINFOPATH "$INPUTFILE"  2> /dev/null 
-	echo
-	#exit $?
+CUSTOMTOOLPATH=$( find $(echo -n $PATH|sed 's/:/ /g') -type f -perm /u=x,g=x,o=x  -name "${INPUTFILEEXT}crack" 2> /dev/null | head -n1 )
+[ -z "$CUSTOMTOOLPATH" ] && CUSTOMTOOLPATH=$( find $(echo -n $PATH|sed 's/:/ /g') -type f -perm /u=x,g=x,o=x  -name "${INPUTFILEEXT}2john"  2> /dev/null | head -n1 )
+[ -z "$CUSTOMTOOLPATH" ] && CUSTOMTOOLPATH=$( find $(echo -n $PATH|sed 's/:/ /g') -type f -perm /u=x,g=x,o=x  -name "${INPUTFILEEXT}2john.pl"  2> /dev/null | head -n1 )
+[ -z "$CUSTOMTOOLPATH" ] && CUSTOMTOOLPATH=$( find $(echo -n $PATH|sed 's/:/ /g') -type f -perm /u=x,g=x,o=x  -name "${INPUTFILEEXT}2john.py"  2> /dev/null | head -n1 )
+if [ ! -z "$CUSTOMTOOLPATH" ]; then
+	echo "$CUSTOMTOOLPATH"
+	TMPFILE=$(mktemp)
+	$CUSTOMTOOLPATH "$INPUTFILE" > $TMPFILE
+	echo "$0: extracted hashes:"
+	cat $TMPFILE
+	echo "$0: cracking with hashcat:"
+	hashcat -m 0 -a 3 $TMPFILE  --restore-disable  --status
 fi
+echo exit
 
 # switch by input file extension
 case $INPUTFILEEXT in
 
 	pdf )
-		# TODO: pdf2john | hashcat
-		
 		zydra.py -f "$INPUTFILE"
 		
 		pdfcrack -f "$INPUTFILE"
 		exit $?
 		;;
 	
-	zip )
-		# TODO: zip2john | hashcat  https://github.com/hashcat/hashcat/issues/69
-		
 	#TODO: |rar|7z|arj|bz2|cab|cpio|gz|lzma|lha|lzh|tar|tgz|tbz|wim )
+	#zip )
+	#	# TODO: zip2john | hashcat  https://github.com/hashcat/hashcat/issues/69
+	#	exit $?
+	#	;;
+		
+	
 	exe ) # windows executable -> assume compressed archive
 		zydra.py -f "$INPUTFILE"
 		exit $?
-		;;
+	;;
 	
 	# WANTED: swf )  # shockwave files
 	
-	#WANTED: key | pem )  # rsa public/private keys
+	#key | pem )  # rsa public/private keys
+	#	pem2john.py "$INPUTFILE" | hashcat
+	#	exit $?
+	#;;
 	
 	#WANTED: csr )  # Certificate Signing Request
-		openssl req -text -noout -verify -in "$INPUTFILE"
-		exit $?
-		;;
+	#	openssl req -text -noout -verify -in "$INPUTFILE"
+	#	exit $?
+	#	;;
 
 	#WANTED: crt )
 	
 	#WANTED: der )
-		openssl x509 -inform der -text -in "$INPUTFILE"
-		exit $?
-		;;
+	#	openssl x509 -inform der -text -in "$INPUTFILE"
+	#	exit $?
+	#	;;
 		
 	#WANTED: pfx|p12 )
 
@@ -77,6 +92,8 @@ case $INPUTFILEEXT in
 	#p7m )
 	#	
 
+	# TODO: more https://github.com/openwall/john/blob/bleeding-jumbo/run/andotp2john.py
+	
 esac
 
 # switch by input file mime type

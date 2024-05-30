@@ -15,5 +15,8 @@ if [ -z "$SERIAL_DEV" ]; then
 fi
 
 ard-reset-arduino --verbose $SERIAL_DEV
+[ $? -ne 127 ] && exit 0
 
 sudo tput reset > $SERIAL_DEV
+
+# esptool --port /dev/ttyUSB0 --before default_reset --after hard_reset chip_id

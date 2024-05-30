@@ -132,9 +132,15 @@ case $INPUTFILEEXT in
 
 	smc|sfc|fig|gb|gbc|gba|nds|n64|z64|smd|gen|md|32x|pce|nes|fds|sms|gg|ws|wsc|jag|ngp|ngc|vb )
 		ucon64 "$INPUTFILE"
+		#aaru image info "$INPUTFILE"
 		exit $?
 		;;
 	
+	# TODO:
+	#ips|ups|aps|delta|ppf|bps )  # https://datacrystal.romhacking.net/wiki/Patch
+	#	exit $?
+	#	;;
+		
 	nsp|xci|nro|nsz )
 		# https://github.com/garoxas/NX_Game_Info
 		nxgameinfo_cli -z "$INPUTFILE"

@@ -4,8 +4,8 @@
 # sudo usermod -a -G dialout $USER
 
 #SPEED=9600
-#SPEED=115200
-SPEED=57600
+SPEED=115200
+#SPEED=57600
 #  The general observation is that the 3.3V devices usually run at 57600 whereas the 5V devices usually run on 115200 
 
 [ -c /dev/ttyUSB0 ] && SERIAL_DEV=/dev/ttyUSB0
@@ -19,44 +19,39 @@ if [ -z "$SERIAL_DEV" ]; then
 	exit 1
 fi
 
-if [ ! -z "$1" ]; then
-	# TODO: accept args like  https://github.com/todbot/arduino-serial/
-	# single message mode using python
-	sudo python -  <<EOF
-import serial
-import time
-print("opening connection with $SERIAL_DEV @ $SPEED baud...")
-arduino_ser = serial.Serial("$SERIAL_DEV", $SPEED)
-print("ok, sleep for 7 seconds...")
-time.sleep(7)
-print("sending message: $1"+'\n')
-arduino_ser.write("$1"+'\n')
-# TODO: read the answer?
-#arduino_ser.flush()
-EOF
-	exit $?
+if [ -t 0 ]; then
+    echo "$0: stdin is empty, interactive mode"
+	arduino-cli monitor --port $SERIAL_DEV  --timestamp  --config baudrate=$SPEED
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 fi
 
-echo "arduino-serial: starting terminal mode, press ctrl-x to exit..."
+# stdin is not empty, command mode
+
+busybox microcom -s $SPEED $SERIAL_DEV  -t 3000
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#echo "arduino-serial: starting terminal mode, press ctrl-x to exit..."
 #some cmds: "setpindir 13 out; writepin 13 0"
 
 # TODO: enable stdin redirection  https://stackoverflow.com/questions/3918032/bash-serial-i-o-and-arduino
 
-sudo busybox microcom -s $SPEED $SERIAL_DEV
+minicom -b BAUD_RATE -D $SERIAL_DEV
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
-screen $SERIAL_DEV $SPEED
+screen  $SERIAL_DEV  $SPEED
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
-python -m serial.tools.miniterm --raw  $SERIAL_DEV $SPEED
+# from pyserial
+python -m serial.tools.miniterm  $SERIAL_DEV  $SPEED  # --raw 
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+python -m serial $SERIAL_DEV $SPEED
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
-# setup parameters from http://playground.arduino.cc/Interfacing/LinuxTTY
-#stty -F $SERIAL_DEV cs8 $SPEED ignbrk -brkint -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts
-# TODO: get settings via $(stty -a < $SERIAL_DEV)
-
-		
 #echo "unable to start an interactive shell, just echo your commands by echo-ing to $SERIAL_DEV" 
+#busybox stty -F $SERIAL_DEV ispeed $SPEED ospeed $SPEED
+#echo "$(cat)" > $SERIAL_DEV
+#cat  $SERIAL_DEV
+
 # TODO: elsa shellscript alternative using:
 #  echo $LINE > $SERIAL_DEV
 #  read -dx -t 1 response < $SERIAL_DEV

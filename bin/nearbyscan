@@ -10,6 +10,20 @@ ip neigh | grep REACHABLE
 
 echo
 
+#OLD:
+#echo "$(basename $0): quick nmap OS scan:" # https://serverfault.com/questions/522596/ping-only-os-detection-with-nmap
+#nmap --top-ports 20 --exclude 127.0.0.1 -T5 -A 192.168.1.* --open  # --host-timeout 1s
+# NO? sudo nmap -sn -O 192.168.1.*  # -sn: Ping Scan - disable port scan
+#[ $? -ne 0 ] && ip neigh #| grep REACHABLE | cut -d' ' -f1 | ...
+#echo
+#echo "$(basename $0): ARP scan:"  # https://www.linux-magazine.com/Online/Features/Using-ARP-for-Network-Recon
+# TIP: get sanitized IEEE OUI Data here https://linuxnet.ca/ieee/oui/
+#sudo arp-scan --localnet  # --quiet 
+#echo "arp:"
+#arp -i $IFACE  # no root req., best executed AFTER arp-scan? https://unix.stackexchange.com/questions/188367/get-names-of-devices-on-the-network
+#echo
+#sudo netdiscover -f -P  # 2FIX: slower than arp-scan?
+
 ARPSCAN="$(sudo arp-scan --localnet)"
 echo "$ARPSCAN"
 
@@ -52,10 +66,58 @@ echo
 
 echo
 
+# discover WebServices using https://pypi.org/project/WSDiscovery/
+#echo "$(basename $0): WS-Discovery scan.."
+# wsdiscover
+
+#OLD:
+[ -z "$IFACE" ] && IFACE=$( route | grep '^default' | grep -o '[^ ]*$' | head -n1 )
+MYIP=$( ip -f inet -o addr show dev $IFACE | cut -d\  -f 7 | cut -d/ -f 1 | tail -n1 )
+[ -z "$MYIP" ] && MYIP=$( ifconfig $IFACE | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}' )
+
+echo "$(basename $0): this computer IP is: $MYIP"
+
+# ping 10 IPs in (MYIP-5 ; MYIP+5 range)
+#BASEADDR=$( echo -n $MYIP | cut -d. -f 1-3 )
+#VARADDR=$( echo -n $MYIP | cut -d. -f 4 )
+#VARADDRMIN=$( expr $VARADDR - 5 )
+#VARADDRMAX=$( expr $VARADDR + 5 )
+#for var in $(seq $VARADDRMIN $VARADDRMAX); do
+#	[ "$MYIP" = "$BASEADDR$var" ] && continue
+#	
+#	# ALTERNATIVEs: nmap -sn | nmap --script broadcast-ping
+#	echo -n "$(basename $0): pinging $BASEADDR.$var... "
+#	sudo ping -c 1 -W 2 $BASEADDR.$var >/dev/null
+#	if [ $? -eq 0 ]; then
+#		# host is online, do further scans
+#		echo "PONG"
+#		
+#		# look for opened ports and try to identify the OS
+#		#tput setaf 1  # set the red color
+#		sudo nmap $BASEADDR.$var -F -O -oG - | grep OS
+#		# http://nmap.org/book/man-host-discovery.html
+#		#tput sgr0  # back to normal color
+#		
+#		# get the MAC address
+#		#sudo nmap -sP -n $BASEADDR.$var | grep MAC
+#	fi
+#	echo
+#done
+#echo "$(basename $0): tip: for more infos use nmap -O IPADDR"
+
+echo
+
+# find DNS names using dig from the "dnsutils" package
+#dig -t axfr 
+# find DNS names using dig from the "bind9utils" package
+# rndc dumpdb -zones
+
 # NetBIOS scan (windows machines)
 echo "$(basename $0) info: NetBIOS scan..." >&2
+# sudo nbtscan -q ${BASEADDR}.1/16
 sudo nbtscan 192.168.1.0/24 
 [ $? -ne 0 ] && nmap --script smb-os-discovery -p 445 ${BASEADDR}.1.*  #-v
+#nmblookup -A $BASEADDR*
 
 # TODO: more alternatives:
 # https://superuser.com/questions/311019/display-list-of-computers-on-a-lan-in-linux
@@ -92,3 +154,6 @@ broadlink_discovery #--timeout 10
 
 # tinytuya  https://github.com/jasonacox/tinytuya
 #python -m tinytuya scan 10  # 10=MAX_TIME  # TODO: disable saving snapshot.json
+
+# smartphones paired with KDEconnect
+# kdeconnect-cli -a

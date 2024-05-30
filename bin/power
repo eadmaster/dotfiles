@@ -3,13 +3,40 @@
 # used for RGB LEDs
 DEFAULT_LED_COLOR=00FF00
 #  TODO: replace with device names  https://gitlab.com/CalcProgrammer1/OpenRGB/-/issues/2854
-OPEN_RGB_KEYBOARD_DEVICE_ID=0
-OPEN_RGB_MOUSE_DEVICE_ID=1
+OPENRGB_KEYBOARD_DEVICE_ID=0
+OPENRGB_MOUSE_DEVICE_ID=1
 #OPEN_RGB_MOUSE_ID=$(openrgb -l | grep ...)
 # used for razer keyboards
 OPENRAZER_BASE_PATH=/sys/bus/hid/drivers/razerkbd
 
 MY_ROUTER_ADDR_LIST=("192.168.1.6"  "192.168.42.1"  "192.168.1.138"  "192.168.2.1"  "DietPi.local"  "friendlywrt.local")
+
+MY_TASMOTA_ADDR=192.168.1.22
+#MY_TASMOTA_ADDR=tasmota.local
+
+_send_tasmota_cmd() {
+	# https://tasmota.github.io/docs/Commands/
+	if [ ! -z "$ANDROID_ROOT" ]; then
+		# using app intents
+		am broadcast -a kg.serial.manager.send --es data "$1"  # https://github.com/delletenebre/SerialManager2
+	elif [ -c /dev/ttyUSB0 ]; then
+		# try via serial
+		echo "$1" | busybox microcom -s 115200 /dev/ttyUSB0  -t 1000
+		[ $? -eq 0 ] && return
+	fi
+	# try via http
+	curl -m3 "http:///${MY_TASMOTA_ADDR}/cm?cmnd=$(urlencode "$1")"
+}
+#_halt_tasmota_cmd() {
+#	_send_tasmota_cmd "Restart 2"
+#}
+_reset_tasmota_cmd() {
+	if [ ! -z "$ANDROID_ROOT" ]; then
+		echo "missing USB serial support on Android"
+	elif [ -c /dev/ttyUSB0 ]; then
+		esptool --port /dev/ttyUSB0 --before default_reset --after hard_reset chip_id
+	fi
+}
 
 # Windows detection
 if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
@@ -17,481 +44,640 @@ if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
 	exit $?
 fi
 
-# TODO: more android cmds: turn off/on wifi, monitor
-
 # check args
 case "$1" in
 	on|up|start|off|down|status|check|reboot|cycle|restart )
 		CMD=$1
 		TARGET=$2
-		;;
+	;;
 esac
 case "$2" in
 	on|up|start|off|down|status|check|reboot|cycle|restart )
 		CMD=$2
 		TARGET=$1
-		;;
+	;;
 esac
 
 
-case "$CMD" in
-status|check )
-	case "$TARGET" in
-		""|all )
-			nearbyscan
-			exit 0
-			
-			#OLD:
-			[ -z "$IFACE" ] && IFACE=$( route | grep '^default' | grep -o '[^ ]*$' | head -n1 )
-			MYIP=$( ip -f inet -o addr show dev $IFACE | cut -d\  -f 7 | cut -d/ -f 1 | tail -n1 )
-			[ -z "$MYIP" ] && MYIP=$( ifconfig $IFACE | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}' )
-			
-			echo "$(basename $0): this computer IP is: $MYIP"
-			
-			# ping 10 IPs in (MYIP-5 ; MYIP+5 range)
-			BASEADDR=$( echo -n $MYIP | cut -d. -f 1-3 )
-			VARADDR=$( echo -n $MYIP | cut -d. -f 4 )
-			VARADDRMIN=$( expr $VARADDR - 5 )
-			VARADDRMAX=$( expr $VARADDR + 5 )
-			
-			#for var in $(seq $VARADDRMIN $VARADDRMAX); do
-			#	[ "$MYIP" = "$BASEADDR$var" ] && continue
-			#	
-			#	# ALTERNATIVEs: nmap -sn | nmap --script broadcast-ping
-			#	echo -n "$(basename $0): pinging $BASEADDR.$var... "
-			#	sudo ping -c 1 -W 2 $BASEADDR.$var >/dev/null
-			#	if [ $? -eq 0 ]; then
-			#		# host is online, do further scans
-			#		echo "PONG"
-			#		
-			#		# look for opened ports and try to identify the OS
-			#		#tput setaf 1  # set the red color
-			#		sudo nmap $BASEADDR.$var -F -O -oG - | grep OS
-			#		# http://nmap.org/book/man-host-discovery.html
-			#		#tput sgr0  # back to normal color
-			#		
-			#		# get the MAC address
-			#		#sudo nmap -sP -n $BASEADDR.$var | grep MAC
-			#	fi
-			#	echo
-			#done
-			#echo "$(basename $0): tip: for more infos use nmap -O IPADDR"
-			
-			echo
-			
-			# find DNS names using dig from the "dnsutils" package
-			#dig -t axfr 
-			# find DNS names using dig from the "bind9utils" package
-			# rndc dumpdb -zones
-			
-			echo "$(basename $0): zeroconf/mDNS/Bonjour names scan:"
-			avahi-browse -a --ignore-local --terminate #--parsable 
-			[ $? -ne 0 ] && mdns-scan
-			[ $? -ne 0 ] && nmap --script=broadcast-dns-service-discovery 192.168.1.*
-
-			echo
-			
-			# discover WebServices using https://pypi.org/project/WSDiscovery/
-			echo "$(basename $0): WS-Discovery scan:"
-			wsdiscover
-			
-			echo
-			
-			echo "$(basename $0): NetBIOS scan:"
-			sudo nbtscan -q ${BASEADDR}.1/16
-			[ $? -ne 0 ] && nmap --script smb-os-discovery -p 445 ${BASEADDR}.1.*  #-v
-			#nmblookup -A $BASEADDR*
-
-			echo
-						
-			echo "$(basename $0): ARP scan:"  # https://www.linux-magazine.com/Online/Features/Using-ARP-for-Network-Recon
-			# TIP: get sanitized IEEE OUI Data here https://linuxnet.ca/ieee/oui/
-			sudo arp-scan --localnet  # --quiet 
-			echo "arp:"
-			arp -i $IFACE  # no root req., best executed AFTER arp-scan? https://unix.stackexchange.com/questions/188367/get-names-of-devices-on-the-network
-			
-			#echo "$(basename $0): netdiscover scan:"  # 2FIX: slower than arp-scan?
-			#sudo netdiscover -f -P
-
-			echo
-			
-			echo "$(basename $0): quick nmap OS scan:" # https://serverfault.com/questions/522596/ping-only-os-detection-with-nmap
-			nmap -p 22,80,445,65123,56123 -T5 -A 192.168.1.* --open  # --host-timeout 1s
-			# NO? sudo nmap -sn -O 192.168.1.*  # -sn: Ping Scan - disable port scan
-			[ $? -ne 0 ] && 
-			[ $? -ne 0 ] && ip neigh #| grep REACHABLE | cut -d' ' -f1 | ...
-			
-			echo
-
-			exit 0
-		;;
-
-		powerline )
-			broadlink_cli $BROADLINK_SP2_PARAMS --check
-			echo -n "energy consumption from device (in W): "
-			broadlink_cli $BROADLINK_SP2_PARAMS --energy
-			exit $?
-		;;
-		
-		#powerpluga )
-		#	broadlink_cli $BROADLINK_RM4PRO_PARAMS  ... https://github.com/mjg59/python-broadlink/issues/800
-		#	exit $?
-		#;;
-		
-		* ) # default case
-			TARGET=$2
-			ping -c 3 $TARGET
+case "$TARGET" in
+	monitor|screen|lcd )
+		if [ "$(hostname)" = "BOSS2" ] || [ "$(hostname)" = "PICCIOTTO3" ]; then
+			# power toggle LG TV IR remote
+			#lgtv_serial poweron
+			#irsend SEND_ONCE LG_AKB72915207 KEY_POWER
+			#sendir lg_power
+			# TODO: using tasmota
+			broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send "260050000001209011131213113712121213121112121213123612361213123612351237123612361213121212131037121212131113121212371236113612131236113712371235120004ff00011f4911000d05"
 			[ $? -eq 0 ] && exit 0
-			# try again with zeroconf
-			ping -c 3 $TARGET.local
-			exit $?
-		;;
-	esac
-;;
-
-off|down )  # OFF COMMANDS
-	case "$TARGET" in
-		""|this|me ) # empty string
-			echo "$(basename $0): about to power off this computer"
-			if [ ! -z "$ANDROID_ROOT" ]; then
-				svc power shutdown
-				exit $?
-			fi
-			# echo "Press [ENTER] to continue or ctrl-c to cancel"
-			# sudo poweroff
-			echo "$(basename $0): type 'ok' and press Enter to continue"
-			read REPLY
-			if [ "$REPLY" = "ok" ]; then
-				sudo poweroff
-				poweroff
-			else
-				echo "$(basename $0): power off cancelled"
-			fi
-			exit $?
-		;;
+		fi
 		
-		monitor|screen )
-			echo "$(basename $0): about to power off the monitor"
-			#if [ "$(hostname)" = "BOSS2" ] || [ "$(hostname)" = "BOSS3" ]; then
-				#lgtv_serial poweroff
-				#irsend SEND_ONCE LG_AKB72915207 KEY_POWER
-				#sendir lg_power
-			#fi
-			if [ ! -z "$ANDROID_ROOT" ]; then
-				# input keyevent 26
-				input keyevent KEYCODE_POWER
-				exit $?
-			fi
-			# using HDMI-CEC
-			echo "standby 0" | cec-client -s
-			# using the DDC/CI protocol (may need to change the dev address, check "sudo ddccontrol -p") https://superuser.com/questions/648805/is-it-possible-to-power-on-off-a-monitor-using-the-computer
-			sudo ddccontrol -r 0xe1 -w 0 dev:/dev/i2c-2
-			#ddcutil setvcp d6 5
-			xset dpms force off
-			exit $?
-		;;
-
-		lan|eth*|wifi|wlan* )
-			if [ ! -z "$ANDROID_ROOT" ]; then
-				termux-wifi-enable false
-				[ $? -eq 0 ] && exit 0
-				svc wifi disable
-				[ $? -eq 0 ] && exit 0
-				settings put global wifi_on 0
-				[ $? -eq 0 ] && exit 0
-			fi
-			IFACE=$2
-			[ "$2" = "lan" ] && IFACE=eth0
-			[ "$2" = "wifi" ] && IFACE=wlan0
-			[ "$2" = "wifi" ] && [ "$(hostname)" = "BOSS2" ] && IFACE=wlxc04a0011cfa4
-			# TODO: detect current active interface?
-			echo "$(basename $0): about to power off the network interface: $IFACE"
-			sudo ip link set dev $IFACE down
-			[ $? -eq 0 ] && exit 0
-			sudo ifdown $IFACE
-			[ $? -eq 0 ] && exit 0
-			sudo ifconfig $IFACE down
-			exit $?
-		;;
-
-		bluetooth|bt )
-			if [ ! -z "$ANDROID_ROOT" ]; then
-				svc bluetooth disable
-				settings put global bluetooth_on 0
-				settings put global bluetooth_disabled_profiles 0
-				exit $?
-			fi
-			rfkill block bluetooth
-			sudo hciconfig hci0 down
-			hciconfig
-			exit $?
-		;;
-
-		smartplug )
-			broadlink_cli $BROADLINK_SP2_PARAMS  --turnoff
-			exit $?
-		;;
-			
-		*sd*|*hd* )
-			[ -b "/dev/$2" ] && TARGET=/dev/$2
-			echo "$(basename $0): about to power off the storage device: $TARGET"
-			# using udisksctl
-			sudo udisksctl unmount -b $TARGET
-			sudo udisksctl power-off -b $TARGET
-			# using udisks  http://superuser.com/questions/430438/powering-down-external-hard-drive-flash-drive-etc-using-the-command-line-in-li
-			udisks --unmount $TARGET
-			udisks --detach $TARGET
-			# using hdparam 
-			#sudo hdparm -Y $TARGET
-			# using eject  http://stackoverflow.com/questions/13224509/linux-ubuntu-safely-remove-usb-flash-disk-via-command-line
-			#eject $TARGET
-			[ $? -eq 0 ] && exit 0
-			exit $?
-		;;
-				
-		usb* )
-			echo "$(basename $0): about to power off the USB port: $TARGET"
-			sudo uhubctl -a off -p $TARGET -r 2 -w 2000  # of PICCIOTTO3: -l 2-6
-			exit $?
-		;;
-			
-		keyboard* )
-			openrgb --device "$OPEN_RGB_KEYBOARD_DEVICE_ID" --mode off
-			#OLD: [ -e "$OPENRAZER_BASE_PATH" ] && echo -n "1" > $OPENRAZER_BASE_PATH/matrix_effect_none
-			[ -e "$OPENRAZER_BASE_PATH" ] && razer-cli -e none
-			exit $?
-		;;
-			
-		mouse* )
-			openrgb --device "$OPEN_RGB_MOUSE_DEVICE_ID" --mode static --color 000000
-			exit $?
-		;;
-		
-		*router|*wrt|nanopi|dietpi )
-			# remote shutdown
-			for addr in ${MY_ROUTER_ADDR_LIST[@]}; do
-				echo "$(basename $0) info: trying ${addr}..." >&2
-				ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3  root@${addr} 'poweroff'  # -o BatchMode=yes
-				[ $? -eq 0 ] && exit 0
-				# -oHostKeyAlgorithms=+ssh-rsa -oPubkeyAcceptedAlgorithms=+ssh-rsa   https://forum.openwrt.org/t/unable-to-connect-via-ssh-no-matching-host-key-type-found/114430/24
-			done
-			exit $?
-		;;
-		
-		* ) # default case
-			# power off a device via an IR blaster (must be configured separately)
-			#echo "$(basename $0): about to power off via IR blaster: $TARGET"
-			#[ "$TARGET" = "LG" ] && TARGET=LG_AKB72915207
-			#irsend SEND_ONCE $TARGET KEY_POWER
-			
-			#[ $? -eq 0 ] && exit 0
-			#TODO: use cec-client to control more devices?
-			
-			# else try to power off a remote machine (via the passed IP or network name)...
-			echo "$(basename $0): about to power off remote machine: $TARGET"
-			# some computer aliases with fixed IPs associated
-			#[ "$2" = "boss3" ] && TARGET=192.168....
-			# check if target machine is connectable
-			sudo ping -c 1 -W 2 $TARGET >/dev/null
-			if [ $? -ne 0 ]; then
-				# try names resolving with with mDNS
-				#TARGET=$(ipget $TARGET)
-				TARGET=$(getent hosts ${TARGET}.local | cut -f2)
-				[ -z "$TARGET" ] && TARGET=$(avahi-resolve --name ${TARGET}.local | cut -f2)
-				[ -z "$TARGET" ] && TARGET=$(nmblookup $TARGET | cut -d' ' -f1)
-				if [ -z "$TARGET" ]; then
-					echo "$(basename $0): error: target is not connectable: $TARGET" >&2
-					exit 1
-				else
-					echo "$(basename $0): target IP address found: $TARGET" >&2
+		case "$CMD" in
+			on|up )
+				echo "$(basename $0): about to power on the monitor"
+				if [ ! -z "$ANDROID_ROOT" ]; then
+					input keyevent KEYCODE_WAKEUP
+					exit $?
 				fi
-			fi
-			# ...running Windows
-			# using samba net command http://lifehacker.com/5275652/shut-down-your-windows-pc-remotely-from-linux
-			# TODO: ask username via user input?
-			net rpc shutdown -I $TARGET -U Administrator -f
-			[ $? -eq 0 ] && exit 0
-			# using winexe  https://sourceforge.net/projects/winexe/
-			winexe //$TARGET 'shutdown -s -f'
-			[ $? -eq 0 ] && exit 0
-			# TODO: more windows alternatives
-			# else try remote ssh host on linux
-			ssh -t $TARGET 'poweroff'
-			[ $? -eq 0 ] && exit 0
-			ssh -t $TARGET.local 'poweroff'
-			[ $? -eq 0 ] && exit 0
-			ssh -t TARGET 'shutdown -h now'
-			[ $? -eq 0 ] && exit 0
-			# remote ssh host on Windows
-			ssh $TARGET 'shutdown -s -f'
-			[ $? -eq 0 ] && exit 0
-			# try with Intel AMT tool
-			amttool $TARGET powerdown
-			[ $? -eq 0 ] && exit 0
-			# try with IPMI
-			ipmitool -H $TARGET -v -I lanplus -U ADMIN chassis power off
-			# else
-			echo "$(basename $0): error: no tool found to power off $TARGET" >&2
-			exit 127
-		;;
-	esac
-;;
-
-on|up ) # ON COMMANDS
-	case "$TARGET" in
-		"" ) # empty string
-			echo "$(basename $0) error: no target specified" >&2
-			exit 1
-		;;
-		
-		monitor|screen|lcd )
-			echo "$(basename $0): about to power on the monitor"
-			if [ "$(hostname)" = "BOSS2" ] || [ "$(hostname)" = "BOSS3" ]; then
-				lgtv_serial poweron
-				irsend SEND_ONCE LG_AKB72915207 KEY_POWER
-				sendir lg_power
-			fi
-			if [ ! -z "$ANDROID_ROOT" ]; then
-				input keyevent KEYCODE_WAKEUP
+				# try using HDMI-CEC
+				echo "on 0" | cec-client -s
+				# try using the DDC/CI protocol (may need to change the dev address, check "sudo ddccontrol -p")  https://superuser.com/questions/648805/is-it-possible-to-power-on-off-a-monitor-using-the-computer
+				sudo ddccontrol -r 0xe1 -w 1 dev:/dev/i2c-2
+				#ddcutil setvcp d6 1
+				xset dpms force on
 				exit $?
-			fi
-			# try using HDMI-CEC
-			echo "on 0" | cec-client -s
-			# try using the DDC/CI protocol (may need to change the dev address, check "sudo ddccontrol -p")  https://superuser.com/questions/648805/is-it-possible-to-power-on-off-a-monitor-using-the-computer
-			sudo ddccontrol -r 0xe1 -w 1 dev:/dev/i2c-2
-			#ddcutil setvcp d6 1
-			xset dpms force on
-			exit $?
-		;;
-
-		lan|wifi|eth*|wlan* )
-			if [ ! -z "$ANDROID_ROOT" ]; then
-				termux-wifi-enable true
-				[ $? -eq 0 ] && exit 0
-				svc wifi enable
-				[ $? -eq 0 ] && exit 0
-				settings put global wifi_on 1
-				exit $?
-			fi
-			IFACE=$2
-			[ "$2" = "lan" ] && IFACE=eth0
-			[ "$2" = "wifi" ] && IFACE=wlan0
-			[ "$2" = "wifi" ] && [ "$(hostname)" = "BOSS2" ] && IFACE=wlxc04a0011cfa4
-			# TODO: detect current active interface?
-			echo "$(basename $0): about to power on the network interface: $IFACE"
-			sudo ip link set dev $IFACE up
-			[ $? -eq 0 ] && exit 0
-			sudo ifup $IFACE
-			[ $? -eq 0 ] && exit 0
-			sudo ifconfig $IFACE up
-			[ $? -eq 0 ] && exit 0
-			# TOFIX: wifi may need to be reinitialized with wpa_supplicant?
-			exit $?
-		;;
-		
-		bluetooth|bt )
-			if [ ! -z "$ANDROID_ROOT" ]; then
-				svc bluetooth enable
-				settings put global bluetooth_on 1
-				settings put global bluetooth_disabled_profiles 1
-				exit $?
-			fi
-			service bluetooth start
-			systemctl start bluetooth
-			rfkill unblock bluetooth
-			# TODO: bt-device --set Powered 1
-			sudo hciconfig hci0 up
-			hciconfig
-			exit $?
-		;;
-		
-		smartplug )
-			broadlink_cli $BROADLINK_SP2_PARAMS  --turnon
-			exit $?
-		;;
-
-		usb* )
-			echo "$(basename $0): about to power on the USB port: $TARGET"
-			sudo uhubctl -a on -p $TARGET  # on PICCIOTTO3: -l 2-6
-			exit $?
-		;;
-		
-		razer*|keyboard )
-			openrgb --device "$OPEN_RGB_KEYBOARD_DEVICE_ID" --mode static --color $DEFAULT_LED_COLOR   # TODO: set brightness
-			if [ -e "$OPENRAZER_BASE_PATH" ]; then
-				#echo -n "1" > $OPENRAZER_BASE_PATH/matrix_effect_spectrum
-				#echo -n "20" >  $OPENRAZER_BASE_PATH/matrix_brightness
-				razer-cli -v --effect static  # effect
-				razer-cli -v --color $DEFAULT_LED_COLOR
-				razer-cli -v --brightness 10
-				razer-cli -v --sync  # sync lighting effects to all supported Razer products
-			fi
-			exit $?
 			;;
-
-		mouse* )
-			openrgb --device "$OPEN_RGB_MOUSE_DEVICE_ID" --mode static --color $DEFAULT_LED_COLOR  # TODO: set brightness
-			exit $?
+			off|down )
+				echo "$(basename $0): about to power off the monitor"
+				#if [ "$(hostname)" = "BOSS2" ] || [ "$(hostname)" = "BOSS3" ]; then
+				#	lgtv_serial poweroff
+				#	irsend SEND_ONCE LG_AKB72915207 KEY_POWER
+				#	sendir lg_power
+				#fi
+				if [ ! -z "$ANDROID_ROOT" ]; then
+					# input keyevent 26
+					input keyevent KEYCODE_POWER
+					exit $?
+				fi
+				# using HDMI-CEC
+				echo "standby 0" | cec-client -s
+				# using the DDC/CI protocol (may need to change the dev address, check "sudo ddccontrol -p") https://superuser.com/questions/648805/is-it-possible-to-power-on-off-a-monitor-using-the-computer
+				sudo ddccontrol -r 0xe1 -w 0 dev:/dev/i2c-2
+				#ddcutil setvcp d6 5
+				xset dpms force off
+				exit $?
 			;;
+		esac
+	;;
 
-		* ) # default case
-			# power on a device via an IR blaster (must be configured separately)
-			#echo "$(basename $0): about to power on via IR blaster: $TARGET"
-			#irsend SEND_ONCE $TARGET KEY_POWER
-			#[ $? -eq 0 ] && exit 0
-			#TODO: use cec-client to control more devices?
-
-			# else try to wake up a remote machine (via the passed IP or network name)
-			echo "$(basename $0): about to wake up remote machine: $TARGET"
-			# via wakeonlan perl script  
-			wakeonlan -i $TARGET
-			[ $? -eq 0 ] && exit 0
-			# search the target MAC address in a db file (should have at least 2 columns: MAC Address,hostname)
-			MAC_DB=$PENDRIVE/Documents/db/mynicmac.csv
-			[ -f $MAC_DB ] && TARGET_MAC=$(grep $TARGET, $MAC_DB | cut -f1 -d,)
-			# else target MAC addr must be passed as 2nd arg
-			[ ! -f $MAC_DB ] && TARGET_MAC=$2
-			powerwake $TARGET_MAC
-			[ $? -eq 0 ] && exit 0
-			etherwake $TARGET_MAC
-			[ $? -eq 0 ] && exit 0
-			wol $TARGET_MAC
-			[ $? -eq 0 ] && exit 0
-			# python oneliner from https://www.mythtv.org/wiki/Wake-on-LAN
-			echo "$(basename $0): broadcasting magic packet targeting $TARGET_MAC..."
-			#python2 -c "print('broadcasting magic packet to ' + r'\x'+\"$TARGET_MAC\".replace(':',r'\x') + '...' );"
-			python -c "import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1); s.sendto('\xff'*6+(r'\x'+\"$TARGET_MAC\".replace(':',r'\x'))*16, ('<broadcast>', 7));"
-			[ $? -eq 0 ] && exit 0
-			# try with Intel AMT tool
-			amttool $TARGET powerup
-			[ $? -eq 0 ] && exit 0
-			# try with IPMI
-			ipmitool -H $TARGET -v -I lanplus -U ADMIN chassis power on
-			# else
-			echo "$(basename $0): error: no tool found to power on $TARGET" >&2
-			exit 127
-		;;
-	esac
-;;
-
-cycle|reset|reboot ) # RESET COMMANDS
-	case "$TARGET" in
-		*router|*wrt|nanopi|dietpi )
-			for addr in ${MY_ROUTER_ADDR_LIST[@]}; do
-				echo "$(basename $0) info: trying ${addr}..." >&2
-				ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3  root@${addr} 'reboot'   # -o BatchMode=yes  -oHostKeyAlgorithms=+ssh-rsa -oPubkeyAcceptedAlgorithms=+ssh-rsa 
+	lan|eth*|wifi|wlan* )
+		case "$CMD" in
+			on|up )
+				if [ ! -z "$ANDROID_ROOT" ]; then
+					termux-wifi-enable true
+					[ $? -eq 0 ] && exit 0
+					svc wifi enable
+					[ $? -eq 0 ] && exit 0
+					settings put global wifi_on 1
+					exit $?
+				fi
+				IFACE=$2
+				[ "$2" = "lan" ] && IFACE=eth0
+				[ "$2" = "wifi" ] && IFACE=wlan0
+				[ "$2" = "wifi" ] && [ "$(hostname)" = "BOSS2" ] && IFACE=wlxc04a0011cfa4
+				# TODO: detect current active interface?
+				echo "$(basename $0): about to power on the network interface: $IFACE"
+				sudo ip link set dev $IFACE up
 				[ $? -eq 0 ] && exit 0
-			done
-			exit $?
-		;;
+				sudo ifup $IFACE
+				[ $? -eq 0 ] && exit 0
+				sudo ifconfig $IFACE up
+				[ $? -eq 0 ] && exit 0
+				# TOFIX: wifi may need to be reinitialized with wpa_supplicant?
+				exit $?
+			;;
+			off|down )
+				if [ ! -z "$ANDROID_ROOT" ]; then
+					termux-wifi-enable false
+					[ $? -eq 0 ] && exit 0
+					svc wifi disable
+					[ $? -eq 0 ] && exit 0
+					settings put global wifi_on 0
+					[ $? -eq 0 ] && exit 0
+				fi
+				IFACE=$2
+				[ "$2" = "lan" ] && IFACE=eth0
+				[ "$2" = "wifi" ] && IFACE=wlan0
+				[ "$2" = "wifi" ] && [ "$(hostname)" = "BOSS2" ] && IFACE=wlxc04a0011cfa4
+				# TODO: detect current active interface?
+				echo "$(basename $0): about to power off the network interface: $IFACE"
+				sudo ip link set dev $IFACE down
+				[ $? -eq 0 ] && exit 0
+				sudo ifdown $IFACE
+				[ $? -eq 0 ] && exit 0
+				sudo ifconfig $IFACE down
+				exit $?
+			;;
+		esac
+	;;
+
+	bluetooth|bt )
+		case "$CMD" in
+			on|up )
+				if [ ! -z "$ANDROID_ROOT" ]; then
+					svc bluetooth enable
+					settings put global bluetooth_on 1
+					settings put global bluetooth_disabled_profiles 1
+					exit $?
+				fi
+				service bluetooth start
+				systemctl start bluetooth
+				rfkill unblock bluetooth
+				# TODO: bt-device --set Powered 1
+				sudo hciconfig hci0 up
+				hciconfig
+				exit $?
+			;;
+			off|down )
+				if [ ! -z "$ANDROID_ROOT" ]; then
+					svc bluetooth disable
+					settings put global bluetooth_on 0
+					settings put global bluetooth_disabled_profiles 0
+					exit $?
+				fi
+				rfkill block bluetooth
+				sudo hciconfig hci0 down
+				hciconfig
+				exit $?
+			;;
+		esac
+	;;
+
+	smartplug )
+		case "$CMD" in
+			status|check )
+				broadlink_cli $MY_BROADLINK_SP2_DEVICE --check
+				echo -n "energy consumption from device (in W): "
+				broadlink_cli $MY_BROADLINK_SP2_DEVICE --energy
+				exit $?
+			;;
+			on|up )
+				broadlink_cli $MY_BROADLINK_SP2_DEVICE  --turnon
+				exit $?
+			;;
+			off|down )
+				broadlink_cli $MY_BROADLINK_SP2_DEVICE  --turnoff
+				exit $?
+			;;
+		esac
+	;;
 		
-		* ) # default case
-			echo "$(basename $0) error: no target specified" >&2
-			exit 1
-		;;
-	esac
-;;
+	*sd*|*hd* )
+		[ -b "/dev/$2" ] && TARGET=/dev/$2
+		case "$CMD" in
+			off|down )
+				echo "$(basename $0): about to power off the storage device: $TARGET"
+				# using udisksctl
+				sudo udisksctl unmount -b $TARGET
+				sudo udisksctl power-off -b $TARGET
+				# using udisks  http://superuser.com/questions/430438/powering-down-external-hard-drive-flash-drive-etc-using-the-command-line-in-li
+				udisks --unmount $TARGET
+				udisks --detach $TARGET
+				# using hdparam 
+				#sudo hdparm -Y $TARGET
+				# using eject  http://stackoverflow.com/questions/13224509/linux-ubuntu-safely-remove-usb-flash-disk-via-command-line
+				#eject $TARGET
+				[ $? -eq 0 ] && exit 0
+				exit $?
+				;;
+		esac
+	;;
+
+	tasmota )  # https://tasmota.github.io/docs/Commands/
+		case "$CMD" in
+			on|up|status )
+				#TODO: wake up from sleep via serial cmd
+				_send_tasmota_cmd "Status"
+				exit $?
+			;;
+			sleep )
+				#_send_tasmota_cmd "Restart 9"  # enter deepsleep
+				_send_tasmota_cmd "Restart 8"  # enter lightsleep
+				exit $?
+			;;
+			off|down )
+				_send_tasmota_cmd "Restart 2"
+				exit $?
+			;;
+			cycle|reset|reboot|restart )
+				_reset_tasmota_cmd
+				exit $?
+			;;
+		esac
+	;;
+	
+	plug1 )  # device plugged to my SCS Sentinel HCN0063 multiplug (RF 433Mhz, port 1) https://www.amazon.it/gp/product/B07RLM4WGS/
+		case "$CMD" in
+			on|up )
+				# using tasmota
+				_send_tasmota_cmd "RfSend 0x445533, 24, 1, 10, 174"
+				[ $? -eq 0 ] && exit 0
+				# using ROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send 'b1c00802009f06000400036e0400042104050400026f061012040611070f0710120406100611061011060610110506111105061011060511061110061105061006111007100605ad06101106061006110511110506110511061110060511110506111007051110060511061110061106051105111105110704ad0611110506100611061011060511051106101107051110060511110506120f070511051111051106051204121006110505ae0512100605110511051111070511051105111105061011070511100605111106051106110f0710070412041210070f0705ad05121006061105110511110505120610061110060511110605111007051111060412051110061107041204121006100605ae05121006051105110611100605120511051111050611100705111006051111060611051110061105051205111007100605ad06111007051105110511110606100611051111060511100606111007041210060511051111061007041205111006110605ae05111105051205120511100605110511051210070511110505111106051110070511051210061006061105111106100605ad0611100705110511051111050711051105111105051111070511100605111105051206110f071106041205111006110704ae0511100606110511061110060511051106120f0705111006051111060611100605110511051205120511051105110511050005dc'
+				exit $?
+			;;
+			off|down )
+				# using tasmota
+				_send_tasmota_cmd "RfSend 0x44553C, 24, 1, 10, 174"
+				[ $? -eq 0 ] && exit 0
+				# using BROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send 'b1c09601009f06000710120407100610061011060610061006111105070f110606101205051111050610071011061006100611050611051205ac061111050611051105111106051106100611110505111106051110070511110505110512100610070f0710070412041205ae05111006051106100611100705110511051111050612100605111006051111070412041210061006110610070412041205ad06111006051105120412100606110511051210060511100606111007041210060511061110071006100610060511061105ad0512100606100611051111060412041205120f07051210060412100606110f0705120412100610070f0710070412041204af051110060512041205111007051105110512100605120f0705111106041210060611051110071006100610070511051204ae05111007051105110512100605110611051111060412100606110f07051210060412061010070f08100610060412061105ad0512100605110611051111060412041206110f07051210060412100606111007041204121006100611070f0704120511050005dc'
+				exit $?
+			;;
+		esac
+	;;
+
+	plug2|usbcharg* )  # USB charger plugged to my SCS Sentinel HCN0063 multiplug (RF 433Mhz, port 2) https://www.amazon.it/gp/product/B07RLM4WGS/
+		case "$CMD" in
+			on|up )
+				# using tasmota
+				_send_tasmota_cmd "RfSend 0x4455c3, 24, 1, 10, 174"
+				[ $? -eq 0 ] && exit 0
+				# using ROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send 'b1c0c801009f0600071011050610070f07111006051106100610110606110f07051111050511110610070f07051105120412051110070f0705ad06111006061006110511110505120511061011060511110605111006061110061106100605110511061204121006100605ad06111006061105110511110506100612051110060511110506111007051110061105110605110611051105111106100605ae05111105051204120610110605110511061110060610110605111106051110061106100704120511051105121006100705ad05111106051106110511100605120412051110070511110505121006061011061007100604120511061006111007100605ad06101107051105110511110605110512051110060512100605111007051111051106100606100611051204121006100606ad05121006041205110610110704120511051111050610110705111006051210061006100705110511051204121006100705ae04121006061006110512100605110511061011070412100605111106051110070f07100605120412061006110f07110604ae061010070511051204121006061006110512100605111105061011070412100605110511061105120412051105110512050005dc'
+				exit $?
+			;;
+			off|down )
+				# using tasmota
+				_send_tasmota_cmd "RfSend 0x4455CC, 24, 1, 10, 174"
+				[ $? -eq 0 ] && exit 0
+				# using BROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send 'b1c0c801009f060005111105071006100610120505110610071011050610110605111106051111051106100605110611100611060412041205ae0511110505110511070f110705110511051111060610100705111105051210061006100705110511110610060611051105ad0511110507110511051111050511051107101007051110060511110605120f07100610070412051110070f070511051204ad06121006051105110610110605120511051111050511110605121006051111051106100705110511100611060511051205ad0511110506100612051110060511051106101107051110060511110606101007100610060512041210070f070512041204ae06110f07051105110511110606110511051111050512100606110f07051111061006100705110511110610060511061105ad05111106051106110511100704120412061010070511110505121006061010071006110604120511100610070512041204ae06110f07051204120412100606110511051210060511100606111007041210061006100705120412100610060511061105ae051110060511061105121006051105110511110704121006051111050610110704120511051105110610061205110511050005dc'
+				exit $?
+			;;
+		esac
+	;;
+	
+	plug3|phon* )  # phon plugged to my SCS Sentinel HCN0063 multiplug (RF 433Mhz, port 3) https://www.amazon.it/gp/product/B07RLM4WGS/
+		case "$CMD" in
+			on|up )
+				# using tasmota
+				_send_tasmota_cmd "RfSend 0x445703, 24, 1, 10, 174"
+				[ $? -eq 0 ] && exit 0
+				# using ROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send 'b1c09a01009f060004000304070f1205071006100610110506100711051111050610110606101106100611050610061106100611051105111106100606ad05111105061007100611100605110512051111050611100605111106100610070511051204120511051106111006110605ad06101106051106100611100606110511051210060511110506111007100610060511061105120511051105111105110605ae05111105061007100611100605110511061011070511110505121006100610070511051204120511061105111106100605ad06111006051205110511110605110512051110060511110605111106100610060611051204120511051105111106100705ad051111060611051105111105051205110611100605111105061110070f0711060412051105110611051105121006100605ae051111060511051106111007051105110511110506120f0705111006110610060512051105110511051206101007100605ae041210070511051105111105071006110511110506111006061110060512100605110511061105110512041205110511060005dc'
+				exit $?
+			;;
+			off|down )
+				# using tasmota
+				_send_tasmota_cmd "RfSend 0x44570C, 24, 1, 10, 174"
+				[ $? -eq 0 ] && exit 0
+				# using BROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send 'b1c0f801009f0600110507100610061012040611070f071011050610120505111106100611060511051106100611100611060511051106ad05111105061006110610110605110610061110060611100605111106100610060611051204120412100610060611051105ae05111007051105110511110605110611051111050511110606101007100710060412051106110511110511060412051106ad05111105061106100611100605110610061110060611110604121006100610080411051204120511110511070412041205ad06101106051105110611100606110511051210060511100606111006110610060511061006120412100610060511061105ae0511100605110612041210060511051106101106061110060511110511061007051105110512041210070f070511051105ae05120f07051105110511110606110511051111060412100705111006110610060511061105110511110610060610061105ad05121006061105110511110605110511061110060512100605111006110610070412041205110611100611060511051105ae05121006051105110610110605120412051111050611100605121006100611050612041205110511100611060512051105ad051111060512051105111105051106110611100605111105061011070412100605110512051106110511051105110511060005dc'
+				exit $?
+			;;
+		esac
+	;;
+	
+	plug4|telefunken|tv* )  # Telefunken TV plugged to my SCS Sentinel HCN0063 multiplug (RF 433Mhz, port 4) https://www.amazon.it/gp/product/B07RLM4WGS/
+		case "$CMD" in
+			on|up )
+				# using tasmota
+				_send_tasmota_cmd "RfSend 0x445D03, 24, 1, 10, 174"
+				[ $? -eq 0 ] && exit 0
+				# using ROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send 'b1c06c01009f0600040405040600048a07101204061106100710110506100611051111050611110610061006051111060512051105110511061006111007100605ad06101106051205110511110506110512051110060511110511061007051110060512051105120511051105111106100606ad05111105061007110511110505110511070f1107051111051106100606110f070511051204120511061105111105110605ad06111006051106110511100705110511051210060511110610061106051110060511061105120511051105111106100704ae0511110506110611051110060511061006120f070511110511051106061110060511051105120610061105111105110605ae05111105051204120610110605110511051210060610110611051106051110060611051204120511051106101106100704ae051111060511051205111006061006120511100605111105061011070412100605110511061105120511051105110511060005dc'
+				exit $?
+			;;
+			off|down )
+				# using tasmota
+				_send_tasmota_cmd "RfSend 0x445D0C, 24, 1, 10, 175"
+				[ $? -eq 0 ] && exit 0
+				# using BROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send 'b1c09601009f060008101204061007100610110606100611051111050610110610061106051111050611051204120511100611050611051204ad06101205061105110511110507100611051111050511110511061007051111050512051106110511110511060412051106ad05111105070f07100611100605110511070f1106061110061006110605120f070511051105110611100710060511051105af05101106051105110611100606110511051111050611100710061006051111050612041205110511110511070511051105ad06111006051205110511110506110512041210060511110511071006051110060610061205110511100611060511051204ae051111050611051204121006051106110511110506111006110511070412100605110511061105120f0710060511051106ae0412100605110611051111060511051106101106051111061006100606111007041205110511051111070f070511051105ae051210060511051106101106051105120511100606111006110610060511100705120412041205110511061006120412050005dc'
+				exit $?
+			;;
+		esac
+	;;
+	
+	plug5 )  # device plugged to my SCS Sentinel HCN0063 multiplug (RF 433Mhz, port 5) https://www.amazon.it/gp/product/B07RLM4WGS/
+		case "$CMD" in
+			on|up )
+				# using tasmota
+				_send_tasmota_cmd "RfSend 0x447503, 24, 1, 10, 174"
+				[ $? -eq 0 ] && exit 0
+				# using ROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send 'b1c0c801009f06000711110506100610070f120506110511061011051205110605111105061011060611051105110511061106101007100605ad061011070511051105111105070f0710061110061105110507101007051111050512041206110511051105111106100606ad05111105051206110511100605110511061011070f07100605111106061010070511051105120511061105111006110604ae06111105051105110511110705110511051111051106100705111105051210060611051105110511051205111007100605ad05121006061105110511110605110611051111051106100606101007051210060511051106110511051204121006110506ae05111006051106110511110605110511061011061007100605111006061110070511051105110512051205111006110505ad07111006051105110511110705110511051111061006100705111106041210060611051105110512041205111007100704ae05111007051105110611100605110611051111061006100606101107041210060511051205120511051105111105110605ae05111105051205120511110505110511061110070f0711050511110606110f0705120412041205110611051111061006050005dc'
+				exit $?
+			;;
+			off|down )
+				# using tasmota
+				_send_tasmota_cmd "RfSend 0x44750C, 24, 1, 10, 174"
+				[ $? -eq 0 ] && exit 0
+				# using BROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send 'b1c0cc01009f060004000142071012040610070f0710120505110610061011051107100605111105061011060611051105110511110511060611051105ad05111106061006110511110506100611061011051106110506101107051110060511051106100611100710060511051106ad05111106051105110611100606100611051111051106100704121006051111050611051204120511100611060512041205ad05111105061105110611100605110610061111061006100605111106051210060412051105110611100710060511051106ad05111106051105110610110605110611051110061105110704121006051111060511051204120511110511060512041205ad0511110506110512041210060511061105120f07100610060512100605120f070511051105110611100710060511051105af04121006051105110511110705110511051111061006100705111105051210060511061105110511110610060610061105ad0512100606110511051111060412041206110f07110511060412100606111007041204120511061010080f070412051105ad061110070412051105111106051105110512100610061107041210060511100606110512041205111006110506110512050005dc'
+				exit $?
+			;;
+		esac
+	;;
+	
+	#TODO: thermostat )
+	
+	#TODO: usbswitchir )  # unbranded USB IR switcher (433MHz)
+
+	usbswitchrf ) # unbranded USB RF switcher (433MHz) https://www.aliexpress.com/item/1005006733689368.html
+		case "$CMD" in
+			on|up )
+				# using tasmota
+				_send_tasmota_cmd "RfSend 0x9448A1, 24, 1, 10, 309"
+				[ $? -eq 0 ] && exit 0
+				# using BROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send 'b1c0e200009f06000b0001331f090b1d0a1d1f090b1d1f090b1d0b1c0c1c1f090b1d0b1d1e0b091e0a1e0a1d1f0a0a1d1f090b1d0b1c0b1d0b1e1e0a090001341f080c1c0b1d1f0a0a1e1e090b1d0a1e0b1d1e0a0a1d0b1d1f090b1e091e0a1e1e0a0a1e1d0b0a1d0b1d0b1d0a1d1f090b0001331f090b1d0b1d1f080b1d1f0a0a1e0a1e091e1e0a0a1e0b1d1e0a0a1d0b1d0b1d1e0b091e1e0a0a1e0a1e091e0b1d1f090b0001331e0a0a1e0b1c1f090b1d1f090b1d0a1e0a1e1e0a0a1e091f1d0a0b1d0b1d0b1d1e090b1d1f0a0a1e091f091e0a1e1e0a0a0001341e0a0a1e091e050005dc'
+				exit $?
+			;;
+			off|down )
+				# using tasmota
+				_send_tasmota_cmd "RfSend 0x9448A2, 24, 1, 10, 309"
+				[ $? -eq 0 ] && exit 0
+				# using BROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send 'b1c0de00009f06000b00013220080b1d0b1d1e0a0a1e1e090a1e0b1d0b1c1f090b1d0b1c1f090b1e0a1e091e1e0a0a1e1d0a0b1d0b1d0b1c1f090b1d0b0001331f080b1d0b1c1f090b1d1f0a0a1e091e0a1e1e0a091e0b1d1f090b1c0b1d0b1d1e0a0a1e1e0a0a1e091e0a1e1e0a0a1d0b0001331e0a0a1d0b1d1f090b1c1f090b1d0b1d0a1d1f0a0a1e0a1d1e0a0a1e0a1d0a1e1f090b1d1e090b1d0b1d0b1d1e0a0a1e0a0001321f090b1d0b1e1e090a1e1e0a0a1d0a1e0b1d1e0a0a1d0b1d1e0a0a1e0a1e0a1e1d0a0a1e1e0a0a1e0a1d0b1d1e0a0a1d0b0001331f090b0005dc'
+				exit $?
+			;;
+		esac
+	;;
+
+	unitec* )  # Unitec 48110 kit plugs (RF)  https://www.amazon.it/gp/product/B002ZCX6C0
+		case "$CMD" in
+			on|up )
+				#TODO: using tasmota https://github.com/arendst/Tasmota/discussions/14343#discussioncomment-9605233
+				#_send_tasmota_cmd "RfSend 0x4f5e3827af1c13d78e09ebc704f5e3827af1c0907bfad3907bfad3907bfad3907bfad3907bfad3, 280, 1, 1, 174"
+				#_send_tasmota_cmd "RfSend 0x907bfad3, 32, 1, 10, 174"
+				#broadlink: _send_tasmota_cmd "RfSend 0x4f5e3827af1c13d78e09ebc704f5e3827af1c120f7f5a6907bfad3483dfd69a41efeb4c0", 288, 1, 1, 174
+				#[ $? -eq 0 ] && exit 0
+				# using BROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send 'b1c04002009f0600040b0400055f0c47230d0b250b25230c230d230d220e0a26220e0a25220f220d220e220e0a2609260a26220d230e220d0a260a260a260a250b49230c0b250b25220e230c230e220d0a26230d0a26220d220f210e220e09260b250a26220e220d220f09260a260a250b26094a220e0a250b26210e220e220d230e0926220e0a25230e220d220e220e0a2609260b25220e220e220d0b250a260a260a250b49210f0a260a25220f210e220e210f0a25220e0a26210f220e210e220f09260a260926220e220e220e0a250b250a260a260a49230e09260a26210f220e210f210e0a26220e0a26210f210e220e210f0a2609260b25230d220e210e0b250a260a260a260a49220e0a260a26220e210e220e210f0a26210e0b25210f220e210e220f09260a260a26210f210e220e0a260a2609260b290ee32d120f310e322e110f310f320d320f310e322e122d122f122d130e312e122e122d132e122d132d132d130e312f110e322e122e120d332d120f320d322e122e130de22f120d320e322e120e320e310f320d330e312f122d122e122e120d332d122f122d122f112e122e122e130c332d130e322e122d120e332d120e320e322e122d120fe22e120e320d332d120f320d320f310e320e322d132e122e122e120e322d122f112e132d122e132d122d130e322d130e312f122d120f312e130d320e322e122d130ee32d130d320e322e120e310e330e320e310e332d122f112e122e120e332d122d122f122d132d122e132d130d322e120e322d122f120d332d120e330d322f112e0005dc'
+				exit $?
+			;;
+			off|down )
+				# using tasmota
+				#_send_tasmota_cmd "RfSend 0x4c0f082607841303c20981e104c0f082607840, 32, 1, 1, 174"
+				#_send_tasmota_cmd "RfSend 0xa1829893, 32, 1, 5, 174"
+				#[ $? -eq 0 ] && exit 0
+				# using BROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send 'b1c03a02009f06000d47240c0c240c24230c240d0a250c240b250b250a250c24220e220e220d230e0a250b2609250c25220d0b250a260b250a250b49220e0b250a25230d220e0b250a250b250a260b250a25230d230d220e220d0b2609260b250a26220e0a250b250a250b260a49220e0a250b26220d220e0a250b260a250b250a250c25220d220e220e220e09260b250a260a26220d0b250a250b260a250b49220d0b250b25220e220d0b250a260b250a250b260926220e220e220e220d0a260a250b250b25220e0a250b260a250b250b48230d0a260a26220d230d0a250c250a250b250b250b25220d230d230d220e0b2609250b260a25220e0a260a260a250b250a49230c0b260b25210e230d0a260b240b250b2609260b25210e230e210e220e0a260a2609260b25210e0b260a250b250a290ee32d120f312e120e310f320e310f312f112e120e310f320e310f320d322e120e322e120e310f322e112e120e320e320e312f120e310f302f120f300f322e112e120fe22d130e322d120f310e320e310f312f112e120f310e320e320e310f322e110f312e120f300f322e112e120f320d320f312e120e320e312f120e310f312e122e120ee22e120e312f120e310f320d320f302f122e110f310f310e320f310e322e110f312f120e310e312f122e120e320d330e312f120d320e312f120d320f312f112e120fe22e110f312e120e320e310e320f312e122e120e310f320d320f310e322e120e312f120d320f312e122e120e310f320e312f110e320f312e120d320f312e122e0005dc'
+				exit $?
+			;;
+		esac
+	;;
+	
+	air* )  # Cecotec ForceClima 7100 Soundless (IR remote, ON/OFF is on the same button)  https://www.amazon.it/dp/B0BPZHKY25
+		# TODO: using tasmota
+		broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send '2600580000011f91111212121213121212121213121212361235123612361236123512361236121212131212123512361236121212131235123612361212121212131235123612121200050200011f4912000c090001214712000d05'  # 1=OFF
+		exit $?
+	;;
+	
+	desk*|lamp* )  # rechargeable bulb lamp (IR remote) https://www.amazon.it/gp/product/B0CMH18FGC/
+		case "$CMD" in
+			on|up )
+				# TODO: using tasmota
+				# using BROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send '2600580000011f8f12131212123711131212121212121212123712361212123612361236123712361112123712121212121312121213121112361213123612361236123612361237120004fc0001204912000c0a0001204812000d05'
+				exit $?
+			;;
+			off|down )
+				# TODO: using tasmota
+				# using BROADLINK RM4PRO
+				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send '2600500000011f9112121112123712121212121312121213113712351213123612361237123512361237123612121213121211121213121212131212123612371235123612371236120004fe0001204812000d05'
+				exit $?
+			;;
+		esac
+	;;
+
+	usbport )
+		case "$CMD" in
+			# TODO: status
+			on|up )
+				echo "$(basename $0): about to power on the local USB port: $TARGET"
+				sudo uhubctl -a on -p $TARGET  # on PICCIOTTO3: -l 2-6
+				exit $?
+			;;
+			off|down )
+				echo "$(basename $0): about to power off the local USB port: $TARGET"
+				sudo uhubctl -a off -p $TARGET -r 2 -w 2000  # of PICCIOTTO3: -l 2-6
+				exit $?
+			;;
+		esac
+	;;
+		
+	keyboard*|razer* )  # keyboard led backlight
+		case "$CMD" in
+			on|up )
+				openrgb --device "$OPENRGB_KEYBOARD_DEVICE_ID" --mode static --color $DEFAULT_LED_COLOR  # --brightness 25
+				if [ -e "$OPENRAZER_BASE_PATH" ]; then
+					#echo -n "1" > $OPENRAZER_BASE_PATH/matrix_effect_spectrum
+					#echo -n "20" >  $OPENRAZER_BASE_PATH/matrix_brightness
+					razer-cli -v --effect static  # effect
+					razer-cli -v --color $DEFAULT_LED_COLOR
+					razer-cli -v --brightness 10
+					razer-cli -v --sync  # sync lighting effects to all supported Razer products
+				fi
+				exit $?
+			;;
+			off|down )
+				openrgb --device "$OPENRGB_KEYBOARD_DEVICE_ID" --mode off
+				#OLD: [ -e "$OPENRAZER_BASE_PATH" ] && echo -n "1" > $OPENRAZER_BASE_PATH/matrix_effect_none
+				[ -e "$OPENRAZER_BASE_PATH" ] && razer-cli -e none
+				exit $?
+			;;
+		esac
+	;;
+
+	mouse* )   # mouse led backlight
+		case "$CMD" in
+			on|up )
+				openrgb --device "$OPENRGB_MOUSE_DEVICE_ID" --mode static --color $DEFAULT_LED_COLOR  --brightness 1
+				exit $?
+			;;
+			off|down )
+				openrgb --device "$OPENRGB_MOUSE_DEVICE_ID" --mode static --color 000000
+				exit $?
+			;;
+		esac
+	;;
+	
+	*router|*wrt|nanopi|rpi|dietpi )
+		case "$CMD" in
+			off|down )
+				# remote shutdown
+				for addr in ${MY_ROUTER_ADDR_LIST[@]}; do
+					echo "$(basename $0) info: trying ${addr}..." >&2
+					ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3  root@${addr} 'poweroff'  # -o BatchMode=yes
+					[ $? -eq 0 ] && exit 0
+					# -oHostKeyAlgorithms=+ssh-rsa -oPubkeyAcceptedAlgorithms=+ssh-rsa   https://forum.openwrt.org/t/unable-to-connect-via-ssh-no-matching-host-key-type-found/114430/24
+				done
+				exit $?
+			;;
+			cycle|reset|reboot|restart )
+				for addr in ${MY_ROUTER_ADDR_LIST[@]}; do
+					echo "$(basename $0) info: trying ${addr}..." >&2
+					ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3  root@${addr} 'reboot'   # -o BatchMode=yes  -oHostKeyAlgorithms=+ssh-rsa -oPubkeyAcceptedAlgorithms=+ssh-rsa 
+					[ $? -eq 0 ] && exit 0
+				done
+				exit $?
+			;;
+		esac
+	;;&  # cascade to the generic case -> handle status and wakeup cmds
+	
+	""|all )  # empty arg
+		case "$CMD" in
+			on|up|off|down|reboot|cycle ) 
+				echo "$(basename $0) error: no target specified, use \"self\" for this machine" >&2
+				exit 1
+			;;
+			status|check|scan )
+				nearbyscan  # moved in a separate script
+				exit 0
+			;;
+		esac
+	;;
+	
+	self|this|me )
+		case "$CMD" in
+			status )
+				uptime
+				# TODO: print status on connected devices?
+				exit 1
+			;;
+			cycle|reset|reboot|restart )
+				echo "$(basename $0): about to reset this computer"
+				echo "$(basename $0): type 'ok' and press Enter to continue"
+				read REPLY
+				if [ "$REPLY" = "ok" ]; then
+					sudo poweroff
+					poweroff
+				else
+					echo "$(basename $0): power off cancelled"
+				fi
+				exit $?
+			;;
+			off|down )
+				echo "$(basename $0): about to power off this computer"
+				if [ ! -z "$ANDROID_ROOT" ]; then
+					svc power shutdown
+					exit $?
+				fi
+				# echo "Press [ENTER] to continue or ctrl-c to cancel"
+				# sudo poweroff
+				echo "$(basename $0): type 'ok' and press Enter to continue"
+				read REPLY
+				if [ "$REPLY" = "ok" ]; then
+					sudo poweroff
+					poweroff
+				else
+					echo "$(basename $0): power off cancelled"
+				fi
+				exit $?
+			;;
+		esac
+	;;
+
+	* )  # any non-empty string
+		# TODO: detect if target is an ipaddr or a macaddr -> replace TARGET to actual IP
+		# else try to wake up a remote machine (via the passed IP or network name)
+		MAC_DB=$PENDRIVE/Documents/db/mynicmac.csv
+		[ -f $MAC_DB ] && TARGET_MAC=$(grep $TARGET, $MAC_DB | cut -f1 -d,)  # search the target MAC address in a db file (should have at least 2 columns: MAC Address,hostname)
+		# else target MAC addr must be passed as 2nd arg
+		#[ ! -f $MAC_DB ] && TARGET_MAC=$2
+		#[ ! -z "$TARGET_MAC" ] && TARGET=$(sudo arp-scan -l | awk '/00:aa:bb:cc:dd:ee/ {print $1}')
+
+		case "$CMD" in
+			status|check )
+				ping -c 3 $TARGET
+				##[ $? -eq 0 ] && exit 0
+				# try again with zeroconf
+				ping -c 3 $TARGET.local
+				# try OS scan
+				sudo nmap -O $TARGET
+				exit $?
+			;;
+			cycle|reset|reboot|restart )
+				echo "$(basename $0) info: trying rebooting $TARGET via ssh..." >&2
+				ssh -o StrictHostKeyChecking=no -o ConnectTimeout=3  root@${TARGET} 'reboot'   # -o BatchMode=yes  -oHostKeyAlgorithms=+ssh-rsa -oPubkeyAcceptedAlgorithms=+ssh-rsa 
+				exit $?
+			;;
+			on|up )
+				# power on a device via an IR blaster (must be configured separately)
+				#echo "$(basename $0): about to power on via IR blaster: $TARGET"
+				#irsend SEND_ONCE $TARGET KEY_POWER
+				#[ $? -eq 0 ] && exit 0
+				#TODO: use cec-client to control more devices?
+
+				if [ ! -z "$TARGET_MAC" ]; then
+					echo "$(basename $0): about to wake up remote machine: $TARGET_MAC"
+					# via wakeonlan perl script  
+					wakeonlan -i $TARGET $TARGET_MAC
+					[ $? -eq 0 ] && exit 0
+					powerwake $TARGET_MAC
+					[ $? -eq 0 ] && exit 0
+					etherwake $TARGET_MAC
+					[ $? -eq 0 ] && exit 0
+					wol $TARGET_MAC
+					[ $? -eq 0 ] && exit 0
+					# python oneliner from https://www.mythtv.org/wiki/Wake-on-LAN
+					echo "$(basename $0): broadcasting magic packet targeting $TARGET_MAC..."
+					#python2 -c "print('broadcasting magic packet to ' + r'\x'+\"$TARGET_MAC\".replace(':',r'\x') + '...' );"
+					python -c "import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1); s.sendto('\xff'*6+(r'\x'+\"$TARGET_MAC\".replace(':',r'\x'))*16, ('<broadcast>', 7));"
+					[ $? -eq 0 ] && exit 0
+				fi
+				# try with Intel AMT tool
+				amttool $TARGET powerup
+				[ $? -eq 0 ] && exit 0
+				# try with IPMI
+				echo "$(basename $0): try with IPMI"
+				ipmitool -v -H $TARGET -R 1 -I lanplus -U ADMIN chassis power on
+				# else
+				echo "$(basename $0): error: no tool found to power on $TARGET" >&2
+				exit 127
+			;;
+			off|down )
+				# power off a device via an IR blaster (must be configured separately)
+				#echo "$(basename $0): about to power off via IR blaster: $TARGET"
+				#[ "$TARGET" = "LG" ] && TARGET=LG_AKB72915207
+				#irsend SEND_ONCE $TARGET KEY_POWER
+				
+				#[ $? -eq 0 ] && exit 0
+				#TODO: use cec-client to control more devices?
+				
+				# else try to power off a remote machine (via the passed IP or network name)...
+				echo "$(basename $0): about to power off remote machine: $TARGET"
+				# some computer aliases with fixed IPs associated
+				#[ "$2" = "boss3" ] && TARGET=192.168....
+				# check if target machine is connectable
+				sudo ping -c 1 -W 2 $TARGET >/dev/null
+				if [ $? -ne 0 ]; then
+					# try names resolving with with mDNS
+					#TARGET=$(ipget $TARGET)
+					TARGET=$(getent hosts ${TARGET}.local | cut -f2)
+					[ -z "$TARGET" ] && TARGET=$(avahi-resolve --name ${TARGET}.local | cut -f2)
+					[ -z "$TARGET" ] && TARGET=$(nmblookup $TARGET | cut -d' ' -f1)
+					if [ -z "$TARGET" ]; then
+						echo "$(basename $0): error: target is not connectable: $TARGET" >&2
+						exit 1
+					else
+						echo "$(basename $0): target IP address found: $TARGET" >&2
+					fi
+				fi
+				# ...running Windows
+				# using samba net command http://lifehacker.com/5275652/shut-down-your-windows-pc-remotely-from-linux
+				# TODO: ask username via user input?
+				net rpc shutdown -I $TARGET -U Administrator -f
+				[ $? -eq 0 ] && exit 0
+				# using winexe  https://sourceforge.net/projects/winexe/
+				winexe //$TARGET 'shutdown -s -f'
+				[ $? -eq 0 ] && exit 0
+				# TODO: more windows alternatives
+				# else try remote ssh host on linux
+				ssh -t $TARGET 'poweroff'
+				[ $? -eq 0 ] && exit 0
+				ssh -t $TARGET.local 'poweroff'
+				[ $? -eq 0 ] && exit 0
+				ssh -t TARGET 'shutdown -h now'
+				[ $? -eq 0 ] && exit 0
+				# remote ssh host on Windows
+				ssh $TARGET 'shutdown -s -f'
+				[ $? -eq 0 ] && exit 0
+				# try with Intel AMT tool
+				amttool $TARGET powerdown
+				[ $? -eq 0 ] && exit 0
+				# try with IPMI
+				ipmitool -H $TARGET -v -I lanplus -U ADMIN chassis power off
+				# else
+				echo "$(basename $0): error: no tool found to power off $TARGET" >&2
+				exit 127
+			;;
+		esac
 esac
+
+
 
 # else
 echo "usage: $(basename $0) on|off|status [monitor|hostname|all|mac_addr|lirc_remote|device]"

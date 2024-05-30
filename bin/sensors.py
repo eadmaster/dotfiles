@@ -68,7 +68,13 @@ def get_cputemp():
 			#w = wmi.WMI()
 			#if(len(w.Win32_TemperatureProbe())!=0):
 			#	return(w.Win32_TemperatureProbe()[0].CurrentReading)
-			w = wmi.WMI(namespace="root\OpenHardwareMonitor")
+			w = None
+			try:
+				#w = wmi.WMI(namespace="root\OpenHardwareMonitor")
+				w = wmi.WMI(namespace="root\LibreHardwareMonitor")
+			except:
+				logging.error("cannot read cpu temp from LibreHardwareMonitor, is it running?")
+				return(-1)
 			sensors = w.Sensor()
 			for sensor in sensors:
 				# filter the cpu temperature sensor

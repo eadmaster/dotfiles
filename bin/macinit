@@ -433,6 +433,7 @@ alias hdpoweroff="power off"
 #alias hwinfo=lshw -> MOVED IN hwinfo
 alias raminfo="sudo dmidecode --type 17 ; sudo modprobe eeprom ; decode-dimms"
 memtest() { sudo grub-reboot "$(awk -F"'" '/Memory test/ {print $2; exit}' /boot/grub/grub.cfg)"; sudo reboot ; }  # ALTERNATIVE: memtester
+[ ! -z "$ANDROID_ROOT" ] && alias lsusb="termux-usb -l"  # https://wiki.termux.com/wiki/Termux-usb
 alias usbls=lsusb
 alias usbtree="lsusb -t"
 alias usbinfo="lsusb -v -d"  # show infos of a device id (e.g. "046d:c336")
@@ -1012,7 +1013,17 @@ alias additivesearch=chemsearch
 alias rfscan=sdrscan
 alias radioscan=sdrscan
 
-alias rtl4332mqtt="rtl_433 -F json -M utc | mosquitto_pub -t home/rtl_433 -l"  # https://github.com/merbanan/rtl_433/blob/master/examples/mqtt_rtl_433_test_client.py
+if which rtl_433 >/dev/null 2>&1 ; then
+	alias 433scan="rtl_433 -a 4"
+	alias rtl4332mqtt="rtl_433 -F json -M utc | mosquitto_pub -t home/rtl_433 -l"  # https://github.com/merbanan/rtl_433/blob/master/examples/mqtt_rtl_433_test_client.py
+fi
+
+if which broadlink_cli >/dev/null 2>&1 ; then
+	# https://github.com/mjg59/python-broadlink/tree/master/cli#universal-remotes
+	broadlinklearnir() { broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --learn ; }
+	broadlinklearnrf() { broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --rflearn --frequency 433.92 ; }
+	broadlinksend() { broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send "$@" ; }
+fi
 
 alias rfc=specs
 #alias docs=specs
@@ -1060,7 +1071,8 @@ fi
 alias jsonmin=jsoncanonize.py
 alias feed2json=xml2json.py
 alias rss2json=xml2json.py
-alias jsonui="fx " # TODO: start not expanded https://github.com/antonmedv/fx/discussions/249
+alias jsonui="export FX_NO_MOUSE=1 ; fx " # opt. start not expanded https://github.com/antonmedv/fx/discussions/249
+alias jx=jsonui
 
 
 alias alert=notify
@@ -2040,6 +2052,7 @@ if which pip >/dev/null 2>&1 ; then
     alias pip2install="pip2 install --no-deps --prefer-binary"
     alias pip2uninstall="pip2 uninstall"
     # TODO: pipdeps="pip install --no-install --verbose"   # https://stackoverflow.com/questions/11460681/listing-the-dependencies-of-a-package-using-pip
+    pipinstallgithub() { pip3 install --upgrade git+$@.git ; }
     
     alias venvinit="python3 -m venv  --system-site-packages  .venv ; source .venv/bin/activate"  # --relocatable 
     #alias venvinit='virtualenv --system-site-packages  .venv ; source .venv/local/bin/activate'
@@ -2131,7 +2144,7 @@ alias chext=renext
 if which git >/dev/null 2>&1 ; then
 	export GIT_EDITOR=nano
     alias gitstats="git remote -v ; echo -n \"$0: last 5 commits:\" ; git log --oneline -n 5 | cat ; git status"
-    alias gitlsconfigs="git config --list | cat ; cat .git/config"
+    alias gitconfigls="git config --list | cat ; cat .git/config"
     alias gitaddalluntracked="git add -A --verbose"
     alias gitaddall="git add -u --verbose"
     alias gitautoadd=gitaddall
@@ -2145,8 +2158,8 @@ if which git >/dev/null 2>&1 ; then
     alias gitcommitsls="git log --oneline"  # TODO: check commitslog of all branches
     alias gitcommitslog=gitcommitsls
     gitcommitfind() { git log --oneline --all --grep="$@" ; }  # https://stackoverflow.com/questions/7124914/how-to-search-a-git-repository-by-commit-message
-    alias gitlspendingcommits="git cherry -v"
-    alias gitunpushed=gitlspendingcommits
+    alias gitpendingcommits="git cherry -v"
+    alias gitunpushed=gitpendingcommits
     alias gitmelddiff="git difftool"
     alias gitdifftool="git difftool"
     alias gitclonerecursive="git clone --recursive"
@@ -2217,33 +2230,6 @@ alias startnointernet="unshare -n -r"  # https://unix.stackexchange.com/question
 
 alias torrentget=magnet2torrent
 alias magnetget=magnet2torrent
-
-if which crispy-doom >/dev/null 2>&1 ; then
-	alias doom="crispy-doom -iwad DOOM.WAD"
-	alias doom2="crispy-doom -iwad DOOM2.WAD"
-	alias heretic="crispy-heretic"
-	alias hexen="crispy-hexen"
-fi
-
-if which gzdoom >/dev/null 2>&1 ; then
-	alias doom="gzdoom -iwad DOOM.WAD"
-	alias doom2="gzdoom -iwad DOOM2.WAD"
-	alias heretic="gzdoom -iwad HERETIC.WAD"
-	alias hexen="gzdoom -iwad HEXEN.WAD"
-fi
-
-if which raze >/dev/null 2>&1 ; then
-	# https://github.com/ZDoom/Raze/issues/655
-	alias duke3d="raze -iwad duke3d.grp"
-	alias blood="raze -iwad blood.rff"
-	#alias sw="raze -iwad sw.grp"
-fi
-
-if which fteqw >/dev/null 2>&1 ; then
-	alias quake="fteqw -basegame id1"  # data files in ~/.config/fteqw/
-	alias quake2="fteqw -basegame baseq2"
-	alias quake3="fteqw -basegame baseq3"
-fi
 
 alias cal=cal.py
 alias calendar=cal.py
