@@ -298,8 +298,6 @@ def mpris_media_player_status_dict():
         running = False
         sys.exit(1)
 
-#def try_dbus_init():
-	
 	
 def dbus_event_listening_thread():
 	import dbus
@@ -307,30 +305,14 @@ def dbus_event_listening_thread():
 	from gi.repository import GLib
 
 	dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-	session_bus = dbus.SessionBus()
 	
-	def find_media_players(session_bus):
-		players = []
-		for service in session_bus.list_names():
-			# skip Chrome/Chromium
-			if "chrom" in service:
-				continue
-			if service.startswith("org.mpris.MediaPlayer2."):
-				players.append(service)
-		return players
+	# global vars
+	session_bus = None
+	main_loop = None
+	player_props = None
 
-	players = find_media_players(session_bus)
-	
-	if not players:
-		print("No MPRIS-compliant media players found.")
-		exit()
-		
-	player_name = players[0]
-	player_obj = session_bus.get_object(player_name, "/org/mpris/MediaPlayer2")
-	player_props = dbus.Interface(player_obj, dbus_interface="org.freedesktop.DBus.Properties")
-	player_iface = dbus.Interface(player_obj, dbus_interface="org.mpris.MediaPlayer2.Player")
-	
 	def print_song_metadata():
+		global player_props
 		metadata = player_props.Get("org.mpris.MediaPlayer2.Player", "Metadata", dbus_interface="org.freedesktop.DBus.Properties")
 		title = metadata.get("xesam:title", "Unknown Title")
 		artist = metadata.get("xesam:artist", ["Unknown Artist"])[0]
@@ -345,27 +327,12 @@ def dbus_event_listening_thread():
 		# NOTE: The following resets if it goes over 23:59:59!
 		return strftime("%M:%S", gmtime(int(seconds)))
 		# Result: '02:05'
-		
-	# init
-	print_song_metadata()
-	metadata = player_props.Get("org.mpris.MediaPlayer2.Player", "Metadata", dbus_interface="org.freedesktop.DBus.Properties")	
-	#global last_time_update
-	try:
-		#print(metadata)
-		url = metadata['xesam:url']
-		print_song_metadata()
-		song_change_event_event_handler(url)
-		position = player_props.Get("org.mpris.MediaPlayer2.Player", "Position", dbus_interface="org.freedesktop.DBus.Properties")
-		position_secs  = position / 1000000
-		last_time_update = seconds_to_lrc_time(position_secs)
-		playback_status = player_props.Get("org.mpris.MediaPlayer2.Player", "PlaybackStatus", dbus_interface="org.freedesktop.DBus.Properties")
-		state_change_event_handler(playback_status)
-	except:
-		logging.exception("")
 	
 	def on_status_changed(interface, changed, invalidated):
 		if not interface == "org.mpris.MediaPlayer2.Player":
 			return
+		
+		global player_props
 		
 		if "Metadata" in changed:
 			logging.debug("changed metadata")
@@ -410,18 +377,79 @@ def dbus_event_listening_thread():
 	
 	def on_name_owner_changed(name, old_owner, new_owner):
 		if not new_owner:  # Player closed
-			print("Player closed.")
+			logging.debug("Player closed or stopped.")
 			state_change_event_handler("stopped")
+			# reinit
+			global main_loop
+			main_loop.quit()
+			global session_bus
+			session_bus.close()
+			sleep(5)
+			wait_for_player_loop()
 			#sys.exit(1)
 			# TODO: sleep and wait for another player
-			
-	player_props.connect_to_signal("PropertiesChanged", on_status_changed)
-	player_iface.connect_to_signal("Seeked", on_seeked)
-	session_bus.add_signal_receiver(on_name_owner_changed, signal_name="NameOwnerChanged", dbus_interface="org.freedesktop.DBus")
 
-	main_loop = GLib.MainLoop()
-	main_loop.run()
+	def find_media_players(session_bus):
+		players = []
+		for service in session_bus.list_names():
+			# skip Chrome/Chromium
+			if "chrom" in service:
+				continue
+			if service.startswith("org.mpris.MediaPlayer2."):
+				players.append(service)
+		return players
+
+	def wait_for_player_loop():
+		global session_bus
+		session_bus = dbus.SessionBus()
+		players = None
+		while not players:
+			players = find_media_players(session_bus)
+			#print(players)
+			
+			if not players:
+				logging.error("No MPRIS-compliant media players found.")
+				# retry later
+				sleep(5)
+				continue
+			# else
+			
+			player_name = players[0]  # get the 1st player found
+			player_obj = session_bus.get_object(player_name, "/org/mpris/MediaPlayer2")
+			global player_props
+			player_props = dbus.Interface(player_obj, dbus_interface="org.freedesktop.DBus.Properties")
+			player_iface = dbus.Interface(player_obj, dbus_interface="org.mpris.MediaPlayer2.Player")
+			
+			# init
+			metadata = player_props.Get("org.mpris.MediaPlayer2.Player", "Metadata", dbus_interface="org.freedesktop.DBus.Properties")	
+			print_song_metadata()
+			#global last_time_update
+			try:
+				#print(metadata)
+				url = metadata['xesam:url']
+				print_song_metadata()
+				song_change_event_event_handler(url)
+				position = player_props.Get("org.mpris.MediaPlayer2.Player", "Position", dbus_interface="org.freedesktop.DBus.Properties")
+				position_secs  = position / 1000000
+				last_time_update = seconds_to_lrc_time(position_secs)
+				playback_status = player_props.Get("org.mpris.MediaPlayer2.Player", "PlaybackStatus", dbus_interface="org.freedesktop.DBus.Properties")
+				state_change_event_handler(playback_status)
+			except:
+				logging.exception("")
+			
+			player_props.connect_to_signal("PropertiesChanged", on_status_changed)
+			player_iface.connect_to_signal("Seeked", on_seeked)
+			
+			global main_loop
+			main_loop = GLib.MainLoop()
+			session_bus.add_signal_receiver(on_name_owner_changed, signal_name="NameOwnerChanged", dbus_interface="org.freedesktop.DBus")
+
+			main_loop.run()
+	# end wait_for_player_loop
 	
+	wait_for_player_loop()
+# end of dbus_event_listening_thread
+
 	
 # main program
 if __name__ == '__main__':

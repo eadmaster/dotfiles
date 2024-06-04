@@ -146,7 +146,7 @@ SoapySDRUtil --find 2> /dev/null | grep -q "rtlsdr"  # check if a SDR device is 
 if [ $? -ne 0 ]; then
 	echo "$(basename $0) info: no SDR device found..." >&2
 else
-	radioscan
+	rfscan
 fi
 
 # python-broadlink  https://github.com/mjg59/python-broadlink/tree/master/cli

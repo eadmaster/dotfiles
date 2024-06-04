@@ -4,11 +4,14 @@
 import os
 import logging
 import json
-
+import sys
 
 # register a system notifications listener
 # and prints them on stdout as json
 
+# needed for piping: set stdout buffering mode to line-buffering (equivalent to export PYTHONUNBUFFERED=1)
+sys.stdout = open(sys.stdout.fileno(), mode=sys.stdout.mode, buffering=1, closefd=False)
+    
 
 if(os.name=="nt"):
 	# assuming Windows-like OS
@@ -37,7 +40,10 @@ else:
 			text = str(m[4])
 		)
 		
+		 #= io.StringIO()
+
 		print(json.dumps(d))
+		#sys.stdout.flush()  # needed for correct piping
 	# end of handle_notification
 	
 
@@ -60,7 +66,7 @@ else:
 	
 	# WIP: read as a dict
 	#bus.add_signal_receiver(handle_notification2, dbus_interface="org.freedesktop.Notifications", signal_name="Notify")
-	                    
+     
 	# main loop
 	from gi.repository import GLib
 	GLib.MainLoop().run()

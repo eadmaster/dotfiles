@@ -926,6 +926,7 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	#electsearch() { dbgrep -Z0 "$1" $PENDRIVE/Documents/db/elect ; }
 	electfind() { find $PENDRIVE/Documents/db/elect -type f  -iname "*$1*" -print  ; }
 	pinouts() { find $PENDRIVE/Documents/db/elect/pinout -type f -not -name "*.txt" -not -name "*.md" -iname "*$1*" -print -exec xdg-open {} \; ; }
+	alias pinout=pinouts
 	fzfpinouts() { find $PENDRIVE/Documents/db/elect/pinout/ -type f -not -name "*.txt" -not -name "*.md" | fzf --exact --no-extended | xargs xdg-open ; }
 	alias schematic=pinouts
 	alias pins=pinouts
@@ -1009,12 +1010,15 @@ alias additivesearch=chemsearch
 #findmime() { dbgrep "$1" $PENDRIVE/Documents/db/hist ; }
 
 #freqgrep() { dbgrep "$1" $PENDRIVE/Documents/db/freq ; }
-#alias radiosgrep=findfreq
-alias rfscan=sdrscan
-alias radioscan=sdrscan
+#alias rfgrep=findfreq
+alias rfscan=rfscan
+alias radioscan=rfscan
+# alias radiocap=...
 
 if which rtl_433 >/dev/null 2>&1 ; then
 	alias 433scan="rtl_433 -a 4"
+	alias 868scan="rtl_433 -f 868M -a 4"  # EU 433 alt.
+	alias 915scan="rtl_433 -f 915M -a 4"  # EU 433 alt.
 	alias rtl4332mqtt="rtl_433 -F json -M utc | mosquitto_pub -t home/rtl_433 -l"  # https://github.com/merbanan/rtl_433/blob/master/examples/mqtt_rtl_433_test_client.py
 fi
 
@@ -1213,6 +1217,8 @@ alias resume=psresume
 #alias terminate="pkill -9"
 alias detach=psdetach
 pscount() { pgrep -c "$@" || ps -C "$@" --no-headers | wc -l ; }  # https://stackoverflow.com/questions/3058137/finding-process-count-in-linux-via-command-line
+killjobs() { kill -9  $(jobs -p) ; }
+#killchilds() { kill -- -$$ ; }  # 
 
 alias memdump=gcore
 

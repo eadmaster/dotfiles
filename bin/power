@@ -9,7 +9,7 @@ OPENRGB_MOUSE_DEVICE_ID=1
 # used for razer keyboards
 OPENRAZER_BASE_PATH=/sys/bus/hid/drivers/razerkbd
 
-MY_ROUTER_ADDR_LIST=("192.168.1.6"  "192.168.42.1"  "192.168.1.138"  "192.168.2.1"  "DietPi.local"  "friendlywrt.local")
+MY_ROUTER_ADDR_LIST=("DietPi.local"  "friendlywrt.local"  "192.168.1.6"  "192.168.42.1"  "192.168.1.138"  "192.168.2.1")
 
 MY_TASMOTA_ADDR=192.168.1.22
 #MY_TASMOTA_ADDR=tasmota.local
@@ -18,7 +18,8 @@ _send_tasmota_cmd() {
 	# https://tasmota.github.io/docs/Commands/
 	if [ ! -z "$ANDROID_ROOT" ]; then
 		# using app intents
-		am broadcast -a kg.serial.manager.send --es data "$1"  # https://github.com/delletenebre/SerialManager2
+		am broadcast -a kg.serial.manager.send --es data "$1"  # req. https://github.com/delletenebre/SerialManager2
+		[ $? -eq 0 ] && return
 	elif [ -c /dev/ttyUSB0 ]; then
 		# try via serial
 		echo "$1" | busybox microcom -s 115200 /dev/ttyUSB0  -t 1000
@@ -250,6 +251,10 @@ case "$TARGET" in
 			;;
 			cycle|reset|reboot|restart )
 				_reset_tasmota_cmd
+				exit $?
+			;;
+			wifi )
+				_send_tasmota_cmd "Wifi 1"  # enable wifi (set as default off on my board with "WifiConfig 0" since i only use serial control)
 				exit $?
 			;;
 		esac
