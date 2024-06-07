@@ -24,7 +24,8 @@ lrc_control_str = ''
 
 LYRICS_DISPLAY=True
 #UNUSED:
-LRC_SEARCH_PATH="/home/andy/lyrics"  # TODO: expand $HOME
+#LRC_SEARCH_PATH="/home/andy/lyrics"  # TODO: expand $HOME
+LRC_SEARCH_PATH = os.path.expandvars(os.path.expanduser("$HOME/lyrics"))
 LYRICS_TIME_OFFSET=0  # show the lyrics 1 second earlier (good for karaok)
 
 
