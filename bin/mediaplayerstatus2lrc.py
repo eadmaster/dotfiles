@@ -23,8 +23,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 lrc_control_str = ''
 
 LYRICS_DISPLAY=True
-#UNUSED:
-LRC_SEARCH_PATH="/home/andy/lyrics"  # TODO: expand $HOME
+LRC_SEARCH_PATH = os.path.expandvars(os.path.expanduser("$HOME/lyrics"))
 LYRICS_TIME_OFFSET=0  # show the lyrics 1 second earlier (good for karaok)
 
 
@@ -144,16 +143,16 @@ def song_change_event_event_handler(title):
 	if(curr_song_timer!=None):
 		curr_song_timer.cancel()
 		curr_song_timer=None
-
+	
+	lrc_file_path = ""
 	if title.startswith("file://"):
 		# handle local lrc file
 		title = title.replace("file://", "")
 		import os, urllib.parse
 		lrc_file_path = os.path.splitext(urllib.parse.unquote(title))[0] + ".lrc"
 		#logging.debug(lrc_file_path)
-		
 	else:
-		# look in the cache
+		# look in the cache (for streaming media)
 		#print(title)
 		if(title == ''):
 			# unable to find the lyrics without a title
@@ -183,8 +182,7 @@ def song_change_event_event_handler(title):
 				lrc_file_path = LRC_SEARCH_PATH + "/" + f
 				break
 		if(lrc_file_path == ""):
-			# no lrc file found
-			# DEBUG: 
+			# no lrc file found 
 			logging.debug("lyrics not found: " + title)
 			return
 	# else

@@ -14,8 +14,8 @@ import dbus.mainloop.glib
 from gi.repository import GLib
 import sys
 
-print("Monitoring progress changes in the KDE taskbar...")
-sys.stdout.flush()  # needed for correct piping
+#print("Monitoring progress changes in the KDE taskbar...")
+#sys.stdout.flush()  # needed for correct piping
 
 
 def print_progress_bar(progress_percent, bar_length=40):
@@ -28,7 +28,7 @@ def print_progress_bar(progress_percent, bar_length=40):
 	#print(f"\rProgress: [{progress_bar}] {progress_percent:.2f}%", end='')
 
  
-def handle_progress_change(bus, message, json_output=False):
+def handle_progress_change(bus, message, json_output=True):
 	args = message.get_args_list()
 	method = message.get_member()
 	path = message.get_path()

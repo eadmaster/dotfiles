@@ -2246,11 +2246,20 @@ alias calnewevent=caladd
 
 # arduino-cli aliases  https://github.com/arduino/arduino-cli
 if which arduino-cli >/dev/null 2>&1 ; then
-    alias arduinols="arduino-cli board list"
+    alias arduinodetect="arduino-cli board list"
+    alias arduinoboards=arduinodetect
     alias arduinolscores="arduino-cli core list"
     alias arduinolslibs="arduino-cli lib list"
     alias arduinolibsearch="arduino-cli lib search"
     alias arduinolibinstall="arduino-cli lib install"
+fi
+
+# micropython aliases
+if which ampy >/dev/null 2>&1 ; then
+	upyrun() { ampy --port $(arduinoserialportguess) run "$@" ; }
+	upyls() { ampy --port $(arduinoserialportguess) ls ; }
+	upyreset() { ampy --port $(arduinoserialportguess) reset ; }
+	upyflash() { ampy --port $(arduinoserialportguess) "$@" main.py ; }
 fi
 
 alias vscode=code

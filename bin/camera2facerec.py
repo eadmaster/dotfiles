@@ -17,6 +17,7 @@ import cv2
 import math
 import time
 import argparse
+import json
 
 PROGRAM_NAME = os.path.basename(sys.argv[0])
 
@@ -71,15 +72,15 @@ def getFaceBox(net, frame,conf_threshold = 0.75):
     return frameOpencvDnn , bboxes
 
 
-#TODO: replace /home/andy/caffe  CAFFE_ROOT
-faceProto = "/home/andy/caffe/opencv_face_detector.pbtxt"
-faceModel = "/home/andy/caffe/opencv_face_detector_uint8.pb"
-
-ageProto = "/home/andy/caffe/age_deploy.prototxt"
-ageModel = "/home/andy/caffe/age_net.caffemodel"
-
-genderProto = "/home/andy/caffe/gender_deploy.prototxt"
-genderModel = "/home/andy/caffe/gender_net.caffemodel"
+# download caffe models here 
+CAFFE_ROOT_DEFAULT_PATH = os.path.expandvars(os.path.expanduser("$HOME/caffe"))
+CAFFE_ROOT = os.getenv("CAFFE_ROOT", CAFFE_ROOT_DEFAULT_PATH)
+faceProto = CAFFE_ROOT + "/opencv_face_detector.pbtxt"
+faceModel = CAFFE_ROOT + "/opencv_face_detector_uint8.pb"
+ageProto = CAFFE_ROOT + "/age_deploy.prototxt"
+ageModel = CAFFE_ROOT + "/age_net.caffemodel"
+genderProto = CAFFE_ROOT + "/gender_deploy.prototxt"
+genderModel = CAFFE_ROOT + "/gender_net.caffemodel"
 
 MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
 ageList = ['0-2', '4-6', '8-12', '15-20', '25-32', '38-43', '48-53', '60-100']
@@ -90,7 +91,7 @@ ageNet = cv2.dnn.readNet(ageModel,ageProto)
 genderNet = cv2.dnn.readNet(genderModel, genderProto)
 faceNet = cv2.dnn.readNet(faceModel, faceProto)
 
-known_people_folder = "/home/andy/pendrive/Documents/img/id/faces_cropped"
+known_people_folder = "/home/andy/pendrive/Documents/img/id/faces_cropped"  # TODO: change this
 known_face_names, known_face_encodings = scan_known_people(known_people_folder)
 
 cap = cv2.VideoCapture(0)
@@ -152,7 +153,9 @@ while cv2.waitKey(1) < 0:
 			best_match_index = np.argmin(face_distances)
 			if matches[best_match_index]:
 				name = known_face_names[best_match_index]
-				print("recognized: " + name)
+				#print("recognized: " + name)
+				d = { "recognized" : { "name" : name } }
+				print(json.dumps(d))
 				cv2.putText(frameFace, name, (bbox[0], bbox[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
 		else:
 			name = ""
@@ -168,14 +171,17 @@ while cv2.waitKey(1) < 0:
 			age = ageList[agePreds[0].argmax()]
 			#print("Age Output : {}".format(agePreds))
 			#print("Age : {}, conf = {:.3f}".format(age, agePreds[0].max()))
-			print("detected face of a " + gender + ", age " + age)
+			#print("detected face of a " + gender + ", age " + age)
+			d = { "detected" : { "gender" : gender, "age" : age } }
+			print(json.dumps(d))
 			label = "{},{}".format(gender, age)
 			cv2.putText(frameFace, label, (bbox[0], bbox[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
 		# end if
 	# end for bboxes
 	
-	if len(face_locations):
-		cv2.imshow(PROGRAM_NAME, frameFace)
+	# show the picture
+	#if len(face_locations):
+	#	cv2.imshow(PROGRAM_NAME, frameFace)
 	
 	#print("time : {:.3f}".format(time.time() - t))
 

@@ -14,6 +14,8 @@ from time import sleep
 # set the default log level to DEBUG (default to WARNING, will skip INFO and DEBUG messages)
 logging.getLogger().setLevel(logging.DEBUG)
 
+# TODO: add android support
+
 def get_net_io_counter():
 	try:
 		import psutil

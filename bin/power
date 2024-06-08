@@ -61,6 +61,7 @@ esac
 
 
 case "$TARGET" in
+
 	monitor|screen|lcd )
 		if [ "$(hostname)" = "BOSS2" ] || [ "$(hostname)" = "PICCIOTTO3" ]; then
 			# power toggle LG TV IR remote
@@ -488,7 +489,27 @@ case "$TARGET" in
 			;;
 		esac
 	;;
-	
+
+	strip|ledstrip|wled-strip )  # via wled api  https://kno.wled.ge/interfaces/json-api/
+		case "$CMD" in
+			off|down )
+				curl -X POST "http://wled-strip.local/json/state" -H "Content-Type: application/json" -d '{"on":false}'
+				exit $?
+			;;
+			on|up )  # set to white
+				curl -X POST "http://wled-strip.local/json/state" -H "Content-Type: application/json" -d '{"on": true, "seg": [{"col": [[255,255,255]]}]}'
+				exit $?
+			;;
+			# TODO: allow setting custom colors:
+			#red )
+			#	curl -X POST "http://wled-strip.local/json/state" -H "Content-Type: application/json" -d '{"on": true, "seg": [{"col": [[255,0,0]]}]}'
+			#	exit $?
+			#;;
+		esac
+	;;
+
+	#TODO: 	matrix|ledmatrix|wled-matrix )  # via wled api  https://kno.wled.ge/interfaces/json-api/
+
 	*router|*wrt|nanopi|rpi|dietpi )
 		case "$CMD" in
 			off|down )
