@@ -11,6 +11,7 @@ import subprocess
 import json
 from time import sleep
 import dbus
+import json
 
 # listen for media player status changes and outputs synched lyrics lines
 #  .lrc files must match current filename path
@@ -26,6 +27,7 @@ LYRICS_DISPLAY=True
 LRC_SEARCH_PATH = os.path.expandvars(os.path.expanduser("$HOME/lyrics"))
 LYRICS_TIME_OFFSET=0  # show the lyrics 1 second earlier (good for karaok)
 
+JSON_OUTPUT_MODE=False
 
 #lrc_current_unparsed = ''
 lrc_file = None
@@ -42,7 +44,11 @@ def update_lyrics_line(full_lrc_line):
 	#print(lrc_control_str)
 	schedule_next_lyrics_line()
 	# output lrc_line
-	print(lrc_line_escaped.replace("\n",""))
+	lrc_line_escaped = lrc_line_escaped.replace("\n","")
+	if JSON_OUTPUT_MODE:
+		print(json.dumps({"player_status" : {"lyrics_line" : lrc_line_escaped}}))
+	else:
+		print(lrc_line_escaped)
 	sys.stdout.flush()  # needed for correct piping
 # end of update_lyrics_line
 
@@ -103,12 +109,16 @@ def schedule_next_lyrics_line():
 	lrc_control_str = " "
 # end of schedule_next_lyrics_line
 
+curr_state_str = "stopped"
+
 def state_change_event_handler(curr_state):
 	curr_state = str(curr_state)
 	logging.debug("state_change_event_handler: " + curr_state)
 	global lrc_control_str
 	global last_time_update
 	global curr_song_timer
+	global curr_state_str
+	curr_state_str=curr_state.lower()
 	#logging.debug(last_time_update)
 	if("stopped" in curr_state.lower()):
 		# clear the lyrics
@@ -120,11 +130,15 @@ def state_change_event_handler(curr_state):
 			curr_song_timer=None
 		if(lrc_file!=None):
 			lrc_file.seek(0)  # rewind
+		if JSON_OUTPUT_MODE:
+			print(json.dumps({"player_status" : {"playback" : "stop"}}))
 	elif("paused" in curr_state.lower()):
 		#logging.debug("PAUSED_PLAYBACK")
 		if(curr_song_timer!=None):
 			curr_song_timer.cancel()
 			curr_song_timer=None
+		if JSON_OUTPUT_MODE:
+			print(json.dumps({"player_status" : {"playback" : "pause"}}))
 	elif("playing" in curr_state.lower()):
 		# create a new timer
 		schedule_next_lyrics_line()
@@ -153,16 +167,24 @@ def song_change_event_event_handler(title):
 		#logging.debug(lrc_file_path)
 	else:
 		# look in the cache (for streaming media)
-		#print(title)
+		global player_props
+		metadata = player_props.Get("org.mpris.MediaPlayer2.Player", "Metadata", dbus_interface="org.freedesktop.DBus.Properties")
+		title = metadata.get("xesam:title", "")
 		if(title == ''):
-			# unable to find the lyrics without a title
+			# title is required
 			return
+		artist = metadata.get("xesam:artist", [""])[0]
+		#title = artist + " - " + title
+		
 		if(title.lower().endswith(".mp3")):
 			# strip the extension
 			title = title[:-4]
 		# remove some chars in the title
-		#title = title.replace(",", "")
+		title = title.replace("  ", " - ")
+		title = title.replace(",", "")
+		
 		# then look for the lrc file
+		logging.debug("looking for lrc file: "  + title.lower()+'.lrc')
 		import os
 		lrc_file_path = ""
 		for f in os.listdir(LRC_SEARCH_PATH):
@@ -358,6 +380,8 @@ def dbus_event_listening_thread():
 	def on_seeked(time):
 		position_secs  = time / 1000000
 		logging.debug("Seeked to: " + str(position_secs))
+		if JSON_OUTPUT_MODE:
+			print(json.dumps({"player_status" : {"seek" : position_secs}}))
 		global last_time_update
 		last_time_update = seconds_to_lrc_time(position_secs)
 		global curr_song_timer
@@ -403,7 +427,7 @@ def dbus_event_listening_thread():
 		players = None
 		while not players:
 			players = find_media_players(session_bus)
-			#print(players)
+			#print("players:", players)
 			
 			if not players:
 				logging.error("No MPRIS-compliant media players found.")

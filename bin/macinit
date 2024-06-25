@@ -2117,9 +2117,12 @@ alias svnget="svn checkout"
 # alias mp3gain=replaygain
 alias mp3gainall="mp3gain -r -T -c"
 
-alias imghash=mediahash
-alias audiohash=mediahash
-alias videohash=mediahash
+alias imghash=filehash
+alias audiohash=filehash
+alias videohash=filehash
+alias mediahash=filehash
+
+alias filenormalize="strip-nondeterminism -v"  # https://salsa.debian.org/reproducible-builds/strip-nondeterminism
 
 # NLP
 if which tika >/dev/null 2>&1 ; then  # Apache Tika app https://github.com/apache/tika
@@ -2259,8 +2262,14 @@ if which ampy >/dev/null 2>&1 ; then
 	upyrun() { ampy --port $(arduinoserialportguess) run "$@" ; }
 	upyls() { ampy --port $(arduinoserialportguess) ls ; }
 	upyreset() { ampy --port $(arduinoserialportguess) reset ; }
-	upyflash() { ampy --port $(arduinoserialportguess) "$@" main.py ; }
+	#upyflash() { ampy --port $(arduinoserialportguess) "$@" main.py ; }
 fi
+
+
+#if which mpremote >/dev/null 2>&1 ; then
+#	alias upyrun="mpremote a0 run"
+#	alias upyreset="mpremote a0 reset"
+#fi
 
 alias vscode=code
 
@@ -2270,6 +2279,7 @@ alias curl2python=uncurl  # https://github.com/spulec/uncurl
 #TODO: alias stdout2null
 
 alias neighbourscan=nearbyscan
+alias findnearby=nearbyscan
 #alias fing=nearbyscan
 
 alias matchsearch=netplaysearch

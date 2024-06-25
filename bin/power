@@ -39,6 +39,21 @@ _reset_tasmota_cmd() {
 	fi
 }
 
+_send_wled_cmd() {
+	# send via serial port  https://kno.wled.ge/interfaces/serial/
+	if [ ! -z "$ANDROID_ROOT" ]; then
+		# using app intents
+		am broadcast -a kg.serial.manager.send --es data "$1"  # req. https://github.com/delletenebre/SerialManager2
+		[ $? -eq 0 ] && return
+	elif [ -c /dev/ttyUSB0 ]; then
+		# try via serial
+		echo "$1" | busybox microcom -s 115200 /dev/ttyUSB0  -t 1000
+		[ $? -eq 0 ] && return
+	fi
+	# try via http
+	curl -X POST "http://wled-strip.local/json/state" -H "Content-Type: application/json" -d "$1"
+}
+
 # Windows detection
 if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
 	cmd.exe /C power "$@"
@@ -62,13 +77,15 @@ esac
 
 case "$TARGET" in
 
-	monitor|screen|lcd )
+	monitor|screen|lcd|lg* )
 		if [ "$(hostname)" = "BOSS2" ] || [ "$(hostname)" = "PICCIOTTO3" ]; then
 			# power toggle LG TV IR remote
 			#lgtv_serial poweron
 			#irsend SEND_ONCE LG_AKB72915207 KEY_POWER
 			#sendir lg_power
-			# TODO: using tasmota
+			# using tasmota
+			_send_tasmota_cmd 'IRSend {"Protocol":"NEC","Bits":32,"Data":"0x20DF10EF"}'
+			[ $? -eq 0 ] && exit 0
 			broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send "260050000001209011131213113712121213121112121213123612361213123612351237123612361213121212131037121212131113121212371236113612131236113712371235120004ff00011f4911000d05"
 			[ $? -eq 0 ] && exit 0
 		fi
@@ -238,6 +255,7 @@ case "$TARGET" in
 		case "$CMD" in
 			on|up|status )
 				#TODO: wake up from sleep via serial cmd
+				_send_tasmota_cmd "Wifi 1"  # enable wifi (set as default off on my board with "WifiConfig 0" since i only use serial control)
 				_send_tasmota_cmd "Status"
 				exit $?
 			;;
@@ -254,7 +272,7 @@ case "$TARGET" in
 				_reset_tasmota_cmd
 				exit $?
 			;;
-			wifi )
+			wifi* )
 				_send_tasmota_cmd "Wifi 1"  # enable wifi (set as default off on my board with "WifiConfig 0" since i only use serial control)
 				exit $?
 			;;
@@ -416,7 +434,9 @@ case "$TARGET" in
 	;;
 	
 	air* )  # Cecotec ForceClima 7100 Soundless (IR remote, ON/OFF is on the same button)  https://www.amazon.it/dp/B0BPZHKY25
-		# TODO: using tasmota
+		# using tasmota
+		_send_tasmota_cmd 'IRSend {"Protocol":"NEC","Bits":32,"Data":"0x01FE39C6"}'
+		[ $? -eq 0 ] && exit 0
 		broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send '2600580000011f91111212121213121212121213121212361235123612361236123512361236121212131212123512361236121212131235123612361212121212131235123612121200050200011f4912000c090001214712000d05'  # 1=OFF
 		exit $?
 	;;
@@ -424,15 +444,35 @@ case "$TARGET" in
 	desk*|lamp* )  # rechargeable bulb lamp (IR remote) https://www.amazon.it/gp/product/B0CMH18FGC/
 		case "$CMD" in
 			on|up )
-				# TODO: using tasmota
+				# using tasmota
+				_send_tasmota_cmd 'IRSend {"Protocol":"NEC","Bits":32,"Data":"0x00F740BF"}'
+				#_send_tasmota_cmd 'IRSend {"Protocol":"NEC","Bits":32,"Data":"0x00F7A05F"}'  # set 4000K light
+				sleep 1
+				_send_tasmota_cmd 'IRSend {"Protocol":"NEC","Bits":32,"Data":"0x00F7E01F"}'  # night mode
+				sleep 1
+				_send_tasmota_cmd 'IRSend {"Protocol":"NEC","Bits":32,"Data":"0x00F700FF"}'  # increase brighness
+				_send_tasmota_cmd 'IRSend {"Protocol":"NEC","Bits":32,"Data":"0x00F700FF"}'  # increase brighness
+				[ $? -eq 0 ] && exit 0
 				# using BROADLINK RM4PRO
 				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send '2600580000011f8f12131212123711131212121212121212123712361212123612361236123712361112123712121212121312121213121112361213123612361236123612361237120004fc0001204912000c0a0001204812000d05'
 				exit $?
 			;;
 			off|down )
-				# TODO: using tasmota
+				# using tasmota
+				_send_tasmota_cmd 'IRSend {"Protocol":"NEC","Bits":32,"Data":"0x00F7C03F"}'
+				[ $? -eq 0 ] && exit 0
 				# using BROADLINK RM4PRO
 				broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send '2600500000011f9112121112123712121212121312121213113712351213123612361237123512361237123612121213121211121213121212131212123612371235123612371236120004fe0001204812000d05'
+				exit $?
+			;;
+		esac
+	;;
+	
+	fingerbot|bot* )  # 433mhz fingerbot https://www.aliexpress.com/item/1005006589435592.html
+		case "$CMD" in
+			on|up|toggle )
+				# using tasmota
+				_send_tasmota_cmd 'RfSend 0x90D524, 24, 1, 10, 256'
 				exit $?
 			;;
 		esac
@@ -490,25 +530,26 @@ case "$TARGET" in
 		esac
 	;;
 
-	strip|ledstrip|wled-strip )  # via wled api  https://kno.wled.ge/interfaces/json-api/
+	strip|ledstrip|wled* )  # via wled api  https://kno.wled.ge/interfaces/json-api/
 		case "$CMD" in
 			off|down )
-				curl -X POST "http://wled-strip.local/json/state" -H "Content-Type: application/json" -d '{"on":false}'
+				_send_wled_cmd '{"on":false}'
 				exit $?
 			;;
 			on|up )  # set to white
-				curl -X POST "http://wled-strip.local/json/state" -H "Content-Type: application/json" -d '{"on": true, "seg": [{"col": [[255,255,255]]}]}'
+				_send_wled_cmd '{"on": true, "seg": [{"col": [[255,255,255]]}]}'
 				exit $?
 			;;
 			# TODO: allow setting custom colors:
 			#red )
-			#	curl -X POST "http://wled-strip.local/json/state" -H "Content-Type: application/json" -d '{"on": true, "seg": [{"col": [[255,0,0]]}]}'
+			#	_send_wled_cmd '{"on": true, "seg": [{"col": [[255,0,0]]}]}'
 			#	exit $?
 			#;;
 		esac
 	;;
 
-	#TODO: 	matrix|ledmatrix|wled-matrix )  # via wled api  https://kno.wled.ge/interfaces/json-api/
+	#NO?	matrix|ledmatrix|wled-matrix )  # via wled api  https://kno.wled.ge/interfaces/json-api/
+	# wled-matrix.local
 
 	*router|*wrt|nanopi|rpi|dietpi )
 		case "$CMD" in

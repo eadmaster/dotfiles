@@ -35,8 +35,14 @@ sleep 3
 # open browser url
 adb shell am start -a android.intent.action.VIEW -d "http://localhost:$PORT_USED#processlist-plugin"
 
+# hide both Status and Navigation bars  https://xdaforums.com/t/full-immersive-mode.3936671/
+adb shell settings put global policy_control immersive.full=*
+
 echo "$(basename $0): press ENTER to quit"
 read
+
+# unhide both Status and Navigation bars
+adb shell settings put global policy_control null*
 
 # close the browser tab with the back button  https://stackoverflow.com/questions/57631090/send-ctrl-t-over-adb-using-sendevent-or-input-keyevent
 adb shell input keyevent KEYCODE_BACK

@@ -70,7 +70,6 @@ case $INPUTFILEEXT in
 	
 	zip|rar|7z|arj|bz2|cab|cpio|gz|lzma|lha|lzh|tar|tgz|tbz|wim )
 		7z l -slt "$INPUTFILE"
-		7z l "$INPUTFILE"
 		exit $?
 		;;
 

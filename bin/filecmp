@@ -49,18 +49,14 @@ case $INPUTFILETYPE in
 		HASH1=$(metaflac --show-md5sum "$INPUTFILE")
 		# MEMO: if metaflac is not found HASH1 will remain empty
 		HASH2=$(metaflac --show-md5sum "$INPUTFILE2")
-		;;  # MEMO: intentional fall-through
+		;;
 	
 	#TODO: audio/mpeg ) extract crc-16 from "LAME Tag"
 	#
 	
-	audio/* )
-		HASH1=$(shntool md5 "$INPUTFILE")
-		HASH2=$(shntool md5 "$INPUTFILE2")
-		# ALTERNATIVE: sndfile-cmp
-		;; # MEMO: intentional fall-through
+	# audio/* ) # ALTERNATIVEs: shntool hash, sndfile-cmp
 
-	video/* )
+	audio/*|video/* )
 		HASH1=$(ffmpeg -i "$INPUTFILE" -f crc - 2>/dev/null | grep CRC)
 		HASH2=$(ffmpeg -i "$INPUTFILE2" -f crc - 2>/dev/null | grep CRC)
 		;;
@@ -116,3 +112,10 @@ fi
 
 #echo "$(basename $0) error: filetype unsupported ($INPUTFILETYPE): $INPUTFILE"  >&2
 #exit 1
+
+if which tlsh >/dev/null 2>&1 ; then
+	echo "$0: TLSH - Trend Micro Locality Sensitive Hash"
+	# sudo apt install tlsh-tools
+	tlsh -c "$INPUTFILE" -f "$INPUTFILE2"
+	echo
+fi
