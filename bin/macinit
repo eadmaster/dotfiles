@@ -736,6 +736,7 @@ alias spell=filecheck
 alias fix=filefix
 alias repair=filefix
 alias crack=filecrack
+alias p2psearch=filemirrorsearch
 
 # c-like commands
 #alias ctime=epochtime
@@ -1156,6 +1157,7 @@ if which flatpak >/dev/null 2>&1 ; then
     alias flatpakuninstall="flatpak uninstall"
     alias flatpakupdate="flatpak update"
     alias flatpakrun="flatpak run --filesystem=host --filesystem=home --share=network --device=dri --socket=pulseaudio --socket=system-bus --socket=session-bus "
+    #TODO: alias flatpakdownload="flatpak --verbose create-usb /r "
 fi
 
 # nix aliases
@@ -1758,7 +1760,7 @@ if which adb >/dev/null 2>&1 ; then
     alias androidgetdownloads="adb pull /sdcard/Download"
     alias androidgetphotos="adb pull /sdcard/Download"
     alias androidphotostransfter=androidgetphotos
-    #androidput() { DESTINATION=/sdcard/Download; [ ! -z "$2" ] && DESTINATION="$2";  adb push "$1" "$DESTINATION" ; }
+    androidput() { DESTINATION=/sdcard/Download; [ ! -z "$2" ] && DESTINATION="$2";  adb push "$1" "$DESTINATION" ; }
     alias androidpush=androidput
     alias androidcp=androidput
     alias androidls="adb shell ls"
@@ -1825,9 +1827,12 @@ fi
 
 # kdeconnect aliases
 if which kdeconnect-cli >/dev/null 2>&1 ; then
+	alias kdeconnectls="kdeconnect-cli --list-available"
 	alias androidnotificationsls="kdeconnect-cli --list-notifications"
-	alias androidput="kdeconnect-cli  --share"
+	alias androidshare="kdeconnect-cli  --share"
+	alias androidsend=androidshare
 	alias androidring="kdeconnect-cli --ring"
+	alias androidcamerasnap="kdeconnect-cli --photo /r/androidcamerasnap.jpg"
 	#alias android...="kdeconnect-cli  --execute-command "
 fi
 
@@ -2255,6 +2260,16 @@ if which arduino-cli >/dev/null 2>&1 ; then
     alias arduinolslibs="arduino-cli lib list"
     alias arduinolibsearch="arduino-cli lib search"
     alias arduinolibinstall="arduino-cli lib install"
+fi
+
+# esptool aliases
+if which esptool.py >/dev/null 2>&1 ; then
+    alias esptool=esptool.py
+    alias esp32info="esptool.py flash_id"
+    alias esp32backup="esptool.py read_flash 0 ALL "
+    alias esp32erase="esptool erase_flash"
+    alias esp32flash="esptool write_flash 0x0"
+    alias esp32reset="esptool --before default_reset --after hard_reset chip_id
 fi
 
 # micropython aliases

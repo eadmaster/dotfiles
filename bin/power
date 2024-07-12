@@ -11,7 +11,7 @@ OPENRAZER_BASE_PATH=/sys/bus/hid/drivers/razerkbd
 
 MY_ROUTER_ADDR_LIST=("DietPi.local"  "friendlywrt.local"  "192.168.1.6"  "192.168.42.1"  "192.168.1.138"  "192.168.2.1")
 
-MY_TASMOTA_ADDR=192.168.1.22
+MY_TASMOTA_ADDR=192.168.1.33
 #MY_TASMOTA_ADDR=tasmota.local
 
 _send_tasmota_cmd() {
@@ -88,6 +88,7 @@ case "$TARGET" in
 			[ $? -eq 0 ] && exit 0
 			broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send "260050000001209011131213113712121213121112121213123612361213123612351237123612361213121212131037121212131113121212371236113612131236113712371235120004ff00011f4911000d05"
 			[ $? -eq 0 ] && exit 0
+			# TODO: tiqiaa_usb_ir.py  --send-data 0x20DF10EF
 		fi
 		
 		case "$CMD" in

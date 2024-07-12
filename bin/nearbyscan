@@ -156,4 +156,5 @@ broadlink_discovery #--timeout 10
 #python -m tinytuya scan 10  # 10=MAX_TIME  # TODO: disable saving snapshot.json
 
 # smartphones paired with KDEconnect
-# kdeconnect-cli -a
+kdeconnect-cli --list-available
+# TODO: scan ADB over Wi-Fi devices

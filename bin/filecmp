@@ -113,9 +113,9 @@ fi
 #echo "$(basename $0) error: filetype unsupported ($INPUTFILETYPE): $INPUTFILE"  >&2
 #exit 1
 
-if which tlsh >/dev/null 2>&1 ; then
-	echo "$0: TLSH - Trend Micro Locality Sensitive Hash"
-	# sudo apt install tlsh-tools
-	tlsh -c "$INPUTFILE" -f "$INPUTFILE2"
-	echo
-fi
+#if which tlsh >/dev/null 2>&1 ; then
+#	echo "$0: TLSH - Trend Micro Locality Sensitive Hash"
+#	# sudo apt install tlsh-tools
+#	tlsh -c "$INPUTFILE" -f "$INPUTFILE2"
+#	echo
+#fi

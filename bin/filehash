@@ -21,6 +21,8 @@ INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
 case $INPUTFILETYPE in
 	image/* )
 		# TODO: perceptual hashes https://github.com/corona10/goimagehash/issues/62
+		# https://github.com/JohannesBuchner/imagehash
+		# ... https://github.com/topics/image-hash
 		
 		if which oiiotool >/dev/null 2>&1 ; then
 			echo "$0: cryptographic hashes via oiiotool: "
@@ -59,8 +61,10 @@ case $INPUTFILETYPE in
 			shntool hash "$INPUTFILE"
 			echo
 		fi
-			
 		;;
+	
+	#video/* )
+	# TODO: video fingerprinting
 	
 	#TODO: application/pdf )  https://github.com/qpdf/qpdf/discussions/1220
 	
@@ -77,13 +81,14 @@ esac
 
 case $INPUTFILETYPE in
 	image/*|audio/*|video/* )
-		# TODO: video fingerprinting
-
+		
+		# using ffmpeg https://ffmpeg.org/ffmpeg-formats.html#streamhash-1
 		echo "$0: content hashes via ffmpeg: "
-		ffmpeg -loglevel error -i "$INPUTFILE"  -f crc - 2>/dev/null  # faster
-		#ffmpeg -loglevel error -i "$INPUTFILE" -f md5 - 2>/dev/null
-		ffmpeg -loglevel error -i "$INPUTFILE"  -f hash - 2>/dev/null  # default to SHA256 (slowest)
-		# TODO: need to add "-map_metadata -1"
+		#NO(UNIFIED HASH audio+video+subs)? ffmpeg -loglevel error -i "$INPUTFILE"  -f hash
+		ffmpeg -loglevel error -i "$INPUTFILE" -f streamhash -hash CRC32 - 2>/dev/null
+		ffmpeg -loglevel error -i "$INPUTFILE" -f streamhash -hash MD5 - 2>/dev/null
+		#ffmpeg -loglevel error -i "$INPUTFILE"  -f streamhash - 2>/dev/null  # default to SHA256 (slowest)
+		# TODO: remove video track if missing
 		echo
 				
 		#TODO: alternative using vlc
