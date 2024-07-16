@@ -29,7 +29,10 @@ if __name__ == '__main__':
 			d = get_curr_sensors_dict()
 
 			print(json.dumps(d))
-			sys.stdout.flush()  # needed for correct piping
+			try:
+				sys.stdout.flush()  # needed for correct piping
+			except:
+				print("broken pipe")
 			
 			sleep(3)
 

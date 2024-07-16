@@ -140,6 +140,9 @@ if __name__ == '__main__':
         def find_media_players(session_bus):
             players = []
             for service in session_bus.list_names():
+                # skip Chrome/Chromium
+                if "chrom" in service:
+                    continue
                 if service.startswith("org.mpris.MediaPlayer2."):
                     players.append(service)
             return players

@@ -21,6 +21,79 @@ import json
 logging.getLogger().setLevel(logging.DEBUG)
 
 
+EXTRACT_ALBUM_ART=True
+RESIZE_ALBUM_ART_WIDTH=135  # 0=does not resize
+curr_album_art_base64_str = ""
+
+def extract_album_art2base64(file_path):
+	from mutagen.id3 import ID3, APIC
+	from mutagen.mp3 import MP3
+	from mutagen.flac import FLAC
+	from mutagen.mp4 import MP4
+	from mutagen.oggvorbis import OggVorbis
+	from PIL import Image
+	import io
+	import os
+
+	audio = None
+	image_data = None
+
+	if file_path.lower().endswith('.mp3'):
+		audio = MP3(file_path, ID3=ID3)
+		for tag in audio.tags.values():
+			if isinstance(tag, APIC):
+				image_data = tag.data
+				break
+	elif file_path.lower().endswith('.flac'):
+		audio = FLAC(file_path)
+		if audio.pictures:
+			image_data = audio.pictures[0].data
+	elif file_path.lower().endswith('.m4a') or file_path.lower().endswith('.mp4'):
+		audio = MP4(file_path)
+		if 'covr' in audio.tags:
+			image_data = audio.tags['covr'][0]
+	elif file_path.lower().endswith('.ogg') or file_path.lower().endswith('.oga'):
+		audio = OggVorbis(file_path)
+		if 'metadata_block_picture' in audio:
+			image_data = audio['metadata_block_picture'][0]
+
+	if image_data:
+		image = Image.open(io.BytesIO(image_data))
+		
+		if RESIZE_ALBUM_ART_WIDTH :
+			# Resize to the specified width while maintaining aspect ratio
+			width = 135
+			ratio = RESIZE_ALBUM_ART_WIDTH / float(image.size[0])
+			height = int(image.size[1] * ratio)
+			image = image.resize((RESIZE_ALBUM_ART_WIDTH, height), Image.LANCZOS)
+
+		# Convert to 8-bit paletted mode
+		image = image.convert('P', palette=Image.ADAPTIVE)
+		
+		# debug: save to file
+		#file_name = os.path.splitext(os.path.basename(file_path))[0] + '.bmp'
+		#output_path = os.path.join("/r", file_name)
+		#image.save(output_path, format='BMP')
+		#print(f'Album art saved to: {output_path}')
+		
+		# Save to a bytes buffer
+		buffer = io.BytesIO()
+		image.save(buffer, format='BMP')
+		buffer.seek(0)
+
+		# Encode to base64
+		import base64
+		global curr_album_art_base64_str
+		curr_album_art_base64_str = base64.b64encode(buffer.read()).decode('utf-8')
+		logging.debug("found album art")
+		return
+		
+	else:
+		logging.debug('No album art found in the file.')
+		curr_album_art_base64_str = ""
+# end of extract_album_art
+
+
 lrc_control_str = ''
 
 LYRICS_DISPLAY=True
@@ -161,9 +234,9 @@ def song_change_event_event_handler(title):
 	lrc_file_path = ""
 	if title.startswith("file://"):
 		# handle local lrc file
-		title = title.replace("file://", "")
+		lrc_file_path = title.replace("file://", "")
 		import os, urllib.parse
-		lrc_file_path = os.path.splitext(urllib.parse.unquote(title))[0] + ".lrc"
+		lrc_file_path = os.path.splitext(urllib.parse.unquote(lrc_file_path))[0] + ".lrc"
 		#logging.debug(lrc_file_path)
 	else:
 		# look in the cache (for streaming media)
@@ -216,6 +289,14 @@ def song_change_event_event_handler(title):
 	
 	# display the title before the 1st lyrics line
 	#lrc_control_str = title
+	
+	# read and extract album art from the file tags if present
+	if title.startswith("file://"):
+		# handle local lrc file
+		title = title.replace("file://", "")
+		import os, urllib.parse
+		audio_file_path = urllib.parse.unquote(title)
+		extract_album_art2base64(audio_file_path)
 	return
 # end of song_change_event_event_handler
 

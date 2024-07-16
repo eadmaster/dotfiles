@@ -20,8 +20,11 @@ if [ -z "$SERIAL_DEV" ]; then
 fi
 
 if [ -t 0 ]; then
-    echo "$0: stdin is empty, interactive mode"
+	echo "$0: stdin is empty, interactive mode"
 	arduino-cli monitor --port $SERIAL_DEV  --timestamp  --config baudrate=$SPEED
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+	# using platformio https://docs.platformio.org/en/stable/core/userguide/device/cmd_monitor.html
+	pio device monitor  --port $SERIAL_DEV --baud  $SPEED 
 	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 fi
 

@@ -67,6 +67,7 @@ if LED_MATRIX_CONNECTED:
 	#tamino_ser.write("00000000000lyrics here 2\n")
 	tamino_control_str_old = ""
 	tamino_player_str_old = ""
+	tamino_album_art_str_old = ""
 LYRICS_DISPLAY=True
 LRC_SEARCH_PATH = os.path.expandvars(os.path.expanduser("$HOME/lyrics"))
 LYRICS_TIME_OFFSET=0  # show the lyrics 1 second earlier (good for karaok)
@@ -470,6 +471,12 @@ try:
 					tamino_ser.write((player_state_str+'\n').encode())
 					tamino_player_str_old = player_state_str
 					print(player_state_str)
+				if False:
+					album_art_str = mediaplayerstatus2lrc.curr_album_art_base64_str
+					if ( tamino_album_art_str_old != album_art_str):
+						tamino_ser.write(("BMP: "+album_art_str+'\n').encode())
+						tamino_album_art_str_old = album_art_str
+						print(album_art_str)
 				# else skip the update
 				# end LED_STRIP_CONNECTED
 				

@@ -2269,7 +2269,16 @@ if which esptool.py >/dev/null 2>&1 ; then
     alias esp32backup="esptool.py read_flash 0 ALL "
     alias esp32erase="esptool erase_flash"
     alias esp32flash="esptool write_flash 0x0"
-    alias esp32reset="esptool --before default_reset --after hard_reset chip_id
+    alias esp32reset="esptool --before default_reset --after hard_reset chip_id"
+fi
+
+# platformio aliases
+if which pio  >/dev/null 2>&1 ; then
+    #alias platformiosdkinit="source $HOME/.platformio/penv/bin/activate"
+    alias platformiodevices="pio device list"
+    alias platformiobuild="pio run"
+    alias platformioclean="pio run --target clean "
+    # ... https://docs.platformio.org/en/stable/core/userguide/index.html
 fi
 
 # micropython aliases
