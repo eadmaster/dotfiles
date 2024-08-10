@@ -22,7 +22,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 
 
 EXTRACT_ALBUM_ART=True
-RESIZE_ALBUM_ART_WIDTH=135  # 0=does not resize
+RESIZE_ALBUM_ART_WIDTH=121  # 0=does not resize
 curr_album_art_base64_str = ""
 
 def extract_album_art2base64(file_path):
@@ -62,7 +62,6 @@ def extract_album_art2base64(file_path):
 		
 		if RESIZE_ALBUM_ART_WIDTH :
 			# Resize to the specified width while maintaining aspect ratio
-			width = 135
 			ratio = RESIZE_ALBUM_ART_WIDTH / float(image.size[0])
 			height = int(image.size[1] * ratio)
 			image = image.resize((RESIZE_ALBUM_ART_WIDTH, height), Image.LANCZOS)
@@ -71,10 +70,10 @@ def extract_album_art2base64(file_path):
 		image = image.convert('P', palette=Image.ADAPTIVE)
 		
 		# debug: save to file
-		#file_name = os.path.splitext(os.path.basename(file_path))[0] + '.bmp'
-		#output_path = os.path.join("/r", file_name)
-		#image.save(output_path, format='BMP')
-		#print(f'Album art saved to: {output_path}')
+		file_name = os.path.splitext(os.path.basename(file_path))[0] + '.bmp'
+		output_path = os.path.join("/r", file_name)
+		image.save(output_path, format='BMP')
+		print(f'Album art saved to: {output_path}')
 		
 		# Save to a bytes buffer
 		buffer = io.BytesIO()
@@ -495,8 +494,10 @@ def dbus_event_listening_thread():
 	def find_media_players(session_bus):
 		players = []
 		for service in session_bus.list_names():
-			# skip Chrome/Chromium
-			if "chrom" in service:
+			# skip Chrome/Chromium and other browsers
+			if "browser" in service.lower():
+				continue
+			if "chrom" in service.lower():
 				continue
 			if service.startswith("org.mpris.MediaPlayer2."):
 				players.append(service)

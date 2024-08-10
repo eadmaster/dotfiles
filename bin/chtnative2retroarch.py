@@ -145,7 +145,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='converts .cht cheat tables from Native/Emulator-handled to Retroarch-handled format')
 	parser.add_argument('infile', nargs='?', default="-", help="input file, defaults to stdin if unspecified. Supports passing urls.")
 	parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'), default=sys.stdout, help="output file, defaults to stdout if unspecified")
-	parser.add_argument("-s", "--system", default=None, help="perform system-specific conversions. Supported values: sat, n64, dc, ps1, pce.")
+	parser.add_argument("system", help="perform system-specific conversions. Supported values: sat, n64, dc, ps1, pce.")
 	args = parser.parse_args()
 
 	if args.infile == "-":

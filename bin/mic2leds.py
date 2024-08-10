@@ -471,7 +471,7 @@ try:
 					tamino_ser.write((player_state_str+'\n').encode())
 					tamino_player_str_old = player_state_str
 					print(player_state_str)
-				if False:
+				if True:
 					album_art_str = mediaplayerstatus2lrc.curr_album_art_base64_str
 					if ( tamino_album_art_str_old != album_art_str):
 						tamino_ser.write(("BMP: "+album_art_str+'\n').encode())

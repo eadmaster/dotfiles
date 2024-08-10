@@ -897,6 +897,7 @@ alias np=mynotesappend
 alias no=mynotesappend
 alias notesp=mynotesp
 
+
 if [ -d $PENDRIVE/Documents/db ]; then
 	findhave() { dbgrep "$1" $PENDRIVE/Documents/db/list/have ; }
 	alias havesearch=findhave
@@ -926,13 +927,15 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	
 	#electsearch() { dbgrep -Z0 "$1" $PENDRIVE/Documents/db/elect ; }
 	electfind() { find $PENDRIVE/Documents/db/elect -type f  -iname "*$1*" -print  ; }
-	pinouts() { find $PENDRIVE/Documents/db/elect/pinout -type f -not -name "*.txt" -not -name "*.md" -iname "*$1*" -print -exec xdg-open {} \; ; }
+	#MOVED IN A SCRIPT:
+	    #pinouts() { find $PENDRIVE/Documents/db/elect/pinout -type f -not -name "*.txt" -not -name "*.md" -iname "*$1*" -print -exec xdg-open {} \; ; }
+	    #fzfpinouts() { find $PENDRIVE/Documents/db/elect/pinout -type f | fzf --no-extended --query="$@" | xargs xdg-open ; }
+	#alias pinouts=fzfpinouts
 	alias pinout=pinouts
-	fzfpinouts() { find $PENDRIVE/Documents/db/elect/pinout/ -type f -not -name "*.txt" -not -name "*.md" | fzf --exact --no-extended | xargs xdg-open ; }
-	alias schematic=pinouts
+	#alias schematic=pinouts
 	alias pins=pinouts
-	aapinouts() { find $PENDRIVE/Documents/db/elect/pinout/asciiart -iname "*$1*" -print | xargs cat | ( aapinouts_prettyprint.sed || cat) ; }
-	#alias pinout=electart
+	#pinoutsaa() { find $PENDRIVE/Documents/db/elect/pinout/asciiart -iname "*$1*" -print | xargs cat | ( aapinouts_prettyprint.sed || cat) ; }
+	#alias aapinouts=pinoutsaa
 	#fzfasciifromzip() {  unzip -Z1 "$1" | fzf --exact --no-extended | xargs unzip -p "$1" ; } # select a file inside a zipped archive and print it
 	#electfzf() { export FZF_DEFAULT_COMMAND="find  $PENDRIVE/Documents/db/elect -iname '*.txt' -o -name '*.md' " ; fzf --exact --no-extended | xargs cat  ; }
 	
@@ -1824,7 +1827,6 @@ if which adb >/dev/null 2>&1 ; then
     #TODO: alias androidassistantquery="adb shell am start-activity com.google.android.apps.googleassistant/.AssistantActivity"
 fi
 
-
 # kdeconnect aliases
 if which kdeconnect-cli >/dev/null 2>&1 ; then
 	alias kdeconnectls="kdeconnect-cli --list-available"
@@ -2287,6 +2289,7 @@ if which ampy >/dev/null 2>&1 ; then
 	upyls() { ampy --port $(arduinoserialportguess) ls ; }
 	upyreset() { ampy --port $(arduinoserialportguess) reset ; }
 	#upyflash() { ampy --port $(arduinoserialportguess) "$@" main.py ; }
+	alias upip=pipkin  # https://github.com/aivarannamaa/pipkin
 fi
 
 

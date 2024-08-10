@@ -11,8 +11,8 @@ OPENRAZER_BASE_PATH=/sys/bus/hid/drivers/razerkbd
 
 MY_ROUTER_ADDR_LIST=("DietPi.local"  "friendlywrt.local"  "192.168.1.6"  "192.168.42.1"  "192.168.1.138"  "192.168.2.1")
 
-#MY_TASMOTA_ADDR=192.168.1.33
 MY_TASMOTA_ADDR=tasmota.local
+[ ! -z "$ANDROID_ROOT" ] &&  MY_TASMOTA_ADDR=192.168.1.18  # only req. on old android ver
 
 _send_tasmota_cmd() {
 	# https://tasmota.github.io/docs/Commands/
@@ -20,10 +20,10 @@ _send_tasmota_cmd() {
 		# using app intents
 		am broadcast -a kg.serial.manager.send --es data "$1"  # req. https://github.com/delletenebre/SerialManager2
 		[ $? -eq 0 ] && return
-	#elif [ -c /dev/ttyUSB0 ] ; then
-	#	# try via serial
-	#	echo "$1" | busybox microcom -s 115200 /dev/ttyUSB0  -t 1000
-	#	[ $? -eq 0 ] && return
+	elif [ -c /dev/ttyUSB0 ] ; then
+		# try via serial
+		echo "$1" | busybox microcom -s 115200 /dev/ttyUSB0  -t 1000
+		[ $? -eq 0 ] && return
 	elif [ -c /dev/ttyACM0 ] ; then
 		echo "$1" | busybox microcom -s 115200 /dev/ttyACM0  -t 1000
 		[ $? -eq 0 ] && return
@@ -438,12 +438,23 @@ case "$TARGET" in
 		esac
 	;;
 	
-	air*|ac )  # Cecotec ForceClima 7100 Soundless (IR remote, ON/OFF is on the same button)  https://www.amazon.it/dp/B0BPZHKY25
-		# using tasmota
-		_send_tasmota_cmd 'IRSend {"Protocol":"NEC","Bits":32,"Data":"0x01FE39C6"}'
-		[ $? -eq 0 ] && exit 0
-		broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send '2600580000011f91111212121213121212121213121212361235123612361236123512361236121212131212123512361236121212131235123612361212121212131235123612121200050200011f4912000c090001214712000d05'  # 1=OFF
-		exit $?
+	air*|ac )  # LG W09TI air conditioner
+		case "$CMD" in
+			on|up )
+				# using flipper raw file
+				#_send_tasmota_cmd 'ir tx_from_file AC_LG_SX122CL_on.ir'
+				# TODO: change passed temp https://github.com/Lucaslhm/Flipper-IRDB/commit/50b9acb7cff690b01c63d6b5f8dc4fd7debf3d9f
+				
+				# https://tasmota.github.io/docs/Tasmota-IR/#sending-irhvac-commands
+				_send_tasmota_cmd 'IRHVAC {"Vendor":"LG", "Power":"On","Mode":"Cool","FanSpeed":1,"Temp":26}'
+				#_send_tasmota_cmd 'IRHVAC {"Vendor":"LG2", "Power":"On","Mode":"Cool","FanSpeed":1,"Temp":26}'
+			;;
+			off|down )
+				# using flipper raw file
+				_send_tasmota_cmd 'ir tx_from_file AC_LG_SX122CL_off.ir'
+				exit $?
+			;;
+		esac
 	;;
 	
 	desk*|lamp* )  # rechargeable bulb lamp (IR remote) https://www.amazon.it/gp/product/B0CMH18FGC/
@@ -604,10 +615,12 @@ case "$TARGET" in
 				echo "$(basename $0): type 'ok' and press Enter to continue"
 				read REPLY
 				if [ "$REPLY" = "ok" ]; then
-					sudo poweroff
-					poweroff
+					sudo reboot
+					sudo shutdown -r
+					reboot
+					systemctl reboot -i
 				else
-					echo "$(basename $0): power off cancelled"
+					echo "$(basename $0): reset cancelled"
 				fi
 				exit $?
 			;;
@@ -623,7 +636,9 @@ case "$TARGET" in
 				read REPLY
 				if [ "$REPLY" = "ok" ]; then
 					sudo poweroff
+					sudo shutdown
 					poweroff
+					systemctl poweroff -i
 				else
 					echo "$(basename $0): power off cancelled"
 				fi
