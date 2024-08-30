@@ -924,13 +924,14 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	manualsearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/manuals ; }
 	musicsearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/music ; }
 	midisearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/midi ; }
+	manual() { fzfopen "$@" $PENDRIVE/Documents/book/man ; }
 	
 	#electsearch() { dbgrep -Z0 "$1" $PENDRIVE/Documents/db/elect ; }
-	electfind() { find $PENDRIVE/Documents/db/elect -type f  -iname "*$1*" -print  ; }
+	#electfind() { find $PENDRIVE/Documents/db/elect -type f  -iname "*$1*" -print  ; }
 	#MOVED IN A SCRIPT:
 	    #pinouts() { find $PENDRIVE/Documents/db/elect/pinout -type f -not -name "*.txt" -not -name "*.md" -iname "*$1*" -print -exec xdg-open {} \; ; }
 	    #fzfpinouts() { find $PENDRIVE/Documents/db/elect/pinout -type f | fzf --no-extended --query="$@" | xargs xdg-open ; }
-	#alias pinouts=fzfpinouts
+	pinouts() { fzfopen "$@" $PENDRIVE/Documents/db/elect ; }
 	alias pinout=pinouts
 	#alias schematic=pinouts
 	alias pins=pinouts

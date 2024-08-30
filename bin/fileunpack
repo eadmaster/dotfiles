@@ -163,8 +163,8 @@ case "$INPUTFILEEXT" in
 		exit $?
 		;;
 		
-	zip|7z|arj|iso|qcow2|vdi|vhd|vmdk|cab|xar|pkg|dmg|lzh|lha|cpio|001 )  #jar|war
-		if [ -n "$DISPLAY" ]; then
+	zip|7z|arj|iso|qcow2|vdi|vhd|vmdk|cab|xar|pkg|dmg|lzh|lha|cpio|001|fat )  #jar|war
+		if [ -n "$DISPLAY" ] && ["$INPUTFILE" != "lha"]; then
 			# use a GUI extractor if X is running 
 			ark -b --autosubfolder --destination "$OUTPUTDIR" "$INPUTFILE"
 			_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
@@ -179,6 +179,23 @@ case "$INPUTFILEEXT" in
 		exit $?
 		;;
 	
+	d64|adf|dsk|dim|hdf|xdf|fdi|hdi|nib|d77|d88|hdm )  # vintage computer disk images
+		#  https://github.com/aaru-dps/Aaru
+		rm "$OUTPUTDIR"  # Will abort if it exists
+		aaru filesystem extract "$INPUTFILE" "${OUTPUTDIR}_new"
+		exit $?
+		;;
+
+	chd )
+		# CHD version 5 is not yet supported https://github.com/aaru-dps/Aaru
+		#rm "$OUTPUTDIR"  # Will abort if it exists
+		#aaru filesystem extract "$INPUTFILE" "${OUTPUTDIR}_new"
+		
+		chdman extractcd -i "$INPUTFILE" -f -o "$OUTPUTDIR/${OUTPUTDIR}.img"
+		chdman extracthd -i "$INPUTFILE" -f -o "$OUTPUTDIR/${OUTPUTDIR}.img"
+		exit $?
+		;;
+		
 	rar )
 		rar x "$INPUTFILE" "$OUTPUTDIR"
 		exit $?
