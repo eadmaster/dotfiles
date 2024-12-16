@@ -1,0 +1,51 @@
+#!/bin/sh
+
+TARGET="$1"
+[ -z "$1" ] && TARGET="$RAMDRIVE/`date +%Y%m%S%d%H%M`.png"
+echo "$(basename $0): saving fullscreen shot in $TARGET in 5 seconds..."
+
+ksnip --fullscreen --delay 5
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else
+
+atexit_handler() {
+  xdg-open "$TARGET"
+}
+trap atexit_handler EXIT
+
+sleep 5
+
+spectacle --background --nonotify --output $TARGET  # --delay 3000 
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#gnome-screenshot
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+xwd -root | imconvert xwd:- $TARGET
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+xwd -root | xwdtopnm | pnmtopng > $TARGET
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+fbgrab $TARGET
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+scrot $TARGET
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+shutter -f -o $TARGET -e
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+ffmpeg -f x11grab -i $DISPLAY -vframes 1 $TARGET
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+import -window root $TARGET
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#mtpaint -s
+
+# MORE ALTERNATIVES https://wiki.archlinux.org/index.php/Taking_a_screenshot
+
+#else
+exit 127

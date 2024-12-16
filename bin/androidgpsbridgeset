@@ -1,0 +1,13 @@
+#!/bin/sh
+
+#sudo apt install gpsd
+
+# service gpsd stop
+adb forward tcp:4352 tcp:4352
+
+gpsd -N -D5 tcp://localhost:4352
+
+#gpsd -N -n -D5 -S 2947 tcp://localhost:4352
+# MEMO: default port is 2947
+
+#echo "$0 tip: use gpspipe -w to view incoming traffic"

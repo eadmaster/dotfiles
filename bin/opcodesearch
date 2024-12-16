@@ -1,0 +1,97 @@
+#!/bin/bash
+
+OPCODES_SEARCH_PATH=$PENDRIVE/Documents/db/opcode
+
+# args checking
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) [opcode] [arch]"
+	echo
+	echo "-L list all supported archs"
+	#echo "if arch is omitted defaults to x86"
+	echo "if opcode is omitted will list all the opcodes"
+	exit 0
+fi
+
+OPCODE=$1
+OPCODE=$( echo -n $OPCODE | tr '[A-Z]' '[a-z]' )   # force lowercase
+#TODO: check opcode aliases
+
+if [ ! -z "$2" ] ; then
+	ARCH=$2
+	ARCH=$( echo -n $ARCH | tr '[A-Z]' '[a-z]' )  # force lowercase
+	# check arch aliases
+	case "$ARCH" in
+		atmel ) ARCH=avr ;;
+		sms|zx|msx ) ARCH=z80 ;;  # gb have specific arch
+		c64|nes|pce|atari ) ARCH=6502 ;;  # snes have specific arch
+		68k|mac|amiga|smd ) ARCH=68 ;;
+		psx|ps1|ps2|n64 ) ARCH=mips ;;
+		32x|ss|sat|dc ) ARCH=sh ;;  # SuperH-4
+		#TODO: nds|psp|3ds ) ARCH=arm.as ; export RZ_ARM32_AS=/opt/devkitpro/devkitARM/bin/arm-none-eabi-as ;;
+		#TODO: nsw|switch ) ARCH=arm.as ; export RZ_ARM64_AS=devkita64 ;;
+		#TODO: ngc|wii|wiiu ) ARCH=ppc.as ; export RZ_PPC_AS=/opt/devkitpro/devkitPPC/bin/powerpc-eabi-as ;; # TODO use rz-ghidra for these https://github.com/rizinorg/rz-ghidra + https://github.com/Maschell/GhidraRPXLoader
+		#TODO: imac|360|ps3 ) ARCH=ppc.as ; RZ_PPC_AS=??? ;; # TODO use rz-ghidra for these https://github.com/rizinorg/rz-ghidra + https://github.com/Maschell/GhidraRPXLoader
+		#TODO: amd64|x86_64 ) ARCH=x86 ; ARCH_BITS=64 ;;
+	esac
+
+	#if [ -z "$ARCH" ]; then
+	#	ARCH=x86  # defaults to x86	
+	#fi
+
+fi
+if [ -z "$ARCH" ] || [ "$1" = "-L" ] ; then	
+	# echo "$0: err: missing or invalid arch." >&2
+	rz-asm -L
+	exit 1
+fi
+
+
+### QUERY USING RIZIN
+
+export RZ_ARCH=$ARCH
+[ "$ARCH" = "68" ] && RZ_ARCH=m68k
+export RZ_BITS=$ARCH_BITS
+
+echo "$0: using arch $RZ_ARCH..." >&2
+
+if [ -z "$2" ]; then
+	[ -f /usr/share/radare2/2.3.0/opcodes/$ARCH.sdb ] && RADARE_OPCODES_PATH=/usr/share/radare2/2.3.0/opcodes/$RZ_ARCH.sdb
+	[ -f /usr/share/rizin/0.2.1/opcodes/$ARCH.sdb ] && RADARE_OPCODES_PATH=/usr/share/rizin/0.2.1/opcodes/$RZ_ARCH.sdb
+	[ -f "$RADARE_OPCODES_PATH" ] && strings $RADARE_OPCODES_PATH | less
+	# TODO: replace with proper rizin command  https://github.com/rizinorg/rizin/issues/1100
+	#rizin -q -c"aoja;q"
+	exit $?
+fi
+
+# TODO: if $OPCODE is an int pass the "-d" switch
+
+rz-asm -w -a $RZ_ARCH $OPCODE
+
+# TODO: = replaced with  - in   https://github.com/rizinorg/rizin/issues/1100
+#rasm2 -B -q -a $RZ_ARCH $OPCODE | radare2 -q -a $RZ_ARCH -c"aod $OPCODE;q" =
+
+#rz-asm -B -q -a $RZ_ARCH $OPCODE | rizin -q -a $RZ_ARCH -c"ao $OPCODE;q" = #| grep -v address   # TODO: remove more fields: esilcost, disasm
+
+
+### QUERY LOCAL TXT FILES
+
+find "$OPCODES_SEARCH_PATH" -iname *$ARCH* | while read TARGET_DB_FILE
+do
+  #filename_escaped="$(printf "%q" "$TARGET_DB_FILE")"
+  #echo "$filename_escaped"
+  #echo "$0: querying $TARGET_DB_FILE" >&2
+
+	# if csv, prints header
+	#TARGET_DB_FILEEXT=$( echo -n "$TARGET_DB_FILE" | rev | cut -d'.' -f1 | rev )
+	#TARGET_DB_FILEEXT=$( echo -n $TARGET_DB_FILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+	#[ "$TARGET_DB_FILEEXT" = "csv" ] || [ "$TARGET_DB_FILEEXT" = "tsv" ] &&  head -n1 "$TARGET_DB_FILE"
+
+	# grep the file
+	grep -H -i $OPCODE  "$TARGET_DB_FILE"  | head -n5
+
+	# TODO: fixed column width, pretty print with colors?
+	#  | column -s, -t
+done
+
+# ALTERNATIVES:
+#  NO? capstone (few archs supported) https://www.capstone-engine.org/lang_python.html

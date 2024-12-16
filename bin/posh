@@ -1,0 +1,26 @@
+
+export POSIXLY_CORRECT=true
+
+command -p posh "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#bash --posix "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+bournesh "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+bsh "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+jsh "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+dash "$@" # -p 
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+sh "$@" # -p 
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

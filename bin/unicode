@@ -1,0 +1,13 @@
+
+
+#command -p unicode "$@"
+/usr/bin/unicode "$@"
+
+# via uni https://github.com/arp242/uni/
+uni "$@"
+
+# via uniutils  https://billposer.org/Software/unidesc.html
+#utf8lookup "$@"
+printf "$@" | uniname -p
+
+# TODO: web api alternative

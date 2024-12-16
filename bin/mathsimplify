@@ -1,0 +1,43 @@
+#!/bin/sh
+
+EXPRESSION="$1"
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ -z "$1" ] || [ "$1" = "-" ] ; then
+	echo "usage: $(basename $0) EXPRESSION"
+	echo
+	echo "expression examples: (ln(x))/(x), 2*sin(x)^2+2*cos(x)^2"
+	# TODO: more examples
+	exit 0
+fi
+
+echo "$(basename $0) info: gnuplot result: "  >&2
+gnuplot -e "print($EXPRESSION)"
+
+echo
+
+echo "$(basename $0) info: maxima result: "  >&2
+maxima --very-quiet -r  "$EXPRESSION ;"
+
+echo
+
+echo "$(basename $0) info: octave result: "  >&2
+octave -q --eval "syms a b c x; simplify($EXPRESSION);"
+
+echo
+
+echo "$(basename $0) info: newton web API result: "  >&2
+wget -q -O- "https://newton.now.sh/simplify/$(urlencode $EXPRESSION)"  |  python -m json.tool
+
+echo
+
+echo "$(basename $0) info: wolframalpha result: "  >&2
+wget -q -O- "http://api.wolframalpha.com/v2/query?appid=R94KW8-YVW37V864K&output=JSON&format=plaintext&input=simplify  $(urlencode $EXPRESSION)" | grep -A4 "\"subpods\""  #| jq '.queryresult.pods[] | select(.title == "Result") | .subpods[]' 
+
+echo
+
+echo "$(basename $0) info: sympy result: "  >&2
+python -c "from sympy import *; from sympy.abc import x, y, z, t; print(simplify(\"$EXPRESSION\"));"
+
+echo
+
+# TODO: using numpy

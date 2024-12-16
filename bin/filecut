@@ -1,0 +1,96 @@
+#!/bin/sh
+ 
+# args checking
+if [ "$#" -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUT_FILE RANGE [OUTPUT_FILE]"
+	echo " for media files the range format is: [[HH:]MM:]SS-[[HH:]MM:]SS"
+	echo " for images the range format is: WxH+X+Y"
+	echo " for pdf files the range format is: PAGE_START-PAGE_END (index starts from 1)"
+	echo
+	exit 1
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+fi
+
+INPUTFILE="$1"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+INPUTFILENAME="`basename \"$INPUTFILE\" | rev | cut -d'.' -f2- | rev`"
+INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
+
+RANGE=$2
+RANGE_START=$(echo $RANGE | cut -d- -f1)
+RANGE_END=$(echo $RANGE | cut -d- -f2)
+if [ -z "$RANGE_END" ]; then
+	RANGE_END=$RANGE_START
+	RANGE_START=0
+	# TODO: allow cutting till the end?
+fi
+
+OUTPUTFILE="$3"
+[ -z "$OUTPUTFILE" ] && OUTPUTFILE="${INPUTFILENAME}_cut.$INPUTFILEEXT"
+
+case $INPUTFILETYPE in
+	application/pdf )
+		[ "$RANGE_START" -eq "0" ] && RANGE_START=1
+		
+		echo "$(basename $0): cutting pages $RANGE_START-$RANGE_END: $INPUTFILE -> $OUTPUTFILE..."  >&2
+		
+		pdftk "$INPUTFILE" cat $RANGE_START-$RANGE_END output "$OUTPUTFILE" verbose
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+		mutool "$INPUTFILE" "$OUTPUTFILE" $RANGE_START-$RANGE_END
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+		pdfjam -o "$OUTPUTFILE" "$INPUTFILE" $RANGE_START-$RANGE_END
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+		qpdf --pages "$INPUTFILE" $RANGE_START-$RANGE_END -- "$INPUTFILE" "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+		gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -dFirstPage=$RANGE_START -dLastPage=$RANGE_END -sOutputFile="$OUTPUTFILE" "$INPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+		imconvert "$INPUTFILE[$RANGE_START-$RANGE_END]" $OUTPUTFILE
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		convert "$INPUTFILE[$PAGES_RANGE]" $OUTPUTFILE
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		
+		exit 127
+		;;
+	
+	#TODO: docx | xls | odt | ods | doc | rtf )  # office file formats
+	#	
+
+	image/* )
+		# avoid multiple crops generation if x and y offsets are omitted
+		X=$(echo $RANGE | cut -d+ -f1)
+		[ -z "$Z" ] && RANGE=$RANGE+0+0
+
+		echo "$(basename $0): cutting pixels $RANGE: $INPUTFILE -> $OUTPUTFILE..."  >&2
+
+		imconvert -verbose "$INPUTFILE" -crop $RANGE "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		convert -verbose "$INPUTFILE" -crop $RANGE +repage "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		# else
+		exit 127
+		;;
+		
+	video/* | audio/* )
+		echo "$(basename $0): cutting media from $RANGE_START to $RANGE_END seconds: $INPUTFILE to $OUTPUTFILE..."  >&2
+		
+		ffmpeg -ss $RANGE_START -i "$INPUTFILE" -to $RANGE_END -c copy "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		# else
+		exit 127
+		;;
+esac
+
+#else generic binary cut using dd
+#echo "$(basename $0) warn: filetype unknown ($INPUTFILETYPE), cutting raw bytes from $RANGE_START to $RANGE_END: $INPUTFILE to $OUTPUTFILE..."  >&2
+#dd if="$INPUTFILE" of="$OUTPUTFILE" bs=1 skip=$RANGE_START count=$( expr "$RANGE_END" - "$RANGE_START" )
+
+echo "$(basename $0) error: filetype unsupported ($INPUTFILETYPE): $INPUTFILE"  >&2
+exit 1

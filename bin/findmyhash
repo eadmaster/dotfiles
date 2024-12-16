@@ -1,0 +1,13 @@
+
+
+
+# clone of https://github.com/frdmn/findmyhash
+
+# syntax $0 MD4 -h "db346d691d7acc4dc2625db19f9e3f52"
+
+cd $HOME/opt/findmyhash
+python3 hash-tool.py  crack -a "$@"
+
+# TODO: rewrite:
+# https://github.com/Talanor/findmyhash/blob/master/findmyhash/services/MyAddr.py
+# https://github.com/Talanor/findmyhash/blob/master/findmyhash/services/MD5Hashing.py

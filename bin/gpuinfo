@@ -1,0 +1,69 @@
+
+vulkaninfo | head -n364
+
+echo
+
+lspci | grep VGA
+
+echo
+
+lshw -C display
+
+echo
+
+# egrep -i " connected|card detect|primary dev" /var/log/Xorg.0.log
+
+echo
+
+glxinfo -B
+
+echo
+
+# puppy-linux-specific
+report-video
+
+echo
+
+xvinfo
+
+echo
+
+clinfo
+
+echo
+
+# AMD-specific
+aticonfig --odgc
+aticonfig --odgt
+aticonfig --pxl
+fglrxinfo
+
+echo
+
+# NVIDIA-specific
+nvidia-smi
+nvclock
+
+# ... http://askubuntu.com/questions/5417/how-to-get-gpu-info
+
+echo
+
+echo "gpuinfo: current video driver (use modinfo for more details):"
+# sudo lshw -c video | grep configuration
+
+echo
+
+lspci -nnk | grep -i vga -A3 | grep 'Kernel modules':
+lspci -nnk | grep -i vga -A3 | grep 'in use'
+
+# cat /var/log/Xorg.0.log | grep driver
+
+echo
+
+/usr/lib/nux/unity_support_test -p
+
+echo
+
+# opencl test
+hashcat --force --opencl-info
+

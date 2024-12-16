@@ -1,0 +1,217 @@
+#!/bin/sh
+
+command -p csvtool "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else alternative using standard unix tools
+
+print_usage_and_exit() {
+	echo "Usage: $(basename $0) COMMAND FILE.CSV [ARGS]"
+	echo ""
+	echo "Supported commands:"
+	echo "    readable         pretty-print"
+	echo "    lint             check if well-formed"
+	echo "    col [COLUMN]     extract columns (vertical cut)"
+	echo "    grep PATTERN     extract rows (horizontal cut)"
+	echo "    sort [COLUMN]    sort rows alphabetiacally"
+	echo "    unique [COLUMN]  print unique values on the selected column"
+	echo "    sum [COLUMN]     sum numeric values of the selected column"
+	echo "    max|min [COLUMN]   find the max or min value of the selected column"
+	echo "    join COL1 COL2   join identical fields on the selected columns"
+	echo ""
+	echo "COLUMN index starts from 1."
+	echo ""
+	exit $1
+}
+
+check_separator() {
+	INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+	INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+	[ "$INPUTFILEEXT" = "tsv" ] && SEPARATOR=\	
+	#[ "$INPUTFILEEXT" = "..." ] && SEPARATOR=...
+}
+
+# default separator
+SEPARATOR=,
+# default console width
+[ -z $COLUMNS ] && COLUMNS=80
+
+case $1 in
+	-h|--help|"" )
+		print_usage_and_exit 0
+		;;
+		
+	print|pprint|view|readable|look|pretty )
+		[ ! -f "$2" ] && print_usage_and_exit 1
+		# TODO: read INPUTFILE from stdin
+		INPUTFILE="$2"
+		# TODO: read from stdin
+		
+		check_separator
+		#column -c$COLUMNS -s"$SEPARATOR" -t "$INPUTFILE"
+		#paste -d"$SEPARATOR" - - < "$INPUTFILE"
+		cat "$INPUTFILE" | tr "$SEPARATOR" "\t"
+		# TODO: better filter using sed
+		exit $?
+		;;
+
+	check|lint|clean )
+		[ ! -f "$2" ] && print_usage_and_exit 1
+		INPUTFILE="$2"
+		# TODO: read from stdin
+		
+		echo "$(basename $0) info: if no error is shown then probably the file is fine" >&2
+		python - "$INPUTFILE" <<EOF
+import sys, csv
+with open(sys.argv[1], 'rb') as csvfile:
+	dialect = csv.Sniffer().sniff(csvfile.readline(), [',',':',';','\t'])
+	csvfile.seek(0)
+	reader = csv.reader(csvfile, dialect)
+	try:
+		for row in reader:
+			pass
+	except csv.Error as e:
+		sys.exit('file %s, line %d: %s' % (filename, reader.line_num, e))
+EOF
+		# MEMO: for data valitation see http://stackoverflow.com/questions/1387644/verify-csv-against-given-format
+		exit $?
+		;;
+	
+	info )
+		[ ! -f "$2" ] && print_usage_and_exit 1
+		INPUTFILE="$2"
+		# TODO: read from stdin
+		
+python - "$INPUTFILE" <<EOF
+import sys, csv, pprint
+with open(sys.argv[1], 'rb') as csvfile:
+	dialect = csv.Sniffer().sniff(csvfile.readline(), [',',':',';','\t'])
+	csvfile.seek(0)
+	pprint.pprint(vars(dialect))
+	reader = csv.reader(csvfile, dialect)
+	data = list(reader)
+	print("fields in the header row: " + str(len(data[0])))
+	print("records found: " + str(reader.line_num))
+EOF
+		exit $?
+		;;
+
+	height|count )
+		[ ! -f "$2" ] && print_usage_and_exit 1
+		INPUTFILE="$2"
+		# TODO: read from stdin
+		
+		wc -l "$INPUTFILE" | cut -d' ' -f1
+		exit $?
+		;;
+	
+	head|take )
+		[ -z "$2" ] && print_usage_and_exit 1
+		[ ! -f "$3" ] && print_usage_and_exit 1
+		ROWSNUM=$2
+		INPUTFILE="$3"
+		# TODO: read from stdin
+		
+		head -n $ROWSNUM "$INPUTFILE"
+		exit $?
+		;;
+	
+	drop )
+		[ -z "$2" ] && print_usage_and_exit 1
+		[ ! -f "$3" ] && print_usage_and_exit 1
+		ROWSNUM=$2
+		INPUTFILE="$3"
+		# TODO: read from stdin
+		
+		tail -n $ROWSNUM "$INPUTFILE"
+		exit $?
+	;;
+	
+	cut|col|unique )
+		[ -z "$2" ] && print_usage_and_exit 1
+		[ ! -f "$3" ] && print_usage_and_exit 1
+		COLNUM=$2
+		INPUTFILE="$3"
+		# TODO: read from stdin
+		
+		check_separator
+		[ "$1" != "unique" ] && cut -d"$SEPARATOR" -f$COLNUM "$INPUTFILE" $APPENDED_PIPE
+		[ "$1" = "unique" ] && cut -d"$SEPARATOR" -f$COLNUM "$INPUTFILE" $APPENDED_PIPE | uniq
+		exit $?
+	;;
+	
+	grep )
+		[ -z "$2" ] && print_usage_and_exit 1
+		[ ! -f "$3" ] && print_usage_and_exit 1
+		INPUTFILE="$3"
+		# TODO: read from stdin
+		
+		head -n 1 "$INPUTFILE"
+		shift
+		grep "$@"
+
+		# TODO: change color for headers
+		#[ $? -eq "0" ]; echo "$0: nothing found"
+		
+		# NO? echo "name = value" pairs instead
+		
+		exit $?
+	;;
+
+	sort )
+		[ ! -f "$2" ] && echo "$(basename $0) info: reading input file from stdin" >&2
+		INPUTFILE="$2"
+		COLNUM=$3
+		[ -z "$3" ] && COLNUM=1
+		check_separator
+		sort -t"$SEPARATOR" -k$COLNUM "$INPUTFILE"
+		exit $?
+	;;
+
+	sum|max|min|avg )
+		[ ! -f "$2" ] && echo "$(basename $0) info: reading input file from stdin" >&2
+		INPUTFILE="$2"
+		COLNUM=$3
+		[ -z "$3" ] && COLNUM=1
+		check_separator
+		[ "$1" = "sum" ] && awk -F "$SEPARATOR" "{ s+=\$$COLNUM } END { print s }" "$INPUTFILE"
+		[ "$1" = "max" ] && awk -F "$SEPARATOR" "{ max=(max>\$$COLNUM)?max:\$$COLNUM } END { print max }" "$INPUTFILE"
+		[ "$1" = "min" ] && awk -F "$SEPARATOR" "{ min=(min<\$$COLNUM)?min:\$$COLNUM } END { print min }" "$INPUTFILE"
+		[ "$1" = "avg" ] && awk -F "$SEPARATOR" '{ total += $1 } END { print total/NR }' "$INPUTFILE"
+		# TODO: avg|mean, median, stdev
+		exit $?
+	;;
+	
+	join )
+		[ -z "$2" ] && print_usage_and_exit 1
+		[ -z "$3" ] && print_usage_and_exit 1
+		[ ! -f "$4" ] && print_usage_and_exit 1
+		[ ! -f "$5" ] && print_usage_and_exit 1
+		COLNUM1=$2
+		COLNUM2=$3
+		INPUTFILE1="$4"
+		INPUTFILE2="$5"
+		check_separator
+		# TODO: untested
+		join -t"$SEPARATOR" -1 $COLNUM1 -2 $COLNUM2 < { sort -t"$SEPARATOR" -k$COLNUM1 "$INPUTFILE1" } < { sort -t"$SEPARATOR" -k$COLNUM2 "$INPUTFILE2" }
+		exit $?
+	;;
+	
+	plot|histogram )
+		[ ! -f "$2" ] && echo "$(basename $0) info: reading input file from stdin" >&2
+		INPUTFILE="$2"
+		COLNUM=$3
+		[ -z "$3" ] && COLNUM=1
+		check_separator
+		gnuplot -e "set terminal dumb ; set datafile separator \"$SEPARATOR\" ; plot \"$INPUTFILE\" using $COLNUM with histogram"
+		# 	https://stackoverflow.com/questions/8345991/cant-set-border-linewidth-for-bars-of-rowstacked-histogram
+		# alternative: https://github.com/mkaz/termgraph
+		# TODO: reduce line width, rotate 90 deg http://gnuplot.sourceforge.net/docs_4.2/node237.html
+		# TODO: alternative without gnuplot
+		exit $?
+		;;
+esac
+
+#else
+echo "$(basename $0) error: usupported command: $1" >&2
+print_usage_and_exit 1

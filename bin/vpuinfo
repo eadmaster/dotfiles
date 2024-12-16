@@ -1,0 +1,11 @@
+
+vdpauinfo 
+
+vainfo
+
+grep -i vdpau /var/log/Xorg.0.log
+
+echo -n "current VDPAU_DRIVER value: "
+echo $VDPAU_DRIVER
+
+# https://wiki.archlinux.org/index.php/VDPAU

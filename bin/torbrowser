@@ -1,0 +1,25 @@
+#!/bin/sh
+
+torbrowser-launcher "$@"
+[ $? -ne 127 ] && exit $?
+
+$HOME/opt/tor-browser/start-tor-browser "$@"
+[ $? -ne 127 ] && exit $?
+
+# setup tor proxy
+service tor start
+export http_proxy=http://127.0.0.1:9050
+
+# --profile-directory=/tmp/r
+chrome --incognito --new-window --proxy-server="socks://127.0.0.1:9050" "https://check.torproject.org/"
+[ $? -ne 127 ] && exit $?
+
+#http_proxy env var is not supported natively by firefox  https://stackoverflow.com/questions/843340/firefox-proxy-settings-via-command-line
+export PROXYCHAINS_SOCKS5=9050
+proxychains firefox -private -new-instance -profile /tmp "https://check.torproject.org/"
+[ $? -ne 127 ] && exit $?
+
+# TODO: more alternative browsers
+
+# else
+exit 127

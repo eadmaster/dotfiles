@@ -1,0 +1,29 @@
+#!/bin/sh
+
+INPUT=$1
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+# using python
+python -c "import math ; print(math.radians($INPUT))"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using php
+php -r "print(deg2rad(\"$INPUT\") . \"\n\");"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using awk
+# PI = atan2(0, -1)
+awk "BEGIN{ print ( $INPUT * atan2(0, -1) / 180 ) }"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using bc
+#echo "$INPUT * 0.0174532925" | bc -l
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using qalc
+qalc "$INPUT degree to rad"
+
+#else
+exit 127
+

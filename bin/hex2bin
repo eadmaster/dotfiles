@@ -1,0 +1,19 @@
+#!/bin/sh
+
+INPUT=$1
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+# remove the "0x" prefix if present
+case $INPUT in 0x*) INPUT=$(echo $INPUT | cut -c 3-);; esac
+
+# via qalc
+#qalc "0x$INPUT to bin"  # TODO: remove starting 0s + spaces
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# via bc
+( echo -n 'obase=2;ibase=16;' ; echo $INPUT | tr '[a-z]' '[A-Z]' ) | bc
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# via python
+python -c "print(bin(int(\"$INPUT\", base=16))[2:]);"

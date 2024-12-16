@@ -1,0 +1,24 @@
+#!/bin/sh
+
+command -p sha256sum "$@"  2> /dev/null
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+busybox sha256sum "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+openssl dgst -sha256 -r "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+if [ -z "$1"]; then
+	rhash --sha256 -
+else
+	rhash --sha256 "$@"
+fi
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using rclone  https://rclone.org/commands/rclone_hashsum/
+rclone hashsum sha256  "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

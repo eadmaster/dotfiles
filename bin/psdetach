@@ -1,0 +1,49 @@
+#!/bin/sh
+
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) PPID|PATTERN"
+	echo
+	exit 0
+fi
+
+PATTERN="$1"
+
+#pid=$(ps ax | grep $PATTERN | grep -v grep | cut -f2 -d " ")
+# safer alternative using pgrep (in busybox)
+if [ -d "/proc/$PATTERN" ]; then
+	pid=$PATTERN
+else
+	pid="$(pgrep $PATTERN)"
+fi
+if [ $( echo "$pid" | wc -w ) -gt 1 ]; then
+	#pid=$( echo -n $pid | head -n1 )
+	pid=$(echo -n $pid | awk '{print $1}' )
+	echo "$(basename $0) warn: more then one PID found matching $PATTERN, using the first: $pid" >&2
+elif [ -z "$pid" ] || [ ! -d "/proc/$pid" ]; then
+	echo "$(basename $0) error: process not found: $1" >&2
+	exit 1
+fi
+
+kill -STOP $pid
+#kill -20 $pid
+kill -CONT $pid
+#kill -18 $pid
+#nohup -p $pid >/dev/null 2>&1
+#exit 0
+
+# source http://stackoverflow.com/questions/625409/how-do-i-put-an-already-running-process-under-nohup
+kill -20 $pid
+kill -18 $pid
+
+# WANTED: disown a process from another shell 
+# http://stackoverflow.com/questions/9589821/disown-a-job-currently-running-under-another-shell
+# http://unix.stackexchange.com/questions/39145/execute-command-in-remote-active-terminal
+#disown %1
+#disown $1
+reptyr $pid
+_ES=$? ; [ $? -eq 127 ] && exit $_ES
+# else
+echo "$(basename $0): type \"disown\" in the shell where the process was running" >&2
+
+# ALTERNATIVE using gdb? http://stackoverflow.com/questions/625409/how-do-i-put-an-already-running-process-under-nohup?rq=1#answer-26296282
+#gdb -q -batch -ex 'call close(0)' -ex 'call close(1)' -ex 'call close(2)' -ex detach -ex quit -p $pid

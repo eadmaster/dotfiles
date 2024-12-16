@@ -1,0 +1,316 @@
+#!/bin/sh
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUT_FILE..."
+	echo
+	exit 0
+elif [ -z "$1" ] || [ "$ARG" = "-" ]; then
+	echo "$(basename $0) warn: reading input file from stdin" >&2
+	INPUTFILE="$TMPDIR/$$.tmp"
+	cat > "$INPUTFILE"
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist (skipped): $1" >&2
+	exit 1
+elif [ ! -z "$2" ]; then
+	# iterate over passed args and recursive call
+	for CURR_FILE in "$@"
+	do
+		$0 "$CURR_FILE"
+	done
+	exit $?
+fi
+
+INPUTFILE="$1"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+INPUTFILENAME="`basename \"$INPUTFILE\" | rev | cut -d'.' -f2- | rev`"
+# fix for files with multiple extensions like "gbamidi-v1.0.tar.gz"
+INPUTFILEEXT2=$( echo -n "$INPUTFILENAME" | rev | cut -d'.' -f1 | rev )
+if [ "$INPUTFILEEXT2" = "tar" ]; then
+	# concatenate the extension
+	INPUTFILEEXT="$INPUTFILEEXT2.$INPUTFILEEXT"
+	# update the filename
+	INPUTFILENAME="`echo -n \"$INPUTFILENAME\" | rev | cut -d'.' -f2- | rev`"
+fi
+INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
+
+# try to detect the input file type according on its extension (useful if file is missing or buggy)
+case $INPUTFILEEXT in
+	jpg|gif|png|tiff|tif|bmp|xpm|pbm|pgm|ppm|tga|ico|dng|crw ) INPUTFILETYPE=image/$INPUTFILEEXT ;;
+	avi|mkv|ogm|mpg|mpeg|mp4 ) INPUTFILETYPE=video/$INPUTFILEEXT ;;
+	mp3|mp2|ogg|flac|aac|ac3|a52|dts|asf|rm|wav ) INPUTFILETYPE=audio/$INPUTFILEEXT ;;
+	xml|xsd|xsl|xslt|xul|opml|svg|rdf|rss|gxl|mpd ) INPUTFILETYPE=application/xml ;;
+	json ) INPUTFILETYPE=application/json ;;
+	html|htm ) INPUTFILETYPE=text/html ;;
+	c|cpp|h|hpp ) INPUTFILETYPE=text/x-c ;;
+	java ) INPUTFILETYPE=text/x-java ;;
+	php ) INPUTFILETYPE=text/x-php ;;
+	py ) INPUTFILETYPE=text/x-python ;;
+	js ) INPUTFILETYPE=application/javascript ;;
+	txt ) INPUTFILETYPE=text/plain ;;
+	so ) INPUTFILETYPE=application/x-sharedlib ;;
+esac
+
+case $INPUTFILEEXT in
+	wim )
+		7z e -so "$INPUTFILE" 2> /dev/null | strings
+		exit $?
+		;;
+		
+	tgz|tar.gz )
+		tar -xzOf "$INPUTFILE" | strings
+		exit $?
+		;;
+	tbz|tar.bz2|tb2|tbz2 )
+		tar -xjOf "$INPUTFILE" | strings
+		exit $?
+		;;
+
+	sqlite|anki2 )
+		sqlite3 "$INPUTFILE" .dump
+		exit $?
+		;;
+	
+	rtf|odt|epub|htm|html|xhtml|md|t2t|rst|tex|text )
+		pandoc -t plain "$INPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		unoconv --format=txt --stdout  "$INPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		#TODO: libreoffice --headless --convert-to txt --outdir "$OUTPUTFILEDIR" "$INPUTFILE"
+		#mv "$OUTPUTFILEDIR/$INPUTFILENAME.$OUTPUTFILEEXT" "$OUTPUTFILE"
+		#_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		;;
+esac
+
+
+# addressbook contacts  https://sourceforge.net/projects/abook/
+if [ "$INPUTFILEEXT" = "vcf" ]; then
+	abook --convert --informat vcard --infile "$INPUTFILE" 
+fi
+if [ "$INPUTFILEEXT" = "ldif" ]; then
+	abook --convert --informat ldif --infile "$INPUTFILE" 
+fi
+	
+# MAME hiscore files  http://greatstone.free.fr/hi2txt/doc/usage.html
+if [ "$INPUTFILEEXT" = "hi" ] || [ "$INPUTFILEEXT" = "nv" ] || [ "$INPUTFILE" = "saveram" ] || [ "$INPUTFILE" = "eeprom" ] ; then
+	hi2txt -ra "$INPUTFILE"
+	exit $?
+fi
+
+# look for a specific tool in the system
+CUSTOMTOOL=$( findcommand ${INPUTFILEEXT}2txt | head -n1 )
+[ -z "$CUSTOMTOOL" ] && CUSTOMTOOL=$( findcommand ${INPUTFILEEXT}totext | head -n1 )
+if [ ! -z "$CUSTOMTOOL" ]; then
+	$CUSTOMTOOL "$INPUTFILE" -
+	_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+fi
+
+
+case $INPUTFILETYPE in
+	application/javascript | text/javascript )  # javascript source code
+		clang-format "$INPUTFILE"
+		# TODO: more alternatives
+		exit $?
+		;;
+	
+	text/x-python | text/python )  # python source code
+		yapf "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		autopep8 "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		pep8ify "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		pindent "$INPUTFILE"
+		exit $?
+		;;
+
+	application/zip | application/x-rar-compressed | application/x-7z-compressed | application/x-*-compressed | application/x-iso9660-image )
+		7z e -so "$INPUTFILE" 2> /dev/null | strings
+		exit $?
+		;;
+		
+	application/x-gzip |  application/gzip )
+		# TODO: detect tarballs? -> pass to tar ...
+		gzip -cd "$INPUTFILE" | strings
+		exit $?
+		;;
+	application/x-xz )
+		# TODO: detect tarballs? -> pass to tar ...
+		xz -cd "$INPUTFILE" | strings
+		exit $?
+		;;
+	application/x-bzip2 )
+		# TODO: detect tarballs? -> pass to tar ...
+		bzip2 -cd "$INPUTFILE" | strings
+		exit $?
+		;;
+	application/x-lzip )
+		# TODO: detect tarballs? -> pass to tar...
+		lzip -cd "$INPUTFILE" | strings
+		exit $?
+		;;
+
+	application/pdf )
+		pdftotext -raw "$INPUTFILE" -
+		exit $?
+		;;
+
+	application/json )  # just pretty print
+		# use bat syntax highlighter
+		bat "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		# TODO: remove comments, convert single quotes to double quotes  https://github.com/stedolan/jq/wiki/FAQ#processing-not-quite-valid-json
+		#  | tr "\'" "\"" 
+		cat "$INPUTFILE" | { jq . || python -m json.tool ; } 2> /dev/null
+		exit $?
+		;;
+
+	image/vnd.djvu )
+		djvutxt "$INPUTFILE" -
+		exit $?
+		;;
+		
+	application/rtf | application/vnd.openxmlformats-officedocument.* | application/vnd.ms-excel | application/vnd.oasis.opendocument.*  )  # office file formats
+		loffice --cat --headless "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		#NO? ALTERNATIVE: unzip -p "$INPUTFILE" content.xml | xmlstarlet fo
+		abiword --to=txt --to-name=fd://1 "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		antiword -f "$INPUTFILE"
+		exit $?
+		;;
+
+	application/vnd.ms-htmlhelp )  # chm
+		# WANTED: alternative printing to stdout directly
+		CHMEXTRACTDIR="$TMPDIR/$INPUTFILENAME"
+		mkdir "$CHMEXTRACTDIR"
+		extract_chmLib "$INPUTFILE" "$CHMEXTRACTDIR" > /dev/null
+		if [ $? -ne 127 ]; then
+			html2text "$CHMEXTRACTDIR"/*.htm
+			html2text "$CHMEXTRACTDIR"/*.html
+			rm -rf "$CHMEXTRACTDIR"
+			exit $?
+		fi
+		# ALTERNATIVE: archmage -c text "$INPUTFILE" "$CHMEXTRACTDIR"
+		# ALTERNATIVE: ebook-convert "$INPUTFILE" - # from calibre, no stdout support
+		exit $?
+		;;
+
+	application/xml|text/xml )  # just pretty print
+		bat "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		xmlstarlet fo "$INPUTFILE"  2> /dev/null
+		[ $? -eq 0 ] && exit $?
+		xmllint --format "$INPUTFILE"  2> /dev/null
+		exit $?
+		;;
+
+	text/html )
+		bat "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		pandoc -f html -t plain "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		html2text --ignore-links --decode-errors=ignore "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		cat "$INPUTFILE" | sed -e :a -e 's/<[^>]*>//g;/</N;//ba'
+		exit $?
+		;;
+
+	text/x-c* )  # pretty-print c-like source code
+		bat "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		clang-format "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		astyle "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		indent "$INPUTFILE"
+		exit $?
+		;;
+	
+	text/x-java )  # just pretty print
+		bat "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		clang-format "$INPUTFILE"
+		# TODO: more alternatives
+		exit $?
+		;;
+		
+	text/x-vcard )  # vCard (.vcf) pretty-printer
+		cat "$INPUTFILE" | sed -e 's/;CHARSET=UTF-8//g' -e 's/;TYPE=INTERNET//g' -e 's/;TYPE=/ /g' -e 's/^N:/NAME:/g' -e 's/^FN:/FULLNAME:/g' -e 's/^BDAY:/BIRTHDAY:/g' -e 's/^ADR/ADDRESS/g' -e 's/^X-//g' -e 's/:/: /g' -e 's/;/ /g' 
+		exit $?
+		;;
+
+	text/calendar )  # vCalendar (.ics) pretty-printer
+		cat "$INPUTFILE" | -e 's/^DTSTART:/DATE START:/g' -e 's/^DTEND:/DATE END:/g' -e 's/^TZ/TIMEZONE /g' -e 's/^RRULE:/REPETITION RULE:/g' -e 's/^X-//g' -e 's/:/: /g' -e 's/;/ /g' 
+		exit $?
+		;;
+	
+	text/troff )  # manpages
+		pandoc -f man -t plain "$INPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		groff -t -e -mandoc -Tascii  "$INPUTFILE"  # TODO: clean more garbage?
+		
+		# TODO: sed alternative  http://info.wsisiz.edu.pl/~bse26236/batutil/help/SED.HTM#11.65
+		#cat "$INPUTFILE" | sed -e "s/.`echo \\\b`//g" -e "s/.^H//g" -e "s/.\x08//g"
+		exit $?
+		;;
+
+	text/* )
+		# use bat syntax highlighter
+		bat "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		# use vim syntax highlighter  https://vim.fandom.com/wiki/Using_vim_as_a_syntax-highlighting_pager
+		# TODO: quit with Esc
+		vim -c '1' -c 'set cmdheight=1' -c 'set readonly' -c 'set nomodifiable' -c 'syntax enable' -c 'set guioptions=aiMr' -c 'nmap q :q!<CR>' -c 'nmap <Up> <C-Y>' -c 'nmap <Down> <C-E>' -c 'nmap ^V <C-F><C-G>' "$INPUTFILE"
+		[ $? -ne 127 ] && exit $?
+		# ALT: vim -c /usr/share/vim/vim80/macros/less.vim "$INPUTFILE"
+		# else just cat
+		cat "$INPUTFILE"
+		exit $?
+		;;
+
+	image/* ) # image formats
+		# show on terminal
+		# TODO: B&W mode only
+		#imgcat "$@"
+		chafa --colors=2 --size=80 "$@"
+		#viu --width 80 "$@"
+		# cacaview ...
+		# ALT. convert with jave
+		#java -jar "%~d0\SharedPrograms\JavE\App\jave.jar" image2ascii
+		exit $?
+		# TODO: detect if greyscale -> perform OCR
+		;;
+	
+	* ) # default case, just pass to an ASCII text filter
+		echo "$(basename $0) warn: unsupported file type, trying with strings..." >&2
+		cat "$INPUTFILE" | strings
+		[ $? -ne 127 ] && exit $?
+		cat "$INPUTFILE" | tr -d '\200-\377'
+		exit $?
+		;;
+esac
+
+# try with tika (lot of supported formats) https://github.com/apache/tika
+tika --text "$INPUTFILE"
+[ $? -ne 127 ] && exit $?
+
+# else try with fileconvert
+#OUTPUTFILE="$TMPDIR/$INPUTFILENAME.txt"
+#fileconvert "$INPUTFILE" "$OUTPUTFILE"
+#if [ $? -eq 0 ]; then
+#	cat "$OUTPUTFILE"
+#	exit $?
+#fi
+#OUTPUTFILE="$TMPDIR/$INPUTFILENAME.csv"
+#fileconvert "$INPUTFILE" "$OUTPUTFILE"
+#if [ $? -eq 0 ]; then
+#	cat "$OUTPUTFILE"
+#	exit $?
+#fi
+
+# else
+echo "$(basename $0) error: filetype not supported: $INPUTFILE ($INPUTFILETYPE)" >&2
+exit 1
+

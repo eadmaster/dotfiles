@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# args checking
+if [ "$#" -lt 3 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ ! -f "$3" ]; then
+	echo "Usage: $(basename $0) HEX_STRING_ORIG  HEX_STRING_REPL  INPUT_FILE"
+	echo "If HEX_STRING_REPL is shorter the output file will be smaller."
+	#echo "Will create a copy of the input file named INPUT_FILE.bak."
+	exit 0
+fi
+
+INPUT_FILE="$3"
+
+cp "$INPUT_FILE" "$INPUT_FILE.bak"
+
+# using sfk  http://stahlworks.com/dev/index.php?tool=rep
+export SFK_COLORS=theme:black  # enable colors
+sfk replace "$INPUT_FILE" -bin "/$1/$2/"  -yes
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using ucon64  https://ucon64.sourceforge.io/ucon64/readme.html
+ucon64 --nbak --hreplace=$1:$2  "$INPUT_FILE"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using bbe
+bbe -e 's/$1/$2/' $INPUT_FILE.bak -o $INPUT_FILE
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# TODO: MORE ALTERNATIVES
+# ... https://stackoverflow.com/questions/2604964/binary-sed-replacement

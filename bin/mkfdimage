@@ -1,0 +1,8 @@
+
+
+if [ -z "$1" ] ; then
+	echo "usage: $0 IMAGEFILE.img"
+	exit 0
+fi
+
+sudo dd bs=512 count=2880 if=/dev/sdb of="$1" status=progress conv=noerror,notrunc

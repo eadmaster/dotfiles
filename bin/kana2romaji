@@ -1,0 +1,38 @@
+#!/bin/sh
+ 
+# kana to romaji converter
+
+# force current locale UTF-8-based (otherwise this script may not work correctly)
+export LC_ALL=en_GB.UTF-8
+
+# using uconv
+uconv -f utf-8 -t utf-8 -x "Any-Latin;Latin-ASCII"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using kakasi (accurate, req. external dict)
+kakasi -i utf8 -o utf8 -Ha -Ka -Ea -ka "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# TODO: more alternatives:
+#mecab -O...
+#chasen...
+#juman...
+# ... http://guides.library.upenn.edu/japanesetext
+
+# using python romkan module https://pypi.python.org/pypi/romkan
+#python -c "import sys; import romkan; print(romkan.to_roma(sys.stdin.readline()))"
+#_ES=$? ; [ $_ES -ne 1 ] && exit $_ES
+
+# using python unidecode module https://pypi.python.org/pypi/Unidecode
+#python -c "import sys; import unidecode; ..."
+#_ES=$? ; [ $_ES -ne 1 ] && exit $_ES
+
+# using a standalone python script  http://halley.cc/code/?python/romaji.py
+#python "$(dirname $0)/romaji.py"
+#_ES=$? ; [ $_ES -ne 2 ] && exit $_ES
+
+# else sed alternative
+INPUT="$1"
+[ -z "$1" ] && INPUT=$(cat)
+[ -f "$1" ] && INPUT=$(cat "$1")
+echo "$INPUT" | kana2romaji.sed

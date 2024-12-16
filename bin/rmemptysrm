@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# remove empty RetroArch saves
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) DIR"
+	echo
+	exit 0
+fi
+
+INPUT_DIR=.
+[ ! -z "$1" ] && INPUT_DIR="$@"
+
+find "$INPUT_DIR" -type f | while read CURR_FILE
+do
+	CURR_FILE_MD5=$(md5sum "$CURR_FILE" | cut -d' ' -f1)
+
+	# check CURR_FILE_MD5 against a set of well-known empty save hashes
+	KNOWN_EMPTY_SAVE_HASHES_LIST=(ecb99e6ffea7be1e5419350f725da86b  3df7b33399422731e8e5615785c0536d  0829f71740aab1ab98b33eae21dee122  84d04c9d6cc8ef35bf825d51a5277699  2c063b192787ac9e7528c0e2096fc034  41d2e2c0c0edfccf76fa1c3e38bc1cf2  4899f80c65657f78035d962bfb5b3ef4  8a250fe6206a1537011166866b509ebd  36c002e515d5468e5116e0e5c54d27b9  d8f29ffd55cb1e4f77987a1e07472d66)
+	# TODO: more values
+
+	for KNOWN_EMPTY_SAVE_HASH in "${KNOWN_EMPTY_SAVE_HASHES_LIST[@]}"; do
+		if [ $KNOWN_EMPTY_SAVE_HASH = $CURR_FILE_MD5 ]; then
+			#echo "$(basename $0) info: EMPTY save: $CURR_FILE" >&2
+			rm -v "$CURR_FILE"
+		fi
+	done
+
+	# else no match found
+	#echo "$(basename $0) info: NON-empty save: $CURR_FILE" >&2
+done

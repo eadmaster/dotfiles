@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# set/overrides the max gpu frequency
+# https://unix.stackexchange.com/questions/404049/how-to-stop-intel-hd4000-from-running-at-max-clock-speed
+
+if [ "$#" -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) MAX_GPU_FREQ"
+	echo
+	exit 0
+fi
+
+MAX_GPU_FREQ=$(cat /sys/class/drm/card0/gt_RP0_freq_mhz)
+MIN_GPU_FREQ=$(cat /sys/class/drm/card0/gt_RPn_freq_mhz)
+CHOSEN_PERCENTAGE=$1
+CHOSEN_FREQUENCY=$(expr $MAX_GPU_FREQ / 100 \* $CHOSEN_PERCENTAGE)
+
+# TODO: check CHOSEN_FREQUENCY is greater than MIN_GPU_FREQ?
+
+echo "$(basename $0) info: overriding max GPU frequency to $CHOSEN_FREQUENCY" >&2
+echo -n $CHOSEN_FREQUENCY | sudo tee /sys/class/drm/card0/gt_boost_freq_mhz
+echo -n $CHOSEN_FREQUENCY | sudo tee /sys/class/drm/card0/gt_max_freq_mhz

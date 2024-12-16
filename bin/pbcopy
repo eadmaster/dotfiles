@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Windows detection
+if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
+	clip.exe "$@"
+	exit $?
+fi
+
+# Android detection
+if [ ! -z "$ANDROID_ROOT" ]; then
+	# TODO: alternative without termux
+	
+	# using the Termux:API add-on
+	termux-clipboard-set "$@"
+	exit $?
+fi
+
+# MEMO: MacOSX has builtin pbcopy command
+
+command -p pbcopy "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+#MEMO: xsel is better on Linux https://askubuntu.com/questions/705620/xclip-vs-xsel
+xsel -b -i "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+xclip -selection clipboard -i "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+# from wl-clipboard  https://github.com/bugaevc/wl-clipboard
+wl-copy "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+# MORE ALTERNATIVES:
+# dbus-send --type=method_call --dest=org.kde.klipper /klipper org.kde.klipper.klipper.setClipboardContents string:"$1"
+# ... https://wiki.archlinux.org/index.php/clipboard
+# ... https://askubuntu.com/questions/11925/a-command-line-clipboard-copy-and-paste-utility
+
+#else
+exit 127

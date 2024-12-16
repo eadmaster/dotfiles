@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# set TCP keepalive http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/usingkeepalive.html
+sudo sysctl -w net.ipv4.tcp_keepalive_time=160
+[ $? -eq 127 ] && sudo sh -c "echo 160> /proc/sys/net/ipv4/tcp_keepalive_time "
+
+ROUTER_ADDRESS1=192.168.1.1
+ROUTER_ADDRESS2=www.google.com
+
+while true
+do
+	ping -q -c 1 $ROUTER_ADDRESS1
+	ping -q -c 1 $ROUTER_ADDRESS2
+	sleep 59
+done

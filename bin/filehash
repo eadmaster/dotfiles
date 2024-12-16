@@ -1,0 +1,106 @@
+#!/bin/sh
+
+# args checking
+if [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "Usage: $(basename $0) INPUT_FILE"
+	echo
+	echo "Extract hashes built in files"
+	echo
+	exit 0
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+fi
+
+INPUTFILE="$1"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
+
+
+case $INPUTFILETYPE in
+	image/* )
+		# TODO: perceptual hashes https://github.com/corona10/goimagehash/issues/62
+		# https://github.com/JohannesBuchner/imagehash
+		# ... https://github.com/topics/image-hash
+		
+		if which oiiotool >/dev/null 2>&1 ; then
+			echo "$0: cryptographic hashes via oiiotool: "
+			oiiotool --hash "$INPUTFILE"
+			echo
+		fi
+		
+		if which identify >/dev/null 2>&1 ; then
+			echo "$0: imagemagick signature hash of image values: "
+			identify -format %# "$INPUTFILE"
+			echo
+			echo
+		elif which imconvert >/dev/null 2>&1 ; then
+			echo "$0: imagemagick signature hash of image values: "
+			imconvert "$INPUTFILE" rgba:- | sha256sum
+			echo
+			echo
+		fi
+		;;
+		
+	audio/* )
+		# audio fingerprinting via Chromaprint  https://github.com/acoustid/chromaprint
+		echo "$0: Chromaprint: "
+		if which fpcalc >/dev/null 2>&1 ; then
+			fpcalc  "$INPUTFILE"  
+		else
+			# https://ffmpeg.org/ffmpeg-formats.html#chromaprint-1
+			ffmpeg -loglevel error  -i "$INPUTFILE" -f chromaprint - 2>/dev/null   # -algorithm 2 
+			# -length SECS   Restrict the duration of the processed input audio (default 120)
+			# -algorithm NUM Set the algorithm method (default 2)
+		fi
+		echo
+		
+		if which shntool >/dev/null 2>&1 ; then
+			echo "$0: content hash via shntool: "
+			shntool hash "$INPUTFILE"
+			echo
+		fi
+		;;
+	
+	#video/* )
+	# TODO: video fingerprinting
+	
+	#TODO: application/pdf )  https://github.com/qpdf/qpdf/discussions/1220
+	
+	#TODO: application/x-executable|application/x-pie-executable )
+	
+	
+	application/x-bittorrent )
+		# Torrent Merkle Root hash () https://github.com/kovalensky/tmrr
+		echo -n "$0: Torrent Merkle Root: "
+		tmrr c "$1"  # TODO: does not support piping
+		;;
+esac
+
+
+case $INPUTFILETYPE in
+	image/*|audio/*|video/* )
+		
+		# using ffmpeg https://ffmpeg.org/ffmpeg-formats.html#streamhash-1
+		echo "$0: content hashes via ffmpeg: "
+		#NO(UNIFIED HASH audio+video+subs)? ffmpeg -loglevel error -i "$INPUTFILE"  -f hash
+		ffmpeg -loglevel error -i "$INPUTFILE" -f streamhash -hash CRC32 - 2>/dev/null
+		ffmpeg -loglevel error -i "$INPUTFILE" -f streamhash -hash MD5 - 2>/dev/null
+		#ffmpeg -loglevel error -i "$INPUTFILE"  -f streamhash - 2>/dev/null  # default to SHA256 (slowest)
+		# TODO: remove video track if missing
+		echo
+				
+		#TODO: alternative using vlc
+		#vlc -I rc "$INPUTFILE" :sout='#std{mux=raw,access=file,dst=-}' vlc://quit | md5sum
+		;;
+esac
+
+# generic algos
+
+if which tlsh >/dev/null 2>&1 ; then
+	echo "$0: TLSH - Trend Micro Locality Sensitive Hash"
+	# sudo apt install tlsh-tools
+	tlsh -f "$INPUTFILE"
+	echo
+fi

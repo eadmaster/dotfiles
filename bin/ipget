@@ -1,0 +1,75 @@
+#!/bin/bash
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) [HOSTNAME]"
+	exit 0
+fi
+
+if [ "$1" = "" ]; then
+    #NO(FORCE RELOAD)? [ -z "$IFACE" ] && 
+    #IFACE=$(route | grep '^default' | grep -o '[^ ]*$' | head -n1)  # freezes
+    IFACE=$( ip route get 8.8.8.8 | sed -n 's/.*dev \([^\ ]*\).*/\1/p' )
+    
+    #echo "$(basename $0): private IPs:"
+    #ifconfig $IFACE | grep "inet addr"
+    #ifconfig | grep -E "Link encap|inet addr"
+    PRIVATEIP=$( ip -f inet -o addr show $IFACE |cut -d\  -f 7 | cut -d/ -f 1 )
+    #PRIVATEIP=$( ip -f inet -o addr show $IFACE | egrep -o '([[:digit:]]{1,3}\.){3}[[:digit:]]{1,3}' | head -n 1 )
+    [ -z "$PRIVATEIP" ] && PRIVATEIP=$( ifconfig $IFACE | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}' )  # old method
+    [ -z "$PRIVATEIP" ] && exit 1
+    echo "$PRIVATEIP"
+    
+    # also checks the public IP
+    #echo "$(basename $0): public IP:"
+    PUBLICIP=$(wget -q -O- -T2 http://checkip.dyndns.org | sed -e 's/.*Current IP Address: //' -e 's/<.*$//')
+    [ -z "$PUBLICIP" ] && PUBLICIP=$(wget -q -O- -T2 http://api.ipify.org/)
+    [ -z "$PUBLICIP" ] && PUBLICIP=$(wget -q -O- -T2 http://ipinfo.io/ip)
+    [ -z "$PUBLICIP" ] && PUBLICIP=$(wget -q -O- -T2 http://whatismijnip.nl | cut -d" " -f5)
+    [ -z "$PUBLICIP" ] && PUBLICIP=$(wget -q -O- -T2 http://httpbin.org/ip | grep -Eo '"origin":.*?[^\\]"' | cut -d\" -f4)
+    [ -z "$PUBLICIP" ] && PUBLICIP=$(wget -q -O- -T2 http://ip-api.com/json | grep -Eo '"query":.*?[^\\]"' | cut -d\" -f4)
+    [ -z "$PUBLICIP" ] && PUBLICIP=$(curl http://ifconfig.me/ip)
+    #SLOW, NEED CUSTOM UA [ -z "$PUBLICIP" ] && PUBLICIP=$(wget -q -O- -T2 -U "Firefox 4.0b10. Mozilla/5.0 (X11; Linux i686; rv:2.0b10) Gecko/20100101 " http://ifconfig.me/ip)
+    if [ -z "$PUBLICIP" ]; then
+        echo "$(basename $0) warn: no public IP found (are you connected?)" >&2
+    elif [ "$PUBLICIP" != "$PRIVATEIP" ]; then
+        echo "$(basename $0) warn: private IP mismatches the public IP (NATted connection?): $PUBLICIP" >&2
+    fi
+    exit 0
+fi
+
+# else try ip lookup
+
+getent hosts ${1} | cut -d' ' -f1
+[ "${PIPESTATUS[0]}" = 0 ] && exit 0
+
+#TODO:
+#[ ! -z "$ANDROID_ROOT" ] ...
+
+# remote lookup with nslookup
+REMOTEIP=$(nslookup $1   | tail -n3 | grep 'Address') # default DNS server
+[ -z "$REMOTEIP" ] && REMOTEIP=$(nslookup $1 8.8.8.8  | tail -n3 | grep 'Address')  # Google DNS
+[ -z "$REMOTEIP" ] && REMOTEIP=$(nslookup $1 208.67.222.222  | tail -n3 | grep 'Address')  # OpenDNS
+[ -z "$REMOTEIP" ] && REMOTEIP=$(nslookup $1 84.200.69.80  | tail -n3 | grep 'Address')  # DNS.WATCH
+[ -z "$REMOTEIP" ] && REMOTEIP=$(nslookup $1 91.239.100.100  | tail -n3 | grep 'Address')  # UncensoredDNS
+# TODO: more uncensored DNS? https://www.c0urier.net/2013/uncensored-and-fast-dns-servers
+if [ ! -z "$REMOTEIP" ]; then
+	echo "$REMOTEIP" | cut -d':' -f2 | tr -d '[:space:]'
+	exit 0
+fi
+# else continue
+
+# zeroconf names
+avahi-resolve --name ${1} | cut -f2
+[ "${PIPESTATUS[0]}" = 0 ] && exit 0
+
+# netbios names
+nmblookup $1 | cut -d' ' -f1 | grep "\."
+[ ${PIPESTATUS[0]} = 0 ] && exit 0
+
+# lookup via systemd
+systemd-resolve $1 | head -n1 | cut -d' ' -f2 | cut -d'%' -f1
+[ ${PIPESTATUS[0]} = 0 ] && exit 0
+
+#else
+echo "$(basename $0) err: unable to resolve: $1"  >&2
+exit 1

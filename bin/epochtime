@@ -1,0 +1,4 @@
+
+date +%s
+
+# ALTERNATIVES: https://stackoverflow.com/questions/1092631/get-current-time-in-seconds-since-the-epoch-on-linux-bash

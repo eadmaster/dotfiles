@@ -1,0 +1,85 @@
+#!/bin/bash
+
+firejail --private "$1"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+# else
+# very basic sandboxing alternative by overriding some envvars
+echo "$(basename $0) warn: firejail not found, using sandboxing via envvars replacement..." >&2
+
+if [ "$#" -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) CMD [ARGS]"
+	echo
+	exit 0
+fi
+
+SANDBOX_ROOT_PATH=$TMPDIR
+#SANDBOX_DIR=.
+
+export HOME=$SANDBOX_ROOT_PATH
+export XDG_DATA_HOME=$SANDBOX_ROOT_PATH
+export XDG_CONFIG_HOME=$SANDBOX_ROOT_PATH
+export XDG_CACHE_HOME=$SANDBOX_ROOT_PATH
+export XDG_DATA_DIRS=$SANDBOX_ROOT_PATH:./usr/share:./share:$XDG_DATA_DIRS
+export XDG_CONFIG_DIRS=$SANDBOX_ROOT_PATH:$XDG_CONFIG_DIRS
+export XDG_RUNTIME_DIR=$SANDBOX_ROOT_PATH
+#export XDG_RUNTIME_DIR=$RAMDRIVE
+
+# remove sudo cached password
+sudo -K
+
+# TODO: block network access
+
+# check extension if a file is passed
+if [ -f "$1" ]; then
+	FILENAME="$1"
+	EXTENSION=$( echo -n "$FILENAME" | rev | cut -d'.' -f1 | rev )
+	EXTENSION=$( echo -n $EXTENSION | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+	if [ "$EXTENSION" = "exe" ] || [ "$EXTENSION" = "bat" ]; then
+		export WINEDLLOVERRIDES="mscoree,mshtml="
+		export WINEPREFIX=$TMPDIR/.wine
+		mkdir -p "$WINEPREFIX"
+		wine "$1" &
+		# disable root and home dir access
+		sleep 1
+		rm -f "$WINEPREFIX/dosdevices/z:"
+		exit $?
+	fi
+fi
+
+# else check if a system command is passed
+findcommand "$1" > /dev/null
+if [ $? -eq 0 ] || [ -x "$1" ]; then
+	# the passed file is an executable
+	
+	# puppy linux test
+	if grep -q -i puppy /etc/DISTRO_SPECS &> /dev/null ; then
+		#su -c "$@" fido # could not be enabled  http://puppylinux.org/wikka/spot
+		su -p -c "$@" spot
+		exit $?
+	fi
+	
+	# else running as the current user
+	# test current user is NOT root
+	if [ $EUID -eq 0 ]; then
+		echo "$(basename $0) warn: running as root, for better security consider switching to a limited user." >&2
+		echo "$(basename $0) press Enter to continue, Ctrl-C to abort." >&2
+		read
+	fi
+	
+	exec "$@"
+	exit $?
+	
+elif [ -f "$1" ]; then
+	# passed file is a regular one, just open it
+	xdg-open "$@"
+	exit $?
+fi
+
+# else
+echo "$(basename $0) error: $1 invalid command passed" >&2
+exit 1
+
+
+# ALTERNATIVEs:
+#[ ! -d $RAMDRIVE/proot-sandbox ] && mkdir $RAMDRIVE/proot-sandbox
+#proot -R $RAMDRIVE/proot-sandbox/ "$@"

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# TODO: check if $1 is empty
+
+sudo shred -v -f -n1 --random-source=/dev/zero $1
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+pv < /dev/zero > $1
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else use good ol' dd
+sudo dd if=/dev/zero of=$1 bs=10MB  iflag=nocache oflag=direct

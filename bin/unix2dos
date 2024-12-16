@@ -1,0 +1,7 @@
+#!/bin/sh
+
+command -p unix2dos "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else alternative using sed
+sed -e 's/$/\r/' "$@"

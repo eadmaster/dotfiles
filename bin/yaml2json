@@ -1,0 +1,23 @@
+#!/bin/sh
+
+if [ -f "$1" ]; then
+	# read from file
+	INPUT=$(cat "$1")
+elif [ -z "$1" ]; then
+	# read from stdin
+	INPUT=$(cat)
+else
+	# read from passed args
+	INPUT="$@"
+fi
+
+echo "$INPUT" | python -c 'import sys, yaml, json; json.dump(yaml.load(sys.stdin), sys.stdout, indent=4)'
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+echo "$INPUT" | sttr yaml-json
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+echo "$INPUT" | catmandu convert YAML to JSON
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+ 
+# MORE ALTERNATIVES: https://www.commandlinefu.com/commands/view/12218/convert-yaml-to-json

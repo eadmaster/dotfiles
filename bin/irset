@@ -1,0 +1,26 @@
+#!/bin/sh
+
+if [ -z "$1"] || [ "$1" = "-h" ] || [ "$1" = "--help" ] ; then
+	echo "usage: $(basename $0) REMOTE_PROFILE_NAME"
+	echo "available profiles:"
+	ls $HOME/rc_keymaps
+	exit 0
+fi
+
+# NO(REQ. FOR IR-BLASTING)? lircd stop ; service lirc stop
+
+sudo modprobe mceusb
+
+KEYMAP_FILE=$HOME/rc_keymaps/$1
+
+[ "$1" = "lg" ] && KEYMAP_FILE=$HOME/rc_keymaps/lg_akb72915206
+[ "$1" = "mini" ] && KEYMAP_FILE=$HOME/rc_keymaps/mini_retroarch
+
+if [ -f $KEYMAP_FILE ]; then
+	sudo ir-keytable -v -c -w $KEYMAP_FILE
+	exit $?
+fi
+
+#else
+echo "$(basename $0): remote not supported: $1"
+exit 1

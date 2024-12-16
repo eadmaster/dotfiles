@@ -1,0 +1,2501 @@
+#!/bin/bash
+
+echo "macinit read"
+
+# get path to this script
+THIS_SCRIPT_DIR="$( cd $(dirname $0) ; pwd -P )"
+#THIS_SCRIPT_DIR="$(dirname $0 )"
+#THIS_SCRIPT_DIR="$(dirname $(readlink -f "$0"))"
+#THIS_SCRIPT_DIR=$(dirname $(readlink -fn $0))
+# workaround for sourced scripts:  
+[ ! -z "$BASH_SOURCE" ] && THIS_SCRIPT_DIR=$(dirname $BASH_SOURCE)
+#DISABLED(slow on BashOnWindows): [ ! -f "$THIS_SCRIPT_DIR/macinit" ] && THIS_SCRIPT_DIR=$( dirname $(find $(echo -n $PATH|sed 's/:/ /g') -name macinit | head -n1) )
+[ ! -f "$THIS_SCRIPT_DIR/macinit" ] && THIS_SCRIPT_DIR=$HOME/bin
+#[ ! -f "$THIS_SCRIPT_DIR/macinit" ] && echo "warn: unable to test for alternative scripts"
+
+#alias aliases='cat $THIS_SCRIPT_DIR/macinit'
+
+### DOS and Windows-like aliases ###
+#alias a:="cd /floppy"
+#alias c:="cd /c"
+alias d:="cd /d"
+#alias e:="cd /e"
+#alias f:="cd /f"
+#alias g:="cd /cdrom"
+alias p:="cd /p"
+alias P:=p:
+#alias r:="cd /tmp"
+alias r:="cd /r"
+alias R:=r:
+alias cd..="cd .."
+alias ..="cd .."
+alias ...="cd .. ; cd .."
+#alias back="cd -"
+#alias cd=pushd
+alias cdhome="cd ~"
+#alias cddocuments="cd ~/Documents"
+#alias cdr="cd /r"
+#alias gohome="cd ~"
+#NO? zsh option autopushd emulation  http://unix.stackexchange.com/questions/4290/aliasing-cd-to-pushd-is-it-a-good-idea
+alias cls="clear ; reset"
+#alias ren=rename
+alias ren="mv -vi"
+[ ! -z "$ANDROID_ROOT" ] && alias ren=mv
+#alias copy="cp -vp"
+alias del=rm
+#alias erase=rm
+alias deltree="rm -rv" # -I
+#alias purge=deltree
+[ ! -z "$ANDROID_ROOT" ] && alias deltree="rm -r"
+#deltree() { read -p "deltree $* (yN)? " ; [[ "$REPLY" == "y" ]] && rm -rvf $* ; }
+alias edit=sensible-editor  # MEMO: override run-mailcap
+alias chmod="chmod -v"
+alias attrib="chmod -Rv"
+#alias mkdir="mkdir -pv"
+alias md="mkdir -p"
+#alias comp=cmp
+alias call=source
+#alias chkdsk="sudo fsck -v -r"
+alias chkdsk="sudo dosfsck -w -r -l -a -v -t"
+alias scandisk=chkdsk
+alias scandisk.ext="sudo e2fsck -vfy "
+#alias defrag=shake
+alias ipconfig=ifconfig
+alias mem="free -h"
+#alias ver="uname -a" -> MOVED IN ver
+#alias ver=osinfo
+#alias fdisk="sudo parted"
+alias format="sudo mkfs"
+alias doskey=alias
+#alias print=lp
+#set() { $* ; }
+#alias set=export  # DO NOT USE: override with bash builtin command used in some scripts
+#alias explorer=defaultfilemanager  -> MOVED IN explorer
+#alias e=defaultfilemanager
+alias open=xdg-open  # shadow /bin/open
+#[ -f "$THIS_SCRIPT_DIR/start" ] || alias start=xdg-open
+#alias load=xdg-open
+#alias view=xdg-open
+#alias see=xdg-open
+#alias run=xdg-open
+#alias runas=su
+#net() { service $2 $1; } # conflicts with samba's "net" command
+#alias basic=fbc
+#alias gwbasic="fbc -lang deprecated"
+#alias qbasic=fbc -lang qb"
+#alias pascal=fpc
+#alias tpc="fpc -Mtp"  # TP/BP 7.0
+#alias dcc32="fpc -Mdelphi"  # Delphi 7
+
+# AmigaDOS-like commands  http://wiki.amigaos.net/index.php/AmigaDOS_Introduction  http://en.wikipedia.org/wiki/AmigaDOS  http://www.pcguru.plus.com/uae_amigados.html
+#alias list=ls
+#alias delete=del
+#alias protect=chmod
+#alias setenv=set
+#alias unsetenv=unset
+#getenv() { echo "${!1}" ; }  # bash-only indirect/reference variable
+getenv() { echo $(eval echo "\$$1") ; }
+#alias get=getenv
+#alias ask=choice
+#alias avail=mem
+alias version=ver
+alias checkver=ver
+#alias changetaskpri=renice
+#alias endcli=exit
+#alias execute=call
+#alias filenote=xattr
+#alias join=cat
+#alias bincat=cat
+#alias makedir=md
+#alias makelink=ln
+#alias getkeyboard="cat /etc/keymap /etc/default/keyboard"
+#alias keyboardset=loadkey -> MOVED in keyboardset
+#alias setkb=keyboardset
+#alias setmap=keyboardset
+alias keycodesget="showkey -a"  # ALT. xinput test 14  ... https://superuser.com/questions/248517/show-keys-pressed-in-linux
+#alias eventsget=xev
+#alias status="ps -fC"
+#alias why="echo $?"
+#alias why="echo $ERRNO"
+#alias errno="echo $ERRNO"
+alias locales="locale ; localectl ; python -m locale"
+alias langget=locales
+alias charmapsls="locale -m"
+
+# Solaris-like commands
+#alias pkg=apt
+#alias prstat=ps
+#alias pfiles=lsof
+#alias ptree=pstree
+#alias ipadm=ip
+#alias svcadm=service
+
+# OpenVMS-like commands  https://www.mpp.mpg.de/~huber/vmsdoc/vms-unix_cmd-equivalents.html  http://www.physnet.uni-hamburg.de/physnet/vms-unix-commands.html
+#alias directory=ls
+#alias purge="find -name '*~' -delete"
+#alias append=cat
+#alias assign=
+#alias define=
+#alias backup=tar
+#alias create="cp /dev/null" -> MOVED IN filenew
+alias create=filenew
+alias new=filenew
+alias dump=od
+#alias library=ar
+#alias link=ld
+#alias merge="sort -m"
+#alias recall=history
+#alias search=grep
+#alias submit=at
+
+alias screensaver="xdg-screensaver activate"
+[ -f "$THIS_SCRIPT_DIR/xlock" ] || alias xlock="xdg-screensaver lock"
+
+#cmp() { command -p cmp "$@" ; [ $? -eq 0 ] && echo "cmp: input files are equal byte-wise" >&2 ; }
+alias compare="diff -qs -sy"  # MEMO: conflicts with imagemagick compare tool
+alias mindiff="diff --minimal"  #  --context=0 --strip-trailing-cr --suppress-common-lines --color  (req. v>=3.4) https://unix.stackexchange.com/questions/196565/how-to-color-diff-output
+
+#alias mingw="gcc --target=mingw32"
+alias c89check="cppcheck --std=c89"
+alias c99check="cppcheck --std=c99"
+
+alias als="7z l"  # TODO: "tar -tf" for tar files
+alias apack="7z a -bb1"
+#alias pack=apack  # conflicts with liballegro4-dev
+#NO(NOT FOR SIMPLE FILES)? alias pack=fileconvert  # conflicts with liballegro4-dev
+#NO(NOT FOR SIMPLE FILES)? alias compress=fileconvert  # conflicts with ncompress
+#alias unpack="7z x -bb1 -y"
+[ -f "$THIS_SCRIPT_DIR/fileunpack" ] || alias unpack=fileunpack
+alias aunpack=fileunpack
+#alias decompress=fileunpack
+#alias extract=fileunpack  # conflicts with libextractor
+alias atest="7z t -bb1"
+[ -f "$THIS_SCRIPT_DIR/filetest" ] || alias atest=filetest
+#alias acat="7z e -so"
+#agrep() { 7z e -so "$2" | grep "$1" ; }   # conflicts
+#alias acat=file2txt
+alias aratio="zipinfo -m"  # TODO: support other archives formats https://superuser.com/questions/189622/how-to-list-the-contents-of-a-zip-along-w-file-sizes-and-compression-ratio-via
+zipfindlatest() { 7z l "$@" | grep -F "....A" | sort | tail -n2 ; }
+
+alias pprint=file2txt
+#alias html2txt=html2text
+#alias ocr=file2txt  # moved in a script
+
+# syntax highlighter
+if which bat >/dev/null 2>&1 ; then
+	alias pprint=bat
+	alias pretty=bat
+fi
+
+alias grepliteral="grep -F"
+#alias agrep=ugrep  # conflicts
+#alias pdfgrep=filegrep
+#alias anygrep=filegrep
+
+alias fileappend=filecat
+#alias anycat=filecat
+#alias append=filecat
+#alias merge=filecat
+alias audiocmp=filecmp
+
+alias tag=filetag
+alias tags=filetag
+gettag() { filetag -$1 "$2" ; }
+alias settag=filetag
+filetaggrep() { export QUERY="$1" ; shift ; for f in "$@"; do exiftool -csv "$f" | grep -i "$QUERY"; done ; }
+alias id3grep=filetaggrep
+
+alias flush=sync
+#alias commit=sync
+
+alias now=timestamps
+#alias gettimestamps=timestamps
+#alias datesget=timestamps
+#alias timestamp=timestamps
+alias tsget=timestamps
+timezone() { cat /etc/timezone || echo "$TZ" ; }
+alias tzget=timezone
+
+alias location="whereami --raw"
+alias positionget=whereami
+alias gpsget=whereami
+#TODO: alias gpsls=
+
+alias dateset="touch -c -d"
+alias chdate=dateset
+alias cpdate="touch -c -r"
+alias datecp=cpdate
+
+# always verbose cp, ln, mv and rm
+#NO? alias cp='cp -vi' -> "-i" override "-f" switch
+#alias cp='cp -va'
+alias cp='cp -v'
+# WANTED: progress bar  https://unix.stackexchange.com/questions/65077/is-it-possible-to-see-cp-speed-and-percent-copied
+#  | progress https://github.com/Xfennec/progress
+[ ! -z "$ANDROID_ROOT" ] && alias cp="cp -p"
+#alias mv='mv -vi' -> "-i" override "-f" switch
+alias mv='mv -v'
+[ ! -z "$ANDROID_ROOT" ] && alias mv=mv
+#alias rm="rm -vI" -> "-i" override "-f" switch
+alias rm="rm -v"
+[ ! -z "$ANDROID_ROOT" ] && alias rm=rm
+#alias ln='ln -vi' -> "-i" override "-f" switch
+alias ln='ln -v'
+
+#bypass "time" shell builtin https://www.reddit.com/r/linux/comments/tq7xws/til_theres_another_time_command_that_gives_some/
+#alias time="command time"
+alias resources='time -v'
+alias timeit="time -f '%e'"
+
+alias qrdecode=barcode2txt
+#alias barcode=zxing
+#alias zbar=zxing
+#alias zint="zxing --encode"
+alias mkqr=qrgen
+
+#alias srm="srm -l -l -v" # moved in a script
+alias wipe=srm
+alias sdelete=srm
+alias shred=srm
+#alias zerofree="sfill -llz"  # moved in a script
+alias zerofillfreespace=zerofree
+zerooverwrite() { dd if=/dev/zero of="$1" bs=$(stat -c%s "$1") count=1 ; }
+#zerofilldrive() { sudo "pv < /dev/zero > $1" ; } # moved in a script
+
+alias undelete=testdisk
+#alias recover=undelete
+#TODO: alias lsdel=??
+
+#alias empty="cp /dev/null"  # create a new file. Fails if the file already exist (!= touch)
+#alias new="cp /dev/null" -> MOVED IN filenew
+#alias mk=filenew
+
+alias trunc=truncate
+alias truncatesize="truncate -s"
+chsize() { truncate -s $2 $1 ; }  # -c  # TODO: swap $2 <-> $1 ?
+#alias sizeset=chsize
+#alias createsz=chsize
+alias createsz=fallocate
+#alias newsz=chsize
+extend() { truncate -c -s+$2 $1 ; }
+#alias expand=extend  # conflict with "expand" command
+reduce() { truncate -c -s-$2 $1 ; }
+alias shrink=reduce
+
+fcp() { dd if="$1" of="$2" bs=1 conv=sync,noerror ; }
+alias forcecopy=fcp
+
+#partcp() { dd if="$1" of="$2" bs=1 count=$3 ; }
+#alias partcopy=partcp
+
+#alias mail="google mail"
+#alias email="google mail"
+alias gmail="google mail"
+#alias mailx=xdg-email
+#alias mailx="source myemailcheck"
+#alias send=xdg-email
+#alias sendmail=xdg-email
+#alias mailcheck="source myemailcheck"
+#alias checkmail="source myemailcheck"
+
+#alias news="google news"
+#alias calendar="google calendar"
+#alias gcal="google calendar"
+#alias memo="google calendar"
+#alias events="google calendar"
+#alias remind="google calendar"
+#alias today="google calendar"
+#alias tv="google tv"
+
+alias mx='chmod u+x'
+alias ro='chmod u-w+r'
+alias rw='chmod u+rw'
+#alias 000='chmod 000'
+#alias 644='chmod 644'
+#alias 755='chmod 755'
+#alias perm='stat --printf "%a %A %n \n "'
+hide() { mv -v "$1" ".$1" ; }
+unhide() { mv -v "$1" "${1:1}" ; }
+
+# easier find with fd https://github.com/sharkdp/fd
+if which fdfind >/dev/null 2>&1 ; then
+    #alias fd=fdfind
+    fd() { fdfind --no-ignore --hidden --ignore-case --glob "*$@*" ; }
+else
+    alias fd="find . -xdev -iname"  # 2>/dev/null  -> skip permission denied errors https://unix.stackexchange.com/questions/19430/how-do-i-remove-permission-denied-printout-statements-from-the-find-program
+fi
+alias f=fd
+#alias search=fd
+#alias ff=fd  # also used for firefox
+
+# wildcard support for commands not having it natively. usage: repeat "cmd arg1 arg2 ..." *.ext
+# TODO: move in an external script?
+repeat() { [ -z "$1" ] && echo "usage: repeat cmd [files]" || { CMD="$1"; shift; for i; do $CMD "$i"; done ; } ; }
+alias recurse=repeat
+#alias loop=repeat
+alias linedo="xargs -d '\n' -I {}"   # https://www.reddit.com/r/commandline/comments/ra4dg7/extremely_useful_alias_i_just_came_up_with/
+
+#enable -n hash
+#alias hashes="rhash --printf \"%p\n CRC32: %C\n MD5: %M\n SHA1: %H\n ED2K: %E\"" -> conflicts with bash command, MOVED in hashes
+alias sfv="rhash -C --sfv"
+[ -f "$THIS_SCRIPT_DIR/crc32" ] || alias crc32="rhash -C --simple"
+alias ed2k="rhash -L"
+#alias mv-addcrc32="rhash --embed-crc"
+alias catalog="rhash --crc32 --sfv -r"
+alias blake2b32="b2sum -l32"
+
+#lock() { flock "$1" -c "echo 'Press enter to unlock'; read"; }  # moved in script
+#alias unlock="fuser -kiv"   # moved in script
+whoopen() { ps $( fuser "$1" ) ; }  # ALTERNATIVE (less descriptive): alias whoopen=lsof
+alias wholock="lslocks -J | grep "
+alias locks=lslocks
+
+alias mount="mount -v"  # always verbose
+alias umount="umount -v"  # always verbose
+alias unmount="umount -v"  # always verbose
+alias remount="sudo mount -a"
+#alias mountreadonly="mount -o ro"
+alias fuserumount="fusermount -u"
+#alias disksls="lsblk --output NAME,MAJ:MIN,SIZE,RO,RM,TYPE,FSTYPE,LABEL,MOUNTPOINT,LOG-SEC,PHY-SEC,OWNER,MODE,HOTPLUG"
+alias lsdsk=drives
+alias disksls=drives
+alias mountsls=findmnt
+mountintmp() { mkdir /tmp/$1 ; sudo mount $1 /tmp/$1 && echo "$0: mounted in /tmp/$1/" ; }  # TODO: add some -o
+alias tmpmount=mountintmp
+
+# qemu aliases
+if which qemu-system-i386 >/dev/null 2>&1 ; then
+    #alias qemu=qemu-system-$(uname -m)
+    alias qemuimg=qemu-img
+    # TODO? add "qemu-$(uname -m)" prefix or suffix
+    #alias bootfd="qemu-system-$(uname -m) -boot a -fda /dev/fd0"
+    alias bootfdi="qemu-system-$(uname -m) -boot a -fda"
+    alias boothdi="qemu-system-$(uname -m) -boot c -hda"
+    #alias bootcd="qemu-system-$(uname -m) -boot d -cdrom"
+    alias bootcdi="qemu-system-$(uname -m) -boot d -cdrom"
+    alias bootiso="qemu-system-$(uname -m) -boot d -cdrom"
+    alias bootusb="qemu-system-$(uname -m) -boot menu=on -usb -usbdevice " # /dev/sdb1
+fi
+
+#alias mounthdi
+#alias umounthdi
+#alias readfdi="dd if=/dev/fd0 of="
+#alias writefdi="dd of=/dev/fd0 conv=noerror if="
+#alias rawrite="dd of=/dev/fd0 conv=noerror if="
+#alias mountfdi=...
+#alias umountfdi=...
+#alias readiso="dd if=$CDR_DEVICE bs=2352 conv=notrunc,noerror of=" # ALTERNATIVEs: iso-read, ...
+#alias dir2iso="mkisofs -o"
+alias mountiso="sudo mount -o loop" #alternative: fuseiso, cdemu load 0 FILE.IMG
+#alias mountcdi="sudo mount -o loop" #alternative: fuseiso
+
+# dosbox aliases
+if which dosbox >/dev/null 2>&1 ; then
+    boot_dosbox() { dosbox -c "boot \"$1\"" ; }  # MEMO: works with both FD and HD images
+    alias dosbox086="dosbox -c 'CONFIG -set cpu cputype=8086'"
+    alias dosbox186="dosbox -c 'CONFIG -set cpu cputype=80186'"
+    alias dosbox286="dosbox -c 'CONFIG -set cpu cputype=286'"
+    alias dosbox386="dosbox -c 'CONFIG -set cpu cputype=386'"
+    alias dosbox486="dosbox -c 'CONFIG -set cpu cputype=486'"
+    alias dosboxpentium="dosbox -c 'CONFIG -set cpu cputype=pentium'"
+    alias dosboxpentiummmx="dosbox -c 'CONFIG -set cpu cputype=pentium_mmx'"
+fi
+
+# VirtualBox
+if which VBoxManage >/dev/null 2>&1 ; then
+	alias lsvms-vbox="VBoxManage list vms"
+	alias vboxls="VBoxManage list vms"
+	alias vboxinfo="VBoxManage showvminfo"
+	alias vboximport-ova="VBoxManage import"
+	alias vboxmkvm="VBoxManage createvm --register --name"
+	#alias bootfdi-vbox="vboxsdl --startvm live --fda"  # TODO: show the full gui
+	#alias boothdi-vbox="vboxsdl --startvm live --hda"  # TODO: show the full gui
+	#alias bootcdi-vbox="vboxsdl --startvm live --cdrom"  # TODO: show the full gui
+fi
+
+#alias cpuid="cat /proc/cpuinfo" -> MOVED IN cpuinfo
+#alias cpuid=cpuinfo  # conflicts
+#alias cpuls=cpuinfo
+alias netinfo="sudo lshw -class network"
+alias nm-tool=nmcli
+alias cpuload='ps -A -o pcpu | tail -n+2 | paste -sd+ | bc'  # https://stackoverflow.com/questions/9229333/how-to-get-overall-cpu-usage-e-g-57-on-linux
+#alias gfxinfo=gpuinfo
+alias gpusl="switcherooctl list"
+#alias gpuswitch="sudo prime-select"
+#alias cputemp=... -> MOVED IN cputemp
+#alias hdinfo="sudo smartctl -s on -i /dev/sda ; hdparm -i /dev/sda" -> MOVED IN hdinfo
+alias hddinfo=hdinfo
+alias hdtest="sudo smartctl -s on -C -t short /dev/sda"
+alias hdtemp=hdinfo
+alias hddtemp=hdinfo
+alias hdpoweroff="power off"
+#alias mbtemp=...
+#alias hwinfo=lshw -> MOVED IN hwinfo
+alias raminfo="sudo dmidecode --type 17 ; sudo modprobe eeprom ; decode-dimms"
+memtest() { sudo grub-reboot "$(awk -F"'" '/Memory test/ {print $2; exit}' /boot/grub/grub.cfg)"; sudo reboot ; }  # ALTERNATIVE: memtester
+[ ! -z "$ANDROID_ROOT" ] && alias lsusb="termux-usb -l"  # https://wiki.termux.com/wiki/Termux-usb
+alias usbls=lsusb
+alias usbtree="lsusb -t"
+alias usbinfo="lsusb -v -d"  # show infos of a device id (e.g. "046d:c336")
+alias resetusb=usbreset
+alias wininfo=xwininfo
+alias xinfo=xwininfo
+#alias xls=lsw  # list window ids
+#TODO: xdump=...  # dump text in a window  https://unix.stackexchange.com/questions/31487/is-there-a-winspy-like-tool-for-linux-x-gtk-qt  https://askubuntu.com/questions/689184/how-can-i-copy-text-from-dialog-boxes-and-menus
+#alias label, awd  (set window label, plan9 cmd) https://9fans.github.io/plan9port/man/man1/label.html
+alias syslog="cat /var/log/syslog"
+#alias syslog=dmesg
+alias fsls="echo \"supported filesystems by this kernel: \"; cat /proc/filesystems"
+#alias version="cat /proc/version; uname -a" -> MOVED IN osinfo
+#alias version=osinfo
+alias sysinfo=osinfo
+alias distroinfo="lsb_release -a"
+alias sysclean=cleansys
+
+alias debianrels="cat /usr/share/distro-info/debian.csv"
+alias ubunturels="cat /usr/share/distro-info/ubuntu.csv"
+# TODO: more detailed infos incl. shipped libs like on https://distrowatch.com/
+
+#alias saferemove="udisksctl power-off"
+#alias peject="sudo pccardctl eject"
+
+alias setvol=volumeset
+alias mute="volumeset 0"
+alias unmute="volumeset 100"
+alias umute="volumeset 100"
+
+#NO? alias logoff, disconnect, halt
+alias reboot="sudo reboot"
+#alias softreboot="sudo kexec -l --append="`cat /proc/cmdline`" --initrd=/boot/initrd.img-`uname -r` /boot/vmlinuz-`uname -r` ; sudo kexec -e" # tip from http://ubuntuforums.org/showthread.php?t=343050
+#alias hibernate=...
+alias turn=power
+#alias switch=power
+alias shut="power off"
+#alias shutdown="power off"
+alias poweroff="power off"
+alias poweron="power on"
+[ -f "$THIS_SCRIPT_DIR/power" ] || alias shutdown="sudo poweroff"
+alias shutmon="power off monitor"
+alias shutwifi="power off wifi"
+alias wake=wakeonlan.pl
+alias wol=wakeonlan.pl
+#alias logout=exit
+#alias logoff="gnome-session-save --kill || wmexit"
+#alias hostsls=arp
+
+alias hd="hexdump -C"
+alias hexview="hexdump -C"
+
+alias hex=hexalter
+alias hexpeek=hexalter
+alias hexpoke=hexalter
+alias hexget=hexalter
+alias hexset=hexalter
+#alias byteget=hexalter
+#alias byteset=hexalter
+
+# MEMO: C64 syntax: "poke DECIMAL_ADDRESS,DECIMAL_NEW_VALUE"  https://en.wikipedia.org/wiki/PEEK_and_POKE
+# TODO: move in separate scripts, add alternatives
+pspeek() { PID=$(pidof -s $2); [ -z "$PID" ] && echo "$0: process not found" && exit 1 ; ADDR=$1; sudo scanmem -c "dump $ADDR 1 ; exit;" $PID ; }  # read the contents of a memory cell at a specified address
+pspoke() { PID=$(pidof -s $2); [ -z "$PID" ] && echo "$0: process not found" && exit 1 ; ADDR=$1; VALUE=$3; sudo scanmem -c "write i8 $ADDR $VALUE ; exit;" $PID ; }  # set the contents of a memory cell 
+alias peek=pspeek
+alias poke=pspoke
+# ALT.: pspeek, pspoke -> use /proc/$(pidof $1)/mem
+
+# ucon64 aliases
+if which ucon64 >/dev/null 2>&1 ; then
+	#OLD: alias ips="ucon64 --nbak -i"  # apply IPS PATCH to ROM (IPS<=v1.2)
+	#OLD: alias ppf="ucon64 --nbak --ppf"  # apply PPF PATCH to IMAGE (PPF<=v2.0)
+	ips() { [ -z "$1" ] && echo "usage: $FUNCNAME ROMFILE PATCHFILE" && return;  ucon64 --nbak -i "$1" "$2" ; }
+	gg() { [ -z "$1" ] && echo "usage: $FUNCNAME CODE ROMFILE" && return;  ucon64 --nbak --gg=$1 "$2" ; }  # apply Game Genie code(s) permanently
+	alias gamegenie=gg
+	alias fixrom="ucon64 --nbak --chk"  # fix rom checksum in header
+	alias fixhead="ucon64 --nbak --chk"  # fix rom checksum in header
+	mkips() { [ -z "$1" ] && echo "usage: $FUNCNAME ORIGINAL PATCHED" && return; ucon64 --nbak --mki="$1" "$2"; }  # make an ips patch (max 32MB)
+	mkaps() { [ -z "$1" ] && echo "usage: $FUNCNAME ORIGINAL PATCHED" && return; ucon64 --nbak --mka="$1" "$2"; }  # make an aps patch
+	mkppf() { [ -z "$1" ] && echo "usage: $FUNCNAME ORIGINAL PATCHED" && return; ucon64 --nbak --mkppf="$1" "$2"; }  # make a ppf patch
+	alias addheadrom="ucon64 --nbak --ins"
+	alias addromhead=addromhead
+	alias rmheadrom="ucon64 --nbak --stp"
+	alias rmromhead=rmheadrom
+	alias renrom="ucon64 --rdat"
+	alias byteswap="ucon64 --nbak --swap"  # ALT.: byteswap() { dd if="$1" of="$1.swapped" conv=swab; }  #  https://stackoverflow.com/questions/6438099/command-line-to-reverse-byte-order-change-endianess
+	alias byteswap2="ucon64 --nbak --swap2"
+	alias wordswap="ucon64 --nbak --swap2"
+fi
+
+# https://github.com/marcrobledo/RomPatcher.js/issues/76
+if which RomPatcher >/dev/null 2>&1 ; then
+    alias rompatch=RomPatcher
+    # TODO: more
+fi
+
+xdelta1patch() { [ -z "$1" ] && echo "usage: %0 XDELTAFILE INPUTFILE" && return; xdelta patch "$1" "$2" "$1.patched" ; }
+xdelta3patch() { [ -z "$1" ] && echo "usage: %0 XDELTAFILE INPUTFILE" && return; xdelta3 -d -s "$2" "$1" "$2.patched" ; }  # https://www.pcgamingwiki.com/wiki/Xdelta
+
+# datfile renamers
+if [ -d $HOME/pendrive/Documents/db/datfile ]; then
+    getgoodtoolsdatfilepath() { find $HOME/pendrive/Documents/db/datfile/GoodTools -iname "*$@*.sfv" -printf '%p\n' | head -n1 ; }
+    getnointrodatfilepath() { find $HOME/datfiles/nointro -iname "*$**.dat" -printf '%p\n' | head -n1 ; }
+    alias rengoodnes2nointro="renfromdats.py --rename --include-roms \"$(getgoodtoolsdatfilepath GoodNES)\" \"$(getnointrodatfilepath - Nintendo Entertainment System)\""
+    alias rengoodsnes2nointro="renfromdats.py --rename --include-roms \"$(getgoodtoolsdatfilepath GoodSNES)\" \"$(getnointrodatfilepath Super Nintendo Entertainment System)\""
+    alias rengoodgbx2nointro="renfromdats.py --rename --include-roms \"$(getgoodtoolsdatfilepath GBx)\" \"$(getnointrodatfilepath Game Boy)\""
+    alias rengoodsms2nointro="renfromdats.py --rename --include-roms \"$(getgoodtoolsdatfilepath GoodSMS)\" \"$(getnointrodatfilepath Master System - Mark III)\""
+    alias rengoodgen2nointro="renfromdats.py --rename --include-roms \"$(getgoodtoolsdatfilepath GoodGen)\" \"$(getnointrodatfilepath Mega Drive - Genesis)\""
+    alias rengoodpce2nointro="renfromdats.py --rename --include-roms \"$(getgoodtoolsdatfilepath PCE)\" \"$(getnointrodatfilepath PC Engine - TurboGrafx 16)\""
+    alias rennointro2goodnes="renfromdats.py --rename --include-roms \"$(getnointrodatfilepath Nintendo \- Nintendo Entertainment System)\" \"$(getgoodtoolsdatfilepath NES | tail -n1)\" ."
+    alias rennointro2goodsnes="renfromdats.py --rename --include-roms \"$(getnointrodatfilepath Super Nintendo Entertainment System)\" \"$(getgoodtoolsdatfilepath SNES)\" ."
+    alias rennointro2goodgbx="renfromdats.py --rename --include-roms \"$(getnointrodatfilepath Game Boy \()\" \"$(getgoodtoolsdatfilepath GBx)\" ."
+    alias rennointro2goodgen="renfromdats.py --rename --include-roms \"$(getnointrodatfilepath Mega Drive - Genesis)\" \"$(getgoodtoolsdatfilepath GoodGen)\" ."
+    alias rennointro2goodsms="renfromdats.py --rename --include-roms \"$(getnointrodatfilepath Master System - Mark III)\" \"$(getgoodtoolsdatfilepath GoodSMS)\" ."
+    alias rennointro2goodpce="renfromdats.py --rename --include-roms \"$(getnointrodatfilepath PC Engine - TurboGrafx 16)\" \"$(getgoodtoolsdatfilepath PCE)\" ."
+fi
+
+alias bps=flips
+
+addhead() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE BYTES_TO_ADD" && return; dd if="$1" of="$1.headed" bs=1 seek="$2"; }  # ALTERNATIVE: ucon64 --nbak --insn=$2 $1
+addtail() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE BYTES_TO_ADD" && return; truncate -c -s+$2 "$1"; }  # ALTERNATIVEs: ucon64 --padn=$2 "$1"
+#alias pad=addtail
+
+rmhead() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE BYTES_TO_REMOVE" && return; dd if="$1" of="$1.nohead" bs=1 skip="$2"; }  # ALTERNATIVE: ucon64 --nbak --stpn=$2 $1
+alias delhead=rmhead
+#alias truncatehead=rmhead
+rmtail() { truncate -c -s-$2 "$1"; }  # ALT.: ucon64 --strip=$2 "$1"
+#alias strip=rmtail
+#alias swapendianess=rax2 -e "$1"  # swap an immediate value
+
+alias mp=mplayer
+#alias play=mplayer
+#mdecoder() { mplayer -ao pcm:waveheader:file=$*.wav $*; }
+#midentify() { mplayer -identify -vo null -ao null -frames 0 $* 2> /dev/null | grep ID; }
+
+if which imconvert >/dev/null 2>&1 ; then
+	#alias im=imconvert
+	#alias magick=imconvert
+	imgresize() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE 00%|pixel_width[x00%|pixel_height]" && return;  imconvert "$1" -resize $2 "$2_$1" ; }
+	imgsetdpi() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE NEW_DPI" && return;  imconvert -units PixelsPerInch "$1" -density $2 "$2dpi_$1" ; }
+	imgs2pdf() { imconvert "*.{png,jpg,jpeg}" -quality 100 outfile.pdf ; }
+	imgcolormostused() { imconvert "$@" -colors 1 -unique-colors txt:- ; }  # https://www.imagemagick.org/discourse-server/viewtopic.php?t=12818
+	#TODO: imgcolorbg() { ...  https://pypi.org/project/colorific/
+	imgcolortopleft() { imconvert "$@" -format "%[pixel:u.p{0,0}]" info:  ; }  # https://legacy.imagemagick.org/discourse-server/viewtopic.php?t=36208
+	#imgcolorreplace() { ...
+fi
+
+if which oiiotool >/dev/null 2>&1 ; then
+	#alias imgaddmetadata="oiiotool -v --sattrib"
+	#alias imgaddcameramake
+	#alias imgaddcameramodel
+	#alias imgaddlocation
+	#alias imgadddescription="oiiotool -v --caption"
+	alias imglosslessrotate90="oiiotool -v --orientcw"
+	alias imgautotrim="oiiotool -v --autotrim"
+fi
+
+#alias imgcrop=...  # from https://9fans.github.io/plan9port/man/man1/crop.html
+#alias imgtogif, imgtoppm, imgtopng, toico=...  # from https://9fans.github.io/plan9port/man/man1/jpg.html
+
+alias convert=fileconvert
+#[ -f "$THIS_SCRIPT_DIR/fileconvert" ] || alias convert="ffmpeg -i"
+#alias encode=fileconvert
+#alias decode=fileconvert
+#alias norm=aacgain
+#alias normalize=aacgain
+#alias wavgain=wavegain
+alias flacgain="metaflac --add-replay-gain"
+
+alias ffmpeglscodecs="ffmpeg -codecs"
+flac2mp3() { ffmpeg -i "$1" -xerror -compression_level 0 -aq 0  -metadata description="encoded by eadmaster" "$2" ; }
+
+#alias ffmpeglosslessrotate=...
+
+cuesplit() { [ -z "$1" ] && echo "usage: $FUNCNAME AUDIOFILE CUEFILE" && return; shntool split "$1" -f "$2" -t "%p - %a - %n - %t" -o flac; }
+
+#alias pmidi="aplaymidi -p 128:0" -> MOVED IN pmidi
+alias pm=pmidi
+
+#alias cdinfo="cdrdao disk-info"
+#alias dvdinfo="dvd+rw-mediainfo /dev/dvd"
+alias cdinfo=discinfo
+alias dvdinfo=discinfo
+#alias cdscan="dvdisaster -s"
+#alias dvdscan="dvdisaster -s"
+#alias isols="isoinfo -f -i"
+
+#alias cdrwblank="cdrecord -v blank=fast"
+#alias burniso="cdrecord -v -sao driveropts=burnfree,noforcespeed"
+#alias burnisosim="burniso -dummy"
+#alias cdcheck, cdverify="cmp /dev/cdrom"
+
+#stop() { service $1 stop; }  -> MOVED IN stop
+restart() { service $1 restart; }
+alias servicesls="service --status-all"  # 2FIX: not grappable: systemctl list-units --type=service
+
+alias nstart="service networking start" 
+alias nstop="service networking stop" 
+alias smbstart="service smb start"
+alias smbstop="service smb stop"
+alias setwifihotspot="service softap start"
+
+alias alsa="service alsa"
+alias alsatest="speaker-test"
+#alias alsauser='fuser -v /dev/snd/*; lsof /dev/snd/*'
+alias audiocardsls="pacmd list ; aplay -L ; aplay -l"
+alias midils="pmidi -l || aplaymidi -l"
+alias piano=vmpk
+alias miditest=vmpk
+
+alias speak=say
+#alias say="espeak -v en" -> MOVED IN say
+#alias di="espeak -v it"
+#alias read="espeak -v en -f"  # NO: override builtin
+#alias leggi="espeak -v it -f"
+#alias diora="echo sono le ore $(date '+%k') e $(date '+%M') minuti | festival --tts --language italian"
+#saytime() { say "it is $(date '+%M') past $(date '+%k')" ; }
+saydate() { say "today is $(date '+%A %d %B 20 %y')" ; }
+#alias didata="espeak -v it \"oggi è $(date '+%A %d %B %Y')\""
+
+#alias av=antivir -> MOVED IN av
+#alias avupdate=
+#alias avmem="clamscan --memory"
+
+#alias links=elinks
+alias lynx=links
+
+#alias geturl=wget
+#alias get=wget
+alias wget="wget --no-hsts --hsts-file $TMPDIR/wget-hsts"  # default options
+#alias wput="wget ..."
+
+alias curl="curl --insecure --fail --show-error --location --remote-time "  # default options
+#alias put="curl -XPUT --insecure --data-binary"
+#alias post="curl -XPOST --insecure --data-binary"
+#alias post="curl -XPOST --insecure -d"  # ALTERNATIVE
+alias curlupload="curl --upload-file"
+#alias httpdelete="curl -XDELETE"
+#alias httpremove="curl -XDELETE"
+wgrep() { wcat "$2" | grep "$1" ; }
+wsize() { curl --head --silent --location "$1" | grep -i "content-length:" |  cut -d' ' -f2 | bytes2human ; }
+wdate() { curl --head --silent --location "$1" | grep -i "last-modified:" |  cut -d' ' -f2- ; }
+wmime() { curl --head --silent --location "$1" | grep -i "content-type:" |  cut -d' ' -f2- ; }
+#wmime() { curl -XHEAD -s -m2 -w '%{content_type}' "$1" ; }  # less reliable?
+alias curlstreamingget="curl --no-buffer"
+alias curljson="curl -H \"Content-Type: application/json\""
+# ftp shortcuts
+alias ftpls="curl --list-only "  # not recursive
+alias ftplsrecursive=ftpfind.py
+# webdav shortcuts https://gist.github.com/stokito/cf82ce965718ce87f36b78f7501d7940
+alias webdavls="curl -X PROPFIND -H 'Depth: 1'"
+alias webdavmkdir="curl -X MKCOL"
+
+alias web2png=webshot
+alias web2pdf=webshot
+
+alias wfinger=webfinger
+alias hostinfo=whois
+alias websiteinfo=whatweb
+alias siteinfo=whatweb
+
+alias netcat=nc
+#alias sock=nc
+#alias socket=nc
+#alias server="nc -v -l"
+#alias listen="nc -l"
+#alias client="nc -v"
+alias connect="nc -v"
+
+alias wsclient=wscat
+alias wsserver="websocat -s"
+
+# alias findcmd="grep $HOME/pendrive/Documents/note/linux.txt"
+alias findcmd=findcommand
+
+alias bench="cpubench ; gpubench"
+
+alias screenshot=shot
+#alias snap=shot  # conflict with the snap package manager
+#alias screencap=shot
+
+#alias mynote=mynotes
+#alias note=mynotes
+#alias notes=mynotes
+#alias memo=mynotes
+complete -W "$(ls $HOME/Documents/NEW | grep -v / | rev | cut -f 2- -d "." | rev)" mynotes  # quick setup autocompletion
+#complete -W "$(ls $HOME/pendrive/Documents/note | grep -v / | rev | cut -f 2- -d "." | rev)" mynotes  # quick setup autocompletion
+
+alias findnote=notegrep
+alias notesearch=notegrep
+#TODO: alias notesearchexact="notegrep -Z0"
+
+[ -f "$THIS_SCRIPT_DIR/gamma" ] || alias gamma="xgamma -gamma"
+# NO(for laptops only)? alias brightness=xdotool key XF86MonBrightnessUp|XF86MonBrightnessDown
+
+#alias noglob="set -f"  # http://abunchofbaloney.blogspot.it/2013/03/disable-wildcard-expansion-when-calling.html
+
+alias info=fileinfo
+alias meta=fileinfo
+alias check=filecheck
+#alias test=filecheck  # conflicts with builtin test cmd
+alias filetest=filecheck
+alias verify=filecheck
+alias lint=filecheck
+alias spell=filecheck
+alias fix=filefix
+alias repair=filefix
+alias crack=filecrack
+alias p2psearch=filemirrorsearch
+
+# c-like commands
+#alias ctime=epochtime
+#alias getepochtime=epochtime
+alias unixtime=epochtime
+alias epoch2local=epochtime2human
+#alias unix2local=epochtime2human
+#alias strlen="expr length" -> MOVED in script
+#alias strftime=...  -> MOVED in script
+#alias strtolower=tr '[A-Z]' '[a-z]'  -> MOVED in script
+#alias strtoupper=tr '[a-z]' '[A-Z]'  -> MOVED in script
+alias rand='echo $RANDOM'
+
+# python-like commands
+alias print=printf  # CONFLICTS WITH "print" command
+alias len=strlen
+#alias size=strlen  # conflicts
+#alias type="file -i"  # CONFLICTS WITH "type" builtin
+alias upper=strtoupper
+alias uppercase=strtoupper
+alias lower=strtolower
+alias lowercase=strtolower
+
+alias netbench=webbench
+alias speedtest=webbench
+
+type sd 2> /dev/null && alias replace=sd
+
+alias wildcards2re="sed 's/\./\\\./g; s/\*/\.\*/g; s/?/./g'"
+
+alias py=python
+alias py3=python3
+type ipython 2> /dev/null && alias py=ipython
+type ipython3 2> /dev/null && alias py=ipython3
+type ptpython3 2> /dev/null && alias py=ptpython3
+#alias piton=python
+#alias pithon=python
+#alias pyton=python
+alias pytohn=python
+alias pytohn3=python3
+
+alias ic=cling  # interactive c/cpp shell
+alias pysh=xonsh  # https://github.com/xonsh/xonsh
+
+alias httpd=uhttpd
+alias https=uhttpd
+alias uhttps=uhttpd
+#alias serve=uhttpd
+alias ftpd=uftpd
+alias ftps=uftpd
+
+#[ -f "$THIS_SCRIPT_DIR/countdown" ] || countdown() { for i in $(seq 1 $1); do sleep 1; echo $i; done; }
+#alias timeout=timer  # conflict with timeout command
+[ -f "$THIS_SCRIPT_DIR/stopwatch" ] || stopwatch() { echo 'timer started, press CTRL+C to stop...' ; time cat; }
+#alias timer=stopwatch
+alias chronometer=stopwatch
+#alias clock=time
+
+#alias pylab="ipython --pylab"
+#alias isympy="ipython ..."
+
+# single-letter aliases
+alias h=history
+#alias l=ls
+#alias f="find . -iname"
+alias s=f
+#alias p="ps -ut" # oppure -lt -aux?
+alias i=fileinfo
+alias d="du -hcx"
+#alias usage=d
+alias c=cd
+#alias c=calc
+alias l=ls
+#alias n=nc
+#alias s=ssh
+#alias g=grep
+#alias g=geany
+#alias e=geany
+
+#alias ll='ls -AFh --color=auto'
+#alias la='ls -A'
+alias bb=busybox
+alias ff=firefox
+alias oo=libreoffice
+alias lo=libreoffice
+alias loffice=libreoffice
+#alias ii=identify
+alias mi=mediainfo
+#alias rn=rename
+#alias rn=mv
+
+#alias df="df -Tmh" # prints Free Disk space in Human-readable mode
+
+#alias clip=pbcopy
+#alias pbcopy='xclip -selection clipboard' -> MOVED in pbcopy
+#alias pbpaste='xclip -selection clipboard -o' -> MOVED in pbpaste
+alias clipboardget=pbpaste
+alias clipboardset=pbcopy
+#alias clipboardput=pbcopy
+alias clipboardhistory=pbhistory
+alias clipboardentries="xclip -o -t TIMESTAMP"  # https://unix.stackexchange.com/questions/163081/application-that-allows-to-show-clipboard-contents-and-its-mime-type
+#alias kcopy=pbcopyfile
+alias copyfile=pbcopyfile
+#alias kpaste=pbpastefile
+alias pastefile=pbpastefile
+#TODO: clipboardentries=https://www.nirsoft.net/utils/inside_clipboard.html
+#alias cb=clipboard  # https://github.com/Slackadays/Clipboard
+
+#alias macget="ifconfig -a | grep HWaddr"  # moved in script
+#alias ipget="ifconfig || ip addr"  # moved in script
+#alias resolve=ipget
+#alias ipaddr="ip addr"
+alias getip=ipget
+macaddrouigrep() { grep -s "$@" /var/lib/ieee-data/oui.txt  /usr/share/ieee-data/oui.txt  /usr/share/nmap/nmap-mac-prefixes  /usr/share/misc/oui.txt ; }  # https://www.poftut.com/how-to-lookup-oui-organizationally-unique-identifier-in-linux/
+isprivateip() { python3 -c "import ipaddress ; print(ipaddress.ip_address(\"$1\").is_private)" ; }
+ispublicip() { python3 -c "import ipaddress ; print(not ipaddress.ip_address(\"$1\").is_private)" ; }
+isinsubnet() { python3 -c "import ipaddress ; print(ipaddress.IPv4Address(\"$1\") in ipaddress.IPv4Network(\"$2\"))" ; }
+alias ipcalc=sipcalc
+alias subnetinfo=sipcalc
+alias netmask=sipcalc
+
+alias setip=ipset
+alias ipreset="ipset dynamic"
+alias reipset=ipreset
+
+alias setdns=dnsset
+alias dnsreset="dnsset dhcp"
+alias resetdns=dnsreset
+alias resreset="xrandr --auto ; pcmodeset"
+alias resetres=resreset
+alias serialreset="tput reset > "
+
+alias serial="busybox microcom"
+alias serialls="cat /proc/tty/drivers"
+alias lsserial=serialls
+
+alias xandr=xrandr
+alias displayls="xrandr"
+alias monitorsls=displaysls
+alias switchdisplay="xrandr --primary --auto --output "
+#setdisplayrotation() { xrandr --output $CURRENT_XRANDR_OUTPUT --rotate $1 ; }
+resetdisplayrotation() { xrandr --output $CURRENT_XRANDR_OUTPUT --rotate normal ; }
+
+alias dnsget="cat /etc/resolv.conf ; nmcli dev show | grep DNS"
+#alias dnsserversls="dig -t axfr "
+alias dnscachestats="systemd-resolve --statistics"
+alias dnscachereset="systemd-resolve --flush-cache | sudo systemctl restart nscd"  # https://www.maketecheasier.com/flush-dns-cache-linux/
+
+if [ ! $UID = 0 ] ; then
+	# sudo wrappers for non-root
+	alias routes="sudo route"
+	alias dmesg="sudo dmesg"
+fi
+
+#alias appendnotes=mynotesappend
+alias np=mynotesappend
+#alias na=mynotesappend
+alias no=mynotesappend
+alias notesp=mynotesp
+
+
+if [ -d $PENDRIVE/Documents/db ]; then
+	findhave() { dbgrep "$1" $PENDRIVE/Documents/db/list/have ; }
+	alias havesearch=findhave
+	finddisc() { dbgrep "$1" $PENDRIVE/Documents/db/list/have/discs ; }
+	havelist() { find $PENDRIVE/Documents/db/list/have/discs -iname "$1Have.txt" | xargs xdg-open ; }
+	#alias havelists=havelist
+	alias findbackup=findhave
+	#alias finddoc=findhave
+	alias whereis=findhave
+	#alias locate=findhave  # conflicts
+
+	dumpsearch() { dbgrep "$1" $PENDRIVE/Documents/db/datfile ; }  #  $retroarch_base_path\database\dat, metadata?
+	alias datsearch=dumpsearch
+	alias romsearch=dumpsearch
+	alias gamesearch=vgsearch
+	goodsearch() { dbgrep "$@" "$PENDRIVE/Documents/db/datfile/GoodTools" ; }
+	#nointrosearch() { ugrep "$@" -i -I -z -g "$PENDRIVE/Documents/db/datfile/No Intro*.zip" ; }  # TODO: fix
+	nointrosearch() { grep -i -I  "$@" $HOME/datfiles/nointro/*.dat ; }  # TODO: remove
+	scenesearch() { dbgrep "$@" $PENDRIVE/Documents/db/datfile/scene ; }
+	comicssearch() { dbgrep "$1" $PENDRIVE/Documents/db/index/comics ; }
+	
+	downloadsearch() { dbgrep "$1" $PENDRIVE/Documents/db/download ; }
+	mangasearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/manga ; }
+	manualsearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/manuals ; }
+	musicsearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/music ; }
+	midisearch() { dbgrep "$1" $PENDRIVE/Documents/db/download/midi ; }
+	
+	#electsearch() { dbgrep -Z0 "$1" $PENDRIVE/Documents/db/elect ; }
+	#electfind() { find $PENDRIVE/Documents/db/elect -type f  -iname "*$1*" -print  ; }
+	#MOVED IN A SCRIPT:
+	    #pinouts() { find $PENDRIVE/Documents/db/elect/pinout -type f -not -name "*.txt" -not -name "*.md" -iname "*$1*" -print -exec xdg-open {} \; ; }
+	    #fzfpinouts() { find $PENDRIVE/Documents/db/elect/pinout -type f | fzf --no-extended --query="$@" | xargs xdg-open ; }
+	pinouts() { fuzzyfind "$@" $PENDRIVE/Documents/db/elect ; }
+	alias pinout=pinouts
+	#alias schematic=pinouts
+	alias pins=pinouts
+	#pinoutsaa() { find $PENDRIVE/Documents/db/elect/pinout/asciiart -iname "*$1*" -print | xargs cat | ( aapinouts_prettyprint.sed || cat) ; }
+	#alias aapinouts=pinoutsaa
+	#fzfasciifromzip() {  unzip -Z1 "$1" | fzf --exact --no-extended | xargs unzip -p "$1" ; } # select a file inside a zipped archive and print it
+	#electfzf() { export FZF_DEFAULT_COMMAND="find  $PENDRIVE/Documents/db/elect -iname '*.txt' -o -name '*.md' " ; fzf --exact --no-extended | xargs cat  ; }
+	
+	psxsearch() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps1/sonyindex_PSone*.txt ; }
+	alias ps1search=psxsearch
+	ps2search() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps2/sonyindex_PS2*.txt ; }
+	pspsearch() { grep -i "$1" $PENDRIVE/Documents/db/vg/psp/sonyindex_PSP*.txt ; }
+	ps3search() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps3/ps3tdb.txt ; }
+	ps4search() { grep -i "$1" $PENDRIVE/Documents/db/vg/ps4/*.* ; }
+	wiisearch() { grep -i "$1" $PENDRIVE/Documents/db/vg/wii/wiitdb_titles.txt ; }
+	alias ngcsearch=wiisearch
+	wiiusearch() { grep -i "$1" $PENDRIVE/Documents/db/vg/wiiu/wiiutdb_titles.txt ; }
+	xboxsearch() { grep -i "$1" $PENDRIVE/Documents/db/vg/xbox/xbox_titleids.tsv ; }
+	xb360search() { grep -i "$1" $PENDRIVE/Documents/db/vg/xb360/gamesdatabase_*.tsv ; }
+	3dssearch() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/3ds/*.json ; }
+	nswsearch() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/nsw/*.json ; }
+	# MEMO: do not quote escaped paths!
+
+fi
+
+if [ -d $PENDRIVE/Documents/book ]; then
+	#bookfind() { find $PENDRIVE/Documents/book -type f  -iname "*$1*" -print  ; }  # -not -name "*.txt" -not -name "*.md"  -exec xdg-open {} \;
+	#alias docfind=bookfind
+	#alias docsfind=bookfind
+	#alias rtfd=bookfind
+	bookfind() { fuzzyfind "$@" $PENDRIVE/Documents/book ; }
+	manual() { fuzzyfind "$@" $PENDRIVE/Documents/book/man ; }
+fi
+
+if [ -d $PENDRIVE/temp/playing ]; then
+	romfind() { fuzzyfind "$@" $PENDRIVE/temp/playing ; }  # TODO: more paths
+fi
+
+# mame aliases   
+if which mame >/dev/null 2>&1 ; then
+	#alias mess=mame
+	#alias mamefaq=mameinfo
+	mamegrep() { mame $1 -listxml | awk -v 'IGNORECASE=1' -v RS="<software" '/'"$1"'/ { print $0 }' ; }
+	messgrep() { mame -listsoftware $2 | awk -v 'IGNORECASE=1' -v RS="<software" '/'"$1"'/ { print $0 }' ; }
+	alias mamedebug="mame -debug -v"
+	complete -W "$(ls $HOME/.mame/roms/*.zip)" mame
+fi
+
+indexgrep() { dbgrep "$1" $PENDRIVE/Documents/db/index ; }
+#alias maggrep=indexgrep
+
+geosearch() { dbgrep "$1" $PENDRIVE/Documents/db/geo ; }  # TODO: merge in geoencode script?
+alias locationsearch=geosearch
+alias citysearch=geosearch
+alias langsearch=geosearch
+#alias human2gps=geocode
+alias gps2human=geocode
+alias geolocate=geocode
+
+geoview() { [ -z "$2" ] && echo "usage: $0 LAT LON" || { xdg-open "https://www.google.com/maps/place/${1},${2}" ; } ; }  # https://stackoverflow.com/questions/1801732/how-do-i-link-to-google-maps-with-a-particular-longitude-and-latitude
+alias maps=geoview
+alias gmaps=geoview
+
+alias ipgeolocate=geoip
+alias ipinfo=geoip
+
+alias rub=contactsearch
+alias addressbook=contactsearch
+alias contactsls=contactsearch
+alias phonesearch=contactsearch
+#phonesearch() { contactsearch $1 | grep -m1 'CELL' | cut -d: -f2 ; }
+
+alias whocall=phoneid
+alias whoisphone=phoneid
+alias phonenuminfo=phoneid
+alias telnuminfo=phoneid
+alias tel2operator=phoneid
+
+#alias datessearch=calsearch
+#alias when=calsearch
+
+#chemsearch() { dbgrep "$1" $PENDRIVE/Documents/db/chem ; }  # moved in script
+alias elemsearch=chemsearch
+alias additivesearch=chemsearch
+
+#findext() { dbgrep "$1" $PENDRIVE/Documents/db/file/headers.ini ; }
+#findmime() { dbgrep "$1" $PENDRIVE/Documents/db/hist ; }
+
+#freqgrep() { dbgrep "$1" $PENDRIVE/Documents/db/freq ; }
+#alias rfgrep=findfreq
+alias rfscan=rfscan
+alias radioscan=rfscan
+# alias radiocap=...
+
+if which rtl_433 >/dev/null 2>&1 ; then
+	alias 433scan="rtl_433 -a 4"
+	alias 868scan="rtl_433 -f 868M -a 4"  # EU 433 alt.
+	alias 915scan="rtl_433 -f 915M -a 4"  # EU 433 alt.
+	alias rtl4332mqtt="rtl_433 -F json -M utc | mosquitto_pub -t home/rtl_433 -l"  # https://github.com/merbanan/rtl_433/blob/master/examples/mqtt_rtl_433_test_client.py
+fi
+
+if which broadlink_cli >/dev/null 2>&1 ; then
+	# https://github.com/mjg59/python-broadlink/tree/master/cli#universal-remotes
+	broadlinklearnir() { broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --learn ; }
+	broadlinklearnrf() { broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --rflearn --frequency 433.92 ; }
+	broadlinksend() { broadlink_cli $MY_BROADLINK_RM4PRO_DEVICE --send "$@" ; }
+fi
+
+alias rfc=specs
+#alias docs=specs
+alias standard=specs
+
+alias xml=xmlstarlet
+alias xmlproc=xsltproc
+alias xmlpprint="xml fo"  #  || xmllint --format
+#alias xml2xpaths=""
+#alias xml2paths=fileinfo
+#alias xml2paths=xml2  # MOVED in a script
+#xmlgrep() { xml2paths "$2" | grep "$1" ; }
+
+# jq aliases   
+if which jq >/dev/null 2>&1 ; then
+	alias jsongrep=jq
+	alias ndjsonsplit="jq --compact-output"
+	alias json2ndjson=ndjsonsplit
+	#alias json2csv="jq -r '. | @csv'"   #  https://stackoverflow.com/questions/32960857/how-to-convert-arbitrary-simple-json-to-csv-using-jq
+fi
+
+# fq aliases (jq for binary formats) https://github.com/wader/fq
+if which fq >/dev/null 2>&1 ; then
+	alias any2json="fq ."
+	alias 2json=any2json
+	alias html2json="fq -d html ."
+	
+	# ALT.
+	#alias 2json="jc --pretty --asciitable "  # converts the output of popular command-line tools, file-types, and common strings to JSON, YAML, or Dictionaries   https://github.com/kellyjonbrazil/jc
+	#alias asciitable2json="jc --pretty --asciitable "
+fi
+
+# jtbl aliases https://github.com/kellyjonbrazil/jtbl
+if which jtbl >/dev/null 2>&1 ; then
+	alias json2table="jtbl "
+	alias ndjson2table="jtbl "
+	alias json2csv="jtbl --csv "
+	alias json2markdown="jtbl --markdown "
+	alias json2mdtable="jtbl --markdown "
+	alias json2html="jtbl --html "
+fi
+
+#alias json2paths=fileinfo
+#alias json2pointers=json2paths.py
+alias jsonmin=jsoncanonize.py
+alias feed2json=xml2json.py
+alias rss2json=xml2json.py
+alias jsonui="export FX_NO_MOUSE=1 ; fx " # opt. start not expanded https://github.com/antonmedv/fx/discussions/249
+alias jx=jsonui
+
+
+alias alert=notify
+#alias alert=dialog
+#alias alert|notificationsls=... # TODO: https://askubuntu.com/questions/1132849/view-recent-gnome-notifications
+
+[ -z "$ANDROID_ROOT" ] && alias pkg=package
+alias packagesls="package list | less"
+alias install="package install"
+alias uninstall="package uninstall"
+alias unistall="package uninstall"
+alias findpackage="package find"
+#alias packagefind="package find"
+#alias pkgsearch="package find"
+#alias packageinfo="package info"
+complete -W "list install uninstall find info" package  # quick setup autocompletion
+
+alias undeb=fileunpack
+
+#whereisinrepos() { dpkg -S "\/$1" | grep "$1$" ; apt-file search --regex "/$1\$" ; }  # MOVED in package
+alias whereisinrepos="package findfile"
+alias findinrepos="package findfile"
+alias findfileinrepos="package findfile"
+alias findcmdinrepos="package findfile"
+
+#alias rpminfo="rpm -qli" # -> MOVED IN fileinfo
+#alias rpmfind="rpm -qa | grep "
+#alias unrpm=fileunpack
+
+# apt aliases   
+if which apt >/dev/null 2>&1 ; then
+    alias addrepo=add-apt-repository
+    alias reposls="apt-cache policy"
+    alias aptreinstall="sudo apt-get install --reinstall"
+    alias aptreconfigure="sudo dpkg-reconfigure"
+    alias aptfind="apt search --names-only"
+    #alias debsearch=aptfind
+    #alias finddeb=aptfind
+    #alias debfind=aptfind
+    alias aptupdate="sudo apt-get install --only-upgrade"
+    alias aptupgrade=aptupdate
+    alias aptupdaterepos="sudo apt-get update --allow-unauthenticated"
+    alias aptreloadrepos=aptupdaterepos
+    alias aptupdatekey="sudo apt-key adv --keyserver keys.gnupg.net --recv-keys"
+    # ALT.: https://launchpad.net/~webupd8team/+archive/ubuntu/y-ppa-manager
+    alias aptimportkey="sudo apt-key add"   # import/update a local Release.key
+    alias apthistory="zless /var/log/apt/*.gz ; cat /var/log/apt/history.log"
+    debinfo() { dpkg -L $1 ; apt-cache show $1 ; apt list -a $1 ; }
+    #alias debls="apt-cache search ."
+    #[ -f "$THIS_SCRIPT_DIR/fileunpack" ] || alias undeb="dpkg-deb -x"
+    alias mkdeb=checkinstall
+    alias aptfixbrokenpackages="sudo dpkg --configure -a"
+    aptfindfileinrepos() { dpkg -S "\/$1" | grep "$1$" ; apt-file search --regex "/$1\$" ; }
+    aptfindbiggestinstalledpackages() { dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n20 ; }  # https://unix.stackexchange.com/questions/40442/which-installed-software-packages-use-the-most-disk-space-on-debian
+    alias aptfindlarge=aptfindbiggestinstalledpackages
+fi
+
+# snap aliases    
+if which snap >/dev/null 2>&1 ; then
+    alias snapls="snap list"
+    alias snapinstall="sudo snap install --classic"
+    alias snapuninstall="sudo snap remove"
+    alias snapupdate="sudo snap refresh"
+    alias snapdownload="snap download"  # https://forum.snapcraft.io/t/download-snaps-and-install-offline/15713
+    alias snapget=snapdownload
+fi
+
+# gem (ruby package manager) aliases
+if which gem >/dev/null 2>&1 ; then
+    alias geminstall="gem install --user-install --no-ri --no-rdoc"
+    #alias gemuninstall=...
+    #alias gemls=...
+fi
+    
+if which flatpak >/dev/null 2>&1 ; then
+    alias flatpakls="flatpak list --columns=name,application,size,version,branch,origin,installation"
+    alias flatpakinstall="flatpak install flathub"
+    alias flatpakuninstall="flatpak uninstall"
+    alias flatpakupdate="flatpak update"
+    alias flatpakrun="flatpak run --filesystem=host --filesystem=home --share=network --device=dri --socket=pulseaudio --socket=system-bus --socket=session-bus "
+    #flatpakdownload() { flatpak install --no-deps flathub "$1" ; flatpak create-usb  . $1 ; flatpak remove "$1" }
+    # flatpak build-bundle /var/lib/flatpak/repo/ $1.flatpak "$1" stable ;  }
+    # flatpak --verbose create-usb /r 
+    alias flatpakget=flatpakdownload
+fi
+
+# nix aliases
+if which nix-env >/dev/null 2>&1 ; then
+    alias nixinstall="nix-env --verbose --prebuilt-only --install"
+    alias nixuninstall="nix-env -e"
+    alias nixlist="nix-env -q | cat"
+    nixinfo() { nix-env -qa --description ".*$@.*" | cat ; }
+    alias nixsearch="nix-env -qa"
+    alias nixupdate="nix-env --verbose -u"
+    # ... https://nixos.wiki/wiki/Cheatsheet
+fi
+
+# zap aliases  https://github.com/srevinsaju/zap
+if which zap >/dev/null 2>&1 ; then
+#    alias appimageinstall="zap install"
+#    alias appimageinstalllocal="zap install"
+    alias appimageinstallgithub="zap install --github --from "
+    alias appimageuninstall="zap remove"
+    alias appimageupdate="zap update"
+    alias appimagelist="zap list"
+#    #appimageinfo() { nix-env -qa --description ".*$@.*" | cat ; }
+    alias appimagesearch="zap search"
+fi
+
+alias color=colorsearch
+#alias colorname=colorsearch
+
+# pastel aliases  https://github.com/sharkdp/pastel
+if which pastel >/dev/null 2>&1 ; then
+    alias colorpick="pastel pick"
+    alias colormix="pastel mix"
+    alias colorcomplement="pastel complement"
+fi
+
+#alias scite=geany
+#alias khex=okteta
+
+if which pastel >/dev/null 2>&1 ; then
+	alias psls="procs"  # https://github.com/dalance/procs
+else
+	alias psls="ps -n"  #"ps -Alf"
+fi
+
+alias pls=psls
+alias psl=psls
+alias psi=psinfo
+#alias pss=pssuspend
+#alias psr=psresume
+
+#alias pstree="pstree -C age -p"
+enable -n suspend  # disable the conflicting shell builtin command
+alias suspend=pssuspend
+alias resume=psresume
+#alias pmonitor=psinfo
+#[ -f "$THIS_SCRIPT_DIR/pssuspend" ] || alias suspend="pkill -STOP"
+#alias pspause=pssuspend
+#[ -f "$THIS_SCRIPT_DIR/psresume" ] || alias resume="pkill -CONT"
+#alias terminate="pkill -9"
+alias detach=psdetach
+pscount() { pgrep -c "$@" || ps -C "$@" --no-headers | wc -l ; }  # https://stackoverflow.com/questions/3058137/finding-process-count-in-linux-via-command-line
+killjobs() { kill -9  $(jobs -p) ; }
+#killchilds() { kill -- -$$ ; }  # 
+
+alias memdump=gcore
+
+alias xmlescape=xmlencode
+alias htmlescape=xmlencode
+alias htmlunescape=xmldecode
+alias htmldecode=xmldecode
+alias urlescape=urlencode
+alias urlquote=urlencode
+alias urlunquote=urldecode
+alias urlencodeplus="urlencode -m"
+alias urldecodeplus="urlencode -d -m"
+alias morseencode=morse
+alias morsedecode=morse2ascii
+alias geoencode=geocode
+alias geodecode="geocode -m reverse"
+alias geodist="geocode --distance"
+alias gpsdist=geodist
+alias calcspell=beghilos
+
+# TODO: move into a script? https://unix.stackexchange.com/questions/465483/cmdline-umask-calculator
+#  awk alternative  https://askubuntu.com/questions/152001/how-can-i-get-octal-file-permissions-from-command-line
+umaskencode() { savmask=$(umask) || return 1 ; umask 777 ; umask $1 ; umask ; umask -- "$savmask" ; }
+alias human2umask=umaskencode
+#alias umask=umaskencode  # conflicts
+umaskdecode() { savmask=$(umask) || return 1 ; umask $(printf '%o' "$((0777 ^ 0$1))") ; umask -S ; umask -- "$savmask" ; }
+alias umask2human=umaskdecode
+alias octalpermdecode=umaskdecode
+
+alias byte2human=bytes2human
+bits2range() { echo -n "0 .. " ; echo "2 ^ $1 - 1" | bc ; }  # TODO: divide by 2 for signed integers
+range2bits() { python -c "import math ; print(int(math.floor(math.log($1)/math.log(2)) + 1))" ; } # TODO: add an extra bit for the sign
+alias biteditor="bitwise -i"  # https://github.com/mellowcandle/bitwise
+
+[ -f "$THIS_SCRIPT_DIR/hexcmp" ] || hexcmp() { ucon64 -c="$@"; }
+alias hexcmp=hexdiff
+alias bindiff=hexdiff
+alias bincmp=hexdiff
+#alias diffbin=hexcmp
+#alias diffhex=hexcmp
+
+alias hexsearch=hexgrep
+alias bingrep=hexgrep
+alias binreplace=hexreplace
+
+alias entropy="binwalk -E"
+#alias plotentropy="binwalk -E"
+
+alias uid=id
+alias mygroups="groups | sort | tr ' ' '\n'"
+alias usersls="cut -d':' -f1 /etc/passwd | sort"  # | tr '\n' '\t'
+alias groupsls="cut -d':' -f1 /etc/group | sort"  # | tr '\n' '\t'
+#addmetogroup() { sudo usermod -a -G $1 $USER ; }
+
+#alias chusr=chown
+#alias own="chown $USER:$USER"
+takeown() { sudo chown -cR $USER:$USER "$@" ; sudo chmod -cR u+X "$@" ; }
+#TODO: resetperm() { ... } #  restore default file permissions and ownership  https://unix.stackexchange.com/questions/49959/how-to-restore-default-group-user-ownership-of-all-files-under-var
+
+alias ytdl="yt-dlp -U --embed-metadata  --embed-chapters --embed-subs"  # --remux-video mp4
+alias ytformats="yt-dlp -F -U --embed-metadata  --embed-chapters --embed-subs"
+ytdlid() { yt-dlp -f $2 -U --embed-metadata  --embed-chapters --embed-subs "$1" ; }
+alias ytdlmp4="ytdl --remux-video mp4" # -f mp4
+alias videoget=ytdl
+#alias videourlget="youtube-dl --get-url" -> MOVED IN mediaurlget
+alias videourlget=mediaurlget
+alias geturls=html2urls
+#alias getlinks=html2urls
+alias html2links=html2urls
+alias yt2m3u=youtube2m3u
+
+alias posix-shell=posh
+
+#alias mime="file -bi"
+alias mimeget="file -bi"  # FIX for symlinks: mimeget() { file -bi $(readlink -f "$@") ; }
+alias getmime=mimeget
+#alias type=mimeget  # NO? conflicts with bash builtin
+alias encodingget=mimeget
+alias suggestext="file --extension"
+alias checkext="file --extension"
+mime2ext() { python -m mimetypes -e "$1" ; }
+
+niceget() { ps -o nice -p $(pidof -s $1); }
+alias prioget=getnice
+prioset() { renice $1 $(pidof -s $2); } # TODO: add aliases high=-10, low=10
+#alias pidget=pidof
+#alias pidget=pgrep
+#alias pgrep="ps -e | grep "
+#alias pkill="killall -v "
+
+alias mkpass=pwgen
+alias passgen=pwgen
+#alias randomget='echo $RANDOM'
+alias randomget='od -A n -t d -N 1 /dev/urandom  | tr -d " "'
+#alias uuid1get='python -c "import uuid; print(uuid.uuid1())"'
+alias uuid4get='python -c "import uuid; print(uuid.uuid4())"'
+
+alias pdfcut=filecut
+#alias pdfsplit=pdfcut
+
+[ -f "$THIS_SCRIPT_DIR/dircmp" ] || dircmp() { diff -qr "$@" ; }
+alias cmpdir=dircmp
+#alias diffdir=dircmp
+alias dirdiff=dircmp
+
+alias ra=retroarch
+alias retroarch32=retroarch
+
+#alias testjoystick=jstest
+alias joysticksls="jstest-sdl -l ; sdl2-jstest --list ; evdev-joystick --l ; dmesg | grep Joystick"  # TODO: print some infos  https://wiki.archlinux.org/index.php/Gamepad
+alias jsls=joysticksls
+alias jsinfo="udevadm info " # /dev/input/js0
+alias fftest="jstest-sdl -r 0; sdl2-jstest -r 0 ; sudo fftest /dev/input/by-id/usb-*event-joystick " # rumble test
+
+alias reloadudevrules="sudo udevadm control --reload-rules ; sudo udevadm trigger"
+
+alias retroarch_network_command="nc -u -w1 127.0.0.1 55355"
+
+alias state2mem="STATE2HI_DEBUG=1 state2hi.py"
+
+alias dict=sdcv
+#alias findword=dict
+alias jap2latin=jap2romaji
+#alias kana=romaji2kana
+#alias romaji=transliterate
+#alias ipa="espeak --ipa"
+alias kanjisearch=dictjap2eng
+alias jap2engdict=dictjap2eng
+alias eng2japdict=dicteng2jap
+
+### math utils
+#alias bc="bc -l"  # always prints decimal digits
+#alias bchex=hexcalc
+#alias bcbin=bincalc
+
+alias solve=mathsolve
+#alias equation-solve=mathsolve
+#alias symplify=mathsimplify
+alias simplify=mathsimplify
+#alias compute=mathsimplify
+#alias math=mathsimplify
+#alias plot="gnuplot -persistent -e plot "
+alias plot=mathplot
+alias functionplot=mathplot
+alias factorize=factor
+alias mean=avg
+#isprime() { factor.sh $1 | grep -qE '^(.*): \1$' ; }  # && echo prime || echo "not prime"
+isprime() { python -c "from sympy import *; print(simplify($1).is_prime )" ; }
+#divisors() { python -c "from sympy import *; print(divisors($1) )" ; }
+alias question=qa
+alias answer=qa
+alias ai=qa
+
+percentage() { echo "($2 / $1 * 100)" | bc ; }  # usage: percentage ORIGINAL COMPRESSED
+#alias proportion=percentage
+alias ratio=percentage
+#alias increment=percentage
+
+## set operations using files (1 line=1 element) https://catonmat.net/set-operations-in-unix-shell  https://catonmat.net/ftp/setops.txt
+#alias sumlines=sum  # conflicts with /usr/bin/sum
+#if which setop >/dev/null 2>&1 ; then
+#	alias equalset="setop --equal"
+#	alias setsize="setop --count"
+#fi
+
+if which python >/dev/null 2>&1 ; then
+    gcd() { python3 -c "import math; print(math.gcd($1, $2))" ; }  # MEMO: max 2 vals
+    lcm() { python3 -c "import math; print(abs($1*$2) // math.gcd($1, $2))" ; }  # https://stackoverflow.com/questions/51716916/built-in-module-to-calculate-least-common-multiple
+
+	# moved in scripts
+    # usage: $0 "set1_el1 set1_el2 set1_el3 ..." "set2_el1 set2_el2 set2_el3 ..."
+    #pythonsetop_fromfiles() { python -c "import sys, itertools; s=set(open(\"$1\").read().splitlines()) ; print('\n'.join(map(str, list($2(s)))))" ;  }
+    #pythonsetop_fromargs() { python -c "import sys, itertools; s=set(\"$1\").split()) ; print('\n'.join(map(str, list($2(s)))))" ;  }
+    #python2setop_fromfiles() { python -c "import sys; set1=set(open(\"$1\").read().splitlines()) ; set2=set(open(\"$2\").read().splitlines()) ; print('\n'.join(map(str, list(set1.$3(set2)))))" ;  }
+    #python2setop_fromstdin() { ...
+    #python2setop_fromargs() { set1=set(\"$1\".split()) ; set2=set(\"$2\".split()) ; print(list(itertools.product(set1, set2)))" ; }
+    #union() { python2setop_fromfiles "$1" "$2" union ;  }
+    #intersection() { python2setop_fromfiles "$1" "$2" intersection ;  }
+    #difference() { python2setop_fromfiles "$1" "$2" difference ;  }
+    #product() { python -c "import ; from pprint import pprint; set1=set(\"$1\".split()) ; set2=set(\"$2\".split()) ; pprint(list(itertools.product(set1, set2)))" ; }
+    #alias cartesian-product=productset
+
+    # usage: $0 "el1 el2 el3 ..." EXPONENT
+    #setpower() { python -c "import itertools, math; from pprint import pprint; args_list=\"$*\".split() ; pprint(list(itertools.product(args_list[0:-1], repeat=int(args_list[-1]))))" ; }
+    #alias cartesian-power=powerset
+
+    # usage: $0 "el1 el2 el3 ..."
+    #permutationspy() { python -c "import itertools; from pprint import pprint; args_list=\"$*\".split() ; pprint(list(itertools.permutations(args_list)))" ; }  #  https://stackoverflow.com/questions/104420/how-to-generate-all-permutations-of-a-list
+    #permutationspy2() { pythonsetop_fromfiles "$1" itertools.permutations ; }
+    alias anagrams=permutations
+    #powersetpy() { python -c "import itertools, math; from pprint import pprint; s=\"$*\".split() ; pprint(list(itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1))))" ; }
+
+    # usage: $0 "el1 el2 el3 ..." ELEMENTS_NO
+    #permutationspartial() { python -c "import itertools; from pprint import pprint; args_list=\"$*\".split() ; pprint(list(itertools.permutations(args_list[0:-1], int(args_list[-1]))))" ; }
+    #alias dispositions=permutationspartial
+    # TODO: permutationsrepeated() {}
+    #combinations() { python -c "import itertools; from pprint import pprint; args_list=\"$*\".split() ; pprint(list(itertools.combinations(args_list[0:-1], int(args_list[-1]))))" ; }
+    #combinationsrepeated() { python -c "import itertools; from pprint import pprint; args_list=\"$*\".split() ; pprint(list(itertools.combinations_with_replacement(args_list[0:-1], int(args_list[-1]))))" ; }
+
+    factorial() { python3 -c "import math; print(math.factorial($1))" ; }  # compute "n!"
+    alias anagramscount=permutationscount
+    permutationscount() { python -c "from math import factorial; n = $1 ; k = $2 ; print( factorial(n) / factorial(n-k) )" ; }  # compute "n! / (n - k)!"
+    #alias dispositionscount=permutationscount
+    #dispositionsrepeatedcount() { echo "$1 ^ $2" | bc ; }  # compute "n^k"
+    # ALTERNATIVE: from scipy.special import perm; perm(n, k, exact=True)  # https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.perm.html
+    combinationscount() { python -c "from math import factorial; n = $1 ; k = $2 ; print( factorial(n) / ( factorial(k) * factorial(n-k) ) )" ; }  # compute "binomial(n,k) = n! / (k! * (n - k)!)"
+    # ALTERNATIVE: from scipy.special import comb; comb(n, k, exact=True)  # https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.comb.html
+    combinationsrepeatedcount() { python -c "from scipy.special import comb; n = $1 ; k = $2 ; print(comb(n, k, exact=True, repetition=True))" ; }
+fi
+
+#alias convertunits=calc
+#alias unitsconvert=units
+
+if [ -d /usr/share/units ]; then
+	alias unitsls="cat /usr/share/units/definitions.units ; cat $PENDRIVE/Documents/db/phys/units.dat ; qalc --list-units"
+	alias constantsls="qalc --list-variables"
+	alias currencyls="(cat /usr/share/units/currency.units || zcat /usr/share/misc/currency.gz)"
+	alias localels="(cat /usr/share/units/locale_map.txt || cat /etc/locale.gen ; echo -e "\ninstalled:" ; locale -a )"
+fi
+
+if [ -d /usr/share/misc ]; then
+	alias langls="(zcat /usr/share/misc/languages.gz || cat /usr/share/units/locale_map.txt)"
+	alias countryls="zcat /usr/share/misc/countries.gz ; cat $PENDRIVE/Documents/db/geo/countries.csv"
+	alias abbrevsls="zcat /usr/share/misc/abbrevs.gen.gz"
+	alias tldls="zcat /usr/share/misc/top-level.domains.gz"
+fi
+
+# if [ -d $PENDRIVE/Documents/db/geo
+#alias eucountriessearch="jq -c '.features[] | .properties | select(.continent==\"Europe\") | pick(.name, .postal, .wb_a2, .wb_a3)' $PENDRIVE/Documents/db/geo/countries.geojson "
+# grepeucountries="eucountriessearch | grep -F -f-"
+#alias eucountriesgrep="grep  "$(coco EU --output_sep \|)""
+#alias eucountriesiso2grep="grep  "$(coco EU --output_sep \| --to ISO2)""
+#alias eucountriesiso3grep="grep  "$(coco EU --output_sep \| --to ISO3)""
+
+alias charsetsls="iconv -l"
+alias encodingsls=charsetsls
+
+roman2arabic() { echo $1 | numconv -f Roman -t Western_Lower ; }
+arabic2roman() { echo $1 | numconv -f Western -t Roman_Upper ; }
+
+if which qalc >/dev/null 2>&1 ; then
+    alias qalc="qalc -c"  # default args
+    alias qualc=qalc
+    alias qualculate=qalculate
+    
+    # constants
+    alias pi="qalc pi"
+    alias goldenratio="qalc golden"
+    
+    # functions
+    # TODO: interactively ask for input values if missing https://github.com/Qalculate/libqalculate/issues/255
+    gcd() { qalc "gcd($1, $2)" ; }
+    lcm() { qalc "lcm($1, $2)" ; }
+    factor() { qalc "factor($1)" ; }  # factorize
+    factorial() { qalc -s "exp mode 0" "factorial($1)" ; }  # n!
+    float2fraction() { qalc "$1 to fraction" ; }
+    arabic2roman() { qalc "roman($1)"; }
+    #roman2arabic() { qalc "???($1)"; }
+
+    # geometry
+    circlearea() { qalc "circle($1)" ; }
+    spherevolume() { qalc "sphere(5)" ; }
+    #trianglearea() { qalc "triangle($1, $2)" ; }
+    #rectarea() { qalc "rect($1, $2)" ; }
+    #rad2fract()
+    
+    # comb
+    alias anagramscount=factorial
+    permutationscount() { qalc "perm($1, $2)" ; }  # n! / (n - k)!
+    dispositionsrepeatedcount() { qalc "$1 ^ $2" ; }   # n^k
+    combinationscount() { qalc "comb($1, $2)" ; } 
+    combinationsrepeatedcount() { qalc "binomial($1+$2-1, $2)" ; }
+    pairscount() { qalc --terse "$1 * ($1 - 1) / 2" ; }
+	alias couplescount=pairscount
+	
+    # stdin redirectors
+    2fraction() { qalc "$(cat) to fraction" ; }
+    #2utc() { qalc "$(cat) to UTC" ; }
+    2hex() { qalc "$(cat) to hex" ; }
+    #to() { qalc "$(cat) to $1" ; }  # generic converter
+    #2sci() { qalc -s "e notation 0" -s "exp mode 3" "$(cat)" ; }  # https://github.com/Qalculate/libqalculate/discussions/614
+
+    # units conversion shortcuts
+    in2cm() { qalc "$1 in to cm" ; }
+    alias inches2cm=in2cm
+    ft2cm() { qalc "$1 ft to cm" ; }
+    alias feet2cm=ft2cm
+    alias foot2cm=ft2cm
+    miles2km() { qalc "$1 mi to km" ; }
+    oz2gr() { qalc "$1 oz to g" ; }
+    alias ounce2gr=oz2gr
+    lb2kg() { qalc "$1 lb to kg" ; }
+    alias pound2kg=lb2kg
+    floz2ml() { qalc "$1 fl_oz to mL" ; }
+    gallon2l() { qalc "$1 gal to L" ; }
+    awg2mm() { qalc -terse "0.127mm*92^((36-$1)/39) to mm" ; echo " (diameter)" ; }  # https://github.com/Qalculate/libqalculate/issues/164
+    kcal2wh() { qalc "round($1 kcal to Wh)" ; }
+    #hp2kw() { qalc "$1 hp to kW" ; }  # horse power to kilowatt - not standard: https://it.wikipedia.org/wiki/Cavallo_vapore
+    kwh2watt() { qalc "$1 kWh to kW" ; }
+    kwhy2watt() { qalc "$1 * 1000 / 365 / 24" ; }
+    mmhg2pascal() { qalc "$1 mmHg to Pa" ; }
+    atm2pascal() { qalc "$1 atm to Pa" ; }
+    bars2pascal() { qalc "$1 bars to Pa" ; }
+    #candela2lumen() { qalc "$1 cs to lm" ; }
+    ms2kmh() { qalc "$1 m/s to km/h" ; }
+    kmh2ms() { qalc "$1 km/h to m/s" ; }
+    knots2kmh() { qalc "$1 knots to km/h" ; }
+    kmh2knots() { qalc "$1 km/h to knots" ; }
+    fahrenheit2celsius() { qalc "$1 fahrenheit to celsius" ; }
+    celsius2kelvin() { qalc "$1 celsius to kelvin" ; }
+    kelvin2celsius() { qalc "$1 kelvin to celsius" ; }
+    # TODO: litres <-> cm3
+    
+    # currencies
+    usd2eur() { qalc "$1 USD to EUR" ; }
+    gbp2eur() { qalc "$1 GBP to EUR" ; }
+    yen2eur() { qalc "$1 YEN to EUR" ; }
+    
+    # GPS
+    gpsdec2sexa() { qalc "$1 to sexa3" ; }
+    alias sexa2dec=qalc
+    alias gpssexa2dec=qalc
+    # TODO: more ... https://github.com/Qalculate/libqalculate/issues/254
+    
+    # chemistry
+    #TODO: chemelementls() { qalc "atom($1, info)" ; } https://github.com/Qalculate/libqalculate/issues/327
+    alias chemelementinfo="qalc atom"   # qalc "atom($1, info)"
+    
+    # TODO: percent calculation: 500€ − 20% "
+	
+    # TODO: eletronics,current calculation: 50ohm * 2A "
+	
+    # TODO: bytes calculation: (5000 × byte) × 10 to MB"
+	
+    # country dataset? https://github.com/Qalculate/libqalculate/issues/62
+	
+    # WIP timezone conversion  https://github.com/Qalculate/libqalculate/issues/123
+	
+    # Boolean Algebra? https://github.com/Qalculate/libqalculate/issues/265
+fi
+
+awg2ampmax() { DB=$PENDRIVE/Documents/db/elect/wire_awg_current_voltage.tsv ; head -n1 $DB ; grep "^$1" $DB ; }
+
+#alias range=seq
+#alias range=jot
+#alias repeat=jot
+
+#alias rencode=iconv
+alias toutf8="iconv -t UTF-8"
+alias unix2win=unix2dos
+alias win2unix=dos2unix
+
+alias sren=detox
+alias saferen=detox
+alias rensafe=detox
+
+alias safefilename=str2filename
+alias sanitizefilename=str2filename
+
+
+alias csv=csvtool
+alias csvgrep="csvtool grep"
+#csvgrep() { head -n 1 "$2" ; grep "$@" ; }  # prints the header and then grep | TODO: replace with rg? https://github.com/BurntSushi/ripgrep/issues/509
+alias csvcut="csvtool cut"
+#alias colrm="csvtool col"
+alias histogram="csvtool histogram"
+
+#enable -n command  # disable the conflicting shell builtin command
+
+#alias rec=record  # conflicts with sox
+alias recmic="record mic"
+alias micrec="record mic"
+#alias desktoprec="record desktop"
+#alias audiorec="record desktop"
+#alias videorec="record cam"
+alias reccam="record cam"
+alias camrec="record cam"
+#alias screencast="record desktop"
+alias screenrecord="record desktop"
+alias recskype="record skype"
+alias skyperec="record skype"
+
+alias phpinfo="php -r 'phpinfo();'"
+#OLD: alias iphp="php -a"  # MEMO: req. php compiled with readline support  https://stackoverflow.com/questions/14792842/how-does-the-interactive-php-shell-work
+alias iphp=psysh  # https://github.com/bobthecow/psysh
+alias phpserv="php -S 0.0.0.0:8000"
+
+#alias ilua=slua
+alias ilua=croissant
+alias luainstall="luarocks --local install"
+
+alias idmd=drepl  # interactive D shell  https://github.com/dlang-community/drepl
+
+alias ikotlin=ki-shell  # https://github.com/Kotlin/kotlin-interactive-shell
+
+# gpg aliases
+if which gpg >/dev/null 2>&1 ; then
+    alias pgp=gpg
+    # asymmetric
+    alias gpglskeys="gpg --list-sigs --fingerprint --with-keygrip"
+    alias gpgupdatekeys="gpg --refresh-keys"
+    gpgsign() { gpg -v -a -s --detach-sign < "$*" > "$*.sig" ; [ -f "$*.sig" ] && echo "$0: $*.sig created"; }
+    gpgsearchkeys() { gpg -v --keyserver pool.sks-keyservers.net --search-keys "$@" ; }
+    alias gpggetkey="gpg --recv-keys"
+    alias gpgverify="gpg --verbose --verify"
+    # symmetric
+    #alias gpgcrypt="gpg -a -c --pinentry-mode=loopback --no-symkey-cache --verbose"
+    #alias gpgencrypt=gpgcrypt
+    #alias gpgdecrypt="gpg -d --use-embedded-filename --pinentry-mode=loopback --no-symkey-cache --verbose"
+fi
+
+alias certutil="certutil -d $FIREFOX_PROFILE_PATH"  # fix for SEC_ERROR_LEGACY_DATABASE
+alias certsls="trust list ; certutil -L"
+alias certinstall="sudo trust anchor --store"  # MEMO: add in 
+
+alias pdfchecksignature=pdfsig  #-nssdir $HOME/.pki/nssdb/
+#alias pdfsign=...  https://unix.stackexchange.com/questions/85873/how-can-i-add-a-signature-png-to-a-pdf-in-linux
+
+#if which openssl >/dev/null 2>&1 ; then
+#smimesign() { openssl smime -sign -signer $SSL_CERT_FILE -inkey $SSL_CERT_FILE -in "$*" -outform DER -nodetach -out "$@.p7m" ; }
+#smimeencrypt() { openssl smime -encrypt $SSL_CERT_FILE -in "$1" -outform DER -nodetach -out "$1.p7m" ;   }
+#alias encrypt="openssl enc -e -base64 -aes-256-cbc"  # MEMO: outputs no header
+#alias decrypt="openssl enc -d -base64 -aes-256-cbc"
+#alias aes=encrypt
+
+encrypt() { 7z a -mhe=on -p "$1.zip" "$1" ; }  # most supported method to distribute symmetric encrypted files
+alias decrypt=filedecrypt
+
+# TODO: cygwin-specific workarounds
+#if [ "$OSTYPE" = "cygwin" ]; then
+#	#  for cygwin bash not finding batch files without extension
+#	/cygdrive/c/CLIPrograms/${LOWERCASE_CMD}.bat "$@"
+#	_ES=$? ; [ $_ES -ne 127 ] && return $_ES
+#	/cygdrive/c/CLIPrograms/busybox.bat $LOWERCASE_CMD "$@" 2> /dev/null
+#	_ES=$? ; [ $_ES -ne 127 ] && return $_ES
+#fi
+
+#alias utf8=unicode
+#unicodegrep() { egrep -i "^[0-9a-f]{4,} .*$*" $(locate -l 1 CharName.pm) | while read h d; do /usr/bin/printf "\U$(printf "%08x" 0x$h)\tU+%s\t%s\n" $h "$d"; done ; }  # req. libunicode-string-perl and locate    https://www.commandlinefu.com/commands/view/7535/look-up-a-unicode-character-by-name
+#alias unicodecharbyname=unicodegrep
+#alias name2unicode=unicodegrep
+alias unicode2name="unicode -i utf-8 -C USE_COLOUR"
+#unicode2name() { echo -n "$*" | uniname ; }
+# alt.: https://github.com/pemistahl/chr/
+
+# mqtt aliases
+mqttpostlocalhost() { curl -d "$1" 'mqtt://localhost/test' ; }
+mqttsuballtopics() { curl 'mqtt://localhost/%23' ; } # https://github.com/curl/curl/discussions/10807
+if which mosquitto_sub >/dev/null 2>&1 ; then
+	alias mqttsuballtopics='mosquitto_sub -v -t "#"'
+	alias mqttpublish='mosquitto_pub -t "test" -m'
+	alias mqttclientdebug=mqttsuballtopics
+	alias mqttlisten=mqttsuballtopics
+fi
+
+# LD_LIBRARY_PATH wrappers
+alias pulse2alsaset="apulse bash"
+#alias gl2glesset="glshim bash"
+alias fpsdisplayset="mangohud bash"
+#alias setogloverlay="mangohud bash"
+alias fpsdisplay32bitset="mangohud.x86 bash"
+#alias glxosd=mangohud
+
+alias camerals="v4l2-ctl --info"
+alias camerals="v4l2-ctl --info"
+alias lscamera=camerals
+alias camerainfo="v4l2-ctl --list-formats-ext ; v4l2-ctl -d /dev/video0 --all"
+alias camera2qr=camera2barcode
+
+alias netcamerascan=webcamerascan
+
+alias hardlinkcp="cp -lr"
+alias lncp="cp -lr"
+
+alias pass=mypass  # conflicts with https://www.passwordstore.org/
+alias getpass=mypass
+alias passget=mypass
+
+alias 2fa=otpclient-cli
+alias otp=otpclient-cli
+
+#alias autotype=exp  # from https://stackoverflow.com/questions/12202587/automatically-enter-ssh-password-with-script#answer-28293101
+
+# rclone aliases
+if which rclone >/dev/null 2>&1 ; then
+    [ ! -z "$ANDROID_ROOT" ] && alias rclone="rclone --no-check-certificate"
+    #alias rclone="rclone --progress --drive-use-trash=false --copy-links"  # add some default args  # MOVED IN autoexec as envvars
+    #alias dirsync="rclone sync --interactive --progress -v --track-renames --transfers 1 --checksum"  # --ignore-case-sync  https://rclone.org/flags/
+    alias rclonecp='rclone copy'
+    alias rclonerm='rclone delete'
+    alias rclonedeltree='rclone purge'
+    alias sync="rclone sync -v --track-renames "  # --size-only  --ignore-times
+    #alias dirdiff="sync --dry-run"
+    
+    gdrivels() { rclone lsf "gdrive:$1" | { column || cat ; } ; }
+    #gdrivelsl() { rclone lsl "gdrive:$1" --max-depth 1 -q ; }  # list files only with size and modtime
+    gdrivefind() { rclone ls  gdrive: --include "*$1*" --ignore-case -v ; }
+    gdriverm() { rclone delete "gdrive:$1" -v; }
+    alias gdrivedel=gdriverm
+    gdriveget() { rclone copy "gdrive:$1" . -v -v; }  # TODO: add "$2"
+    gdriveput() { rclone copy "$1" "gdrive:$2" --copy-links -v -v; }
+    #TODO: multiple files copy by list:   https://github.com/ncw/rclone/issues/1426
+    #gdriveput() { rclone copy . "gdrive:$2" --include "$1" --copy-links -v -v; }
+    gdrivecat() { rclone cat "gdrive:$1" ; }
+    gdrivegrep() { rclone cat "gdrive:$2" | grep "$1" ; }  #TODO: online ver -> use in findnote
+    #eadmastertkput() { rclone copy $1 eadmastertk:$2 -v; }
+    #NO? only for dirs: gdrivedircmp() { rclone check "gdrive:$1" "$2" -v ; }
+    gdrivediff() { rclone cat "gdrive:$2" | diff -qs "$1" - ; }
+    #gdrivedu() { rclone size "gdrive:$1" -v  ; }
+    alias gdrivemount="mkdir /tmp/gdrive ; rclone mount gdrive: /tmp/gdrive --vfs-cache-mode writes --daemon -vv"
+    #alias mountgdrive=gdrivemount
+    #alias umountgdrive="fusermount -u /tmp/gdrive"
+fi
+
+#alias ss=binpack.py
+#alias subsetsum=binpack.py
+
+alias trimrom=autotrimrom.py
+alias romtrim=autotrimrom.py
+
+# Android aliases
+if [ ! -z "$ANDROID_ROOT" ]; then
+    alias setbatterysaver="settings put global low_power"
+    
+    #if [ -e /data/data/com.termux/files/ ]; then
+    alias camerainfo=termux-camera-info
+    
+    # TODO: xidle  https://unix.stackexchange.com/questions/191436/linux-w-command-get-idle-time-in-seconds
+fi
+
+# adb aliases
+#if [ -z "$ANDROID_ROOT" ]; then
+if which adb >/dev/null 2>&1 ; then
+    # TODO: move in a script + bash autocomplete
+    # [ -z "$ANDROID_SERIAL" ]  # TODO: ask to set 
+    alias androiddevices="adb devices -l"
+    alias androidcat="adb exec-out cat"
+    alias androidget="adb pull"
+    alias androidgetdownloads="adb pull /sdcard/Download"
+    alias androidgetphotos="adb pull /sdcard/Download"
+    alias androidphotostransfter=androidgetphotos
+    androidput() { DESTINATION=/sdcard/Download; [ ! -z "$2" ] && DESTINATION="$2";  adb push "$1" "$DESTINATION" ; }
+    alias androidpush=androidput
+    alias androidcp=androidput
+    alias androidls="adb shell ls"
+    alias androiddir="adb shell ls -l"
+    androidfind() { adb shell find /sdcard/ -iname "*$@*" ; }
+    alias androidshell="adb shell"
+    alias androidinstall="adb install"
+    alias androiduninstall="adb shell pm uninstall"
+    alias androidrm="adb shell rm"
+    alias androidvibrate='adb shell "echo 200 > /sys/devices/virtual/timed_output/vibrator/enable"'  # req. root. source: https://a3nm.net/blog/android_cli.html
+    #alias androidpowerbutton="adb shell input keyevent 26"
+    alias androidscreenoff="adb shell input keyevent 26"
+    alias androidmute="adb shell input keyevent 164"
+    androidtype() { adb shell input text $(echo "$@" | sed 's/ /%s/g') ; }
+    alias androidappsls="adb shell pm list packages"  # TODO: list app names
+    alias androidappinfo="adb shell pm dump"
+    androidrun() { APPNAME=$(adb shell pm list packages | grep -i -m1 "$1" | cut -d: -f2 | tr -d '\r') ; echo "$0: launching $APPNAME..." ; adb shell monkey -p "$APPNAME" 1 ; }  # https://stackoverflow.com/questions/4567904/how-to-start-an-application-using-android-adb-tools
+    alias androidstartapp=androidrun
+    #NO? androidopen() { adb shell am start -d "file://$1" -a android.intent.action.VIEW ; }
+    androidkillapp() { APPNAME=$(adb shell pm list packages | grep -i -m1 "$1" | cut -d: -f2 | tr -d '\r') ; echo "$0: killing $APPNAME..." ; adb shell am force-stop"$APPNAME" ; }  # https://stackoverflow.com/questions/3117095/stopping-an-android-app-from-console
+    androidshot() { TARGET="$1"; [ -z "$1" ] && TARGET="$RAMDRIVE/`date +%Y%m%S%d%H%M`.png" ; adb exec-out screencap -p > $TARGET ; echo "$0: saved $TARGET" ; }
+    alias androidrecordaudio="androidtermuxshell termux-microphone-record -d"  # https://wiki.termux.com/wiki/Termux-microphone-record
+    #2FIX: androidrecordscreen() { TARGET="$1"; [ -z "$1" ] && TARGET="/sdcard/Movies/`date +%Y%m%S%d%H%M`.mp4" ; adb shell screenrecord $TARGET & ; PID=$! ; read -p "$0: press ENTER to stop recording..." ; kill $PID ; sleep 3 ; adb pull $TARGET ; adb shell rm $TARGET ; }  #TODO: via piping -- source: https://adventuresinqa.com/2015/02/04/android-screen-recording-using-adb/
+    alias androidnotify="androidtermuxshell termux-notification --sound --vibrate 500 -c"  # https://wiki.termux.com/wiki/Termux-notification
+    alias androidsay="androidtermuxshell termux-tts-speak"  # https://wiki.termux.com/wiki/Termux-notification
+    #alias androidservicesls="adb shell service list"
+    alias androidsensorsls="adb shell getevent -il ; adb shell dumpsys sensorservice"  # TODO: reduce output verbosity
+    alias androidbatterystatus="adb shell dumpsys batterymanager"
+    #NO? androidcamera="adb shell am start -a android.media.action.IMAGE_CAPTURE ; adb shell "input keyevent KEYCODE_CAMERA""  https://stackoverflow.com/questions/24747665/android-command-line-photo
+    alias androidaddressbook=androidcontactsls
+    androidcall() { adb shell am start -a android.intent.action.CALL -d tel:$1 ; }  # TODO: autoenable hands-free mode and call
+    alias androidlogs="adb logcat -t1000"
+    alias androidsettingsls="(adb shell settings list secure ; adb shell settings list system ; adb shell settings list global) 2>& 1"  # ALTERNATIVE: adb shell content query --uri content://settings/system
+    #alias androidsetairplanemode="adb shell settings put global airplane_mode_on 1"
+    alias androidwifion="adb shell settings put global wifi_on 1"
+    alias androidwifioff="adb shell settings put global wifi_on 0"
+    #alias androidsetbluetoothdiscoverable="adb shell am start -a android.bluetooth.adapter.action.REQUEST_DISCOVERABLE"
+    #alias androidsetbrightness="adb shell settings put system screen_brightness"
+    #alias androidsetscreenofftimeout="adb shell settings put system screen_off_timeout"
+    #alias androidclipboardget="androidtermuxshell termux-clipboard-get"
+    #alias androidclipboardset="androidtermuxshell termux-clipboard-set"  https://android.stackexchange.com/questions/19710/is-it-possible-to-write-to-a-devices-clipboard-using-adb
+    #androidredled() { adb shell "echo $1 > /sys/class/leds/red/brightness" ; }
+    #androidgreenled() { adb shell "echo $1 > /sys/class/leds/green/brightness" ; }
+    alias androidflashlight="androidtermuxshell termux-torch"  #  /sys/class/flashlightdrv/kd_camera_flashlight
+    alias androidsettethering="adb shell svc usb setFunction rndis"  # TODO: not supported by all smartphones https://android.stackexchange.com/questions/29954/is-it-possible-to-activate-the-usb-tethering-android-setting-from-the-command
+    alias androidwifiscan="androidtermuxshell termux-wifi-scaninfo"
+    #alias androidbtscan="androidtermuxshell termux-bluetooth-scaninfo"  # https://github.com/StevenSalazarM/Termux-api-bluetooth
+    #alias androidirsend="androidtermuxshell termux-infrared-transmit -f"
+    # ... http://adbcommand.com/awesome-adb
+    alias androidip="adb shell ifconfig"
+    androidforwardport() { adb forward tcp:$1 tcp:$1 ; }
+    # TODO: androididle, printidle
+    alias androidinfo="adb shell getprop"
+    alias androidcpuinfo="adb shell cat /proc/cpuinfo ; adb shell getprop | grep -i cpu"
+    #alias androidsetsilent="adb shell settings put global mode_ringer 0"  # set RINGER MODE=SILENT TODO: https://android.stackexchange.com/questions/186925/android-phone-shell-command-silent-mode
+    alias androidnotifications="adb shell dumpsys notification | grep ticker | cut -d= -f2"
+    alias androidalerts=androidnotifications
+    alias androidlock="adb shell input keyevent 26"
+    alias androidphotostransfer="androidget sdcard/DCIM"  # "storage/sdcard1/DCIM/Camera" if using SD card
+    alias androidremountsystemrw="adb root ; adb remount"  # TODO: reconnect before the 2nd command if necessary...  https://android.stackexchange.com/questions/60446/cant-remount-system-in-rw
+    #TODO: alias androidassistantquery="adb shell am start-activity com.google.android.apps.googleassistant/.AssistantActivity"
+fi
+
+# kdeconnect aliases
+if which kdeconnect-cli >/dev/null 2>&1 ; then
+	alias kdeconnectls="kdeconnect-cli --list-available"
+	alias androidnotificationsls="kdeconnect-cli --list-notifications"
+	alias androidshare="kdeconnect-cli  --share"
+	alias androidsend=androidshare
+	alias androidring="kdeconnect-cli --ring"
+	alias androidcamerasnap="kdeconnect-cli --photo /r/androidcamerasnap.jpg"
+	#alias android...="kdeconnect-cli  --execute-command "
+fi
+
+if which scrcpy >/dev/null 2>&1 ; then
+    alias androidremotecontrol="scrcpy &"
+	#TODO: alias androidcamerabridgeset="scrcpy --video-source=camera --no-audio --camera-facing=front --v4l2-sink=/dev/video0"
+	# https://adityatelange.in/blog/android-phone-webcam-linux/
+fi
+
+alias androidmount="mkdir /tmp/adb ; sudo umount /tmp/adb ; adbfs /tmp/adb -o hard_remove,umask=000" # from fuse-adbfs | https://github.com/spion/adbfs-rootless
+# TODO: setadbmount -> adbfs /tmp/adb
+#alias androidmount="rclone mount adb: ..." # WIP: https://github.com/rclone/rclone/issues/2956
+
+alias pendrivemount="mkdir /tmp/pendrive ; sudo mount -v /dev/sdb1 /tmp/pendrive -o users"
+#alias pendriveumount="sudo umount /tmp/pendrive"
+
+# libimobiledevice-utils aliases
+#if [ -z "$ANDROID_ROOT" ]; then
+if which ideviceinfo >/dev/null 2>&1 ; then
+    # TODO: move in a script + bash autocomplete
+    # [ -z "$ANDROID_SERIAL" ]  # TODO: ask to set 
+    alias iphonedevices="idevice_id -l"
+    alias iphoneinfo=ideviceinfo
+    alias iphoneshot=idevicescreenshot
+    # WANTED: iphoneput, pull=... https://github.com/libimobiledevice/libimobiledevice/issues/313
+    # WANTED: iphonetype
+    # WANTED: iphonepbpaste, pbcopy  https://github.com/libimobiledevice/libimobiledevice/issues/1143
+    # WANTED: iphoneremotecontrol=...  # via teamviewer, joinme, VNC (req. jailbreak): https://thetechslugs.com/getting-started/remote-accessing-devices/remotely-access-an-ios-device-from-an-ubuntu-linux-computer-using-vnc/
+fi
+if which ifuse >/dev/null 2>&1 ; then
+    alias iphonemount="mkdir /tmp/iphone ; ifuse /tmp/iphone ; echo 'MEMO: confirm trusting this PC on the phone...'"
+fi
+if which ideviceinstaller >/dev/null 2>&1 ; then
+    alias iphonelsapps="ideviceinstaller -l ; ideviceinstaller -L"
+    alias iphoneinstall="ideviceinstaller -i"
+fi
+
+# samba aliases
+#TODO: alias smbls=smbclient
+#TODO: alias smbput=...
+#TODO: alias smbupload=...
+#NO(ALREADY EXISTS)? alias smbget=...
+smbshare() { net usershare add "$(basename $1)" "$(realpath $1)" "$(basename $1)" everyone:F guest_ok=y ; [ $? -eq 0 ] && echo "smbshare: done" ; }
+smbsharero() { net usershare add "$(basename $1)" "$(realpath $1)" "$(basename $1)" everyone:R guest_ok=y ; [ $? -eq 0 ] && echo "smbshare: done" ; }
+smbsharerm() { net usershare delete "$(basename $1)" ; [ $? -ne 0 ] && net usershare delete "$1" ; [ $? -ne 0 ] && echo "smbsharerm: done" ; }
+alias smbunshare=smbsharerm
+alias smbsharels="net usershare list"
+alias share=smbshare
+#alias unshare=smbsharerm  # NO? shadow "unshare" command
+alias smbmount="mkdir /tmp/smb/ service smb start ; smbnetfs /tmp/smb "  # TODO: -o show_$_shares=on use autofs instead?
+alias sambamount=smbmount
+
+portgrep() { grep -i $1 /etc/services ; }  # ALTERNATIVE: getent services $1
+alias whatportis=portgrep  # https://github.com/ncrocfer/whatportis
+#alias findport=portgrep
+alias portinfo=portgrep
+
+portcheck() { sudo fuser -v -n udp $1 ; sudo fuser -v -n tcp $1 ; [ $? -ne 0 ] && echo "portcheck: no process found" ; }
+alias wholisten=portcheck
+alias openportsnls="sudo netstat -plnt"
+alias connectionsls="netstat -vtu"
+freeportudp() { fuser -ivk $1/udp ; }
+freeporttcp() { fuser -ivk $1/tcp ; }
+alias fdls=lsof
+
+# nmap-only aliases
+if which nmap >/dev/null 2>&1 ; then
+	alias nmap="nmap --top-ports 20 --exclude 127.0.0.1 "  # --privileged # TODO: move in user config file?
+	alias portscan="nmap -v --open"
+	alias osscan="sudo nmap -O"
+	alias servicescan="nmap --script http-enum"
+	alias lanservicescan="servicescan 192.168.1.*"
+	#alias lancamerascan="nmap --script rtsp-url-brute 192.168.1.*"  # TODO: more protocols
+	#alias camerascan=onvif-audit  # moved in a script
+	#alias netbiosscan="nbtscan 192.168.1/16 || nmap --script smb-os-discovery -p 445 192.168.1.*"
+	#alias neighboursls="ip neigh | grep REACHABLE"
+	alias subdomainsls="nmap -v --script dns-brute"
+	#alias wls="nmap -v script http-sitemap-generator "
+	alias mdnsinfo="nmap --script upnp-info.nse -p 1900"
+	#alias defaultpassword="nmap --script http-default-accounts"  # https://github.com/nnposter/nndefaccts
+fi
+
+alias mdnsscan="avahi-browse -a --ignore-local --terminate ; mdns-scan"
+alias mdnsresolve="avahi-resolve --name"
+alias resolve="getent hosts"  # generic system resolver
+
+# docker-only aliases
+if which docker >/dev/null 2>&1 ; then
+    alias dockerexec="docker exec -it "
+    dockerbash() { docker exec -it $1 bash ; }
+    dockerlogs() { docker logs --since "$@" 2>&1 ; }  # MEMO: greppable logs via redirection
+    alias dockerattach="docker attach"
+    alias dockercontainersls='docker ps -as --format "{{.Names}}  {{.ID}}  {{.Size}}  {{.Ports}}  {{.Status}}"'
+    alias dockerimagesls='docker images --format "{{.Repository}}:{{.Tag}} @ {{.ID}}  {{.Size}}"'
+    dockerstopall() { docker stop $(docker ps -aq) ; }
+    #alias dockerclean="docker system prune"  # MOVED in a script
+    alias dockerinfo="docker inspect"
+    alias dockerstartattached="docker start -ai"
+fi
+
+#alias tunnel=tunnelset
+#alias sshtunnel=tunnelset
+#alias publish=tunnelset
+#alias expose=tunnelset
+
+#alias listen=play
+alias webradio="play radio"
+alias webtv="play tv"
+#alias radio=webradio
+#alias tv=webtv
+
+alias myids=id
+alias uid="id -u"
+alias gid="id -g"
+
+#alias airquality="weather 2> /dev/null | grep -A5 'air quality'"  # TODO: move in a separate script?
+#alias uvindex="weather 2> /dev/null | grep 'UV index'"  # TODO: move in a separate script?
+
+alias wordscount="wc -w"
+alias linescount="wc -l"
+alias bytescount="wc -c"
+alias charscount="wc -m"
+#countcharslike() { tr -cd $1 | wc -m ; }
+filescount() { find . -maxdepth 1 -type f -iname "$@" | wc -l  ; }  # MEMO: wildcards must be escaped
+
+alias linescountadd=nl
+
+alias ptrace=strace
+
+alias btadaptersls="bt-adapter --list ; hciconfig -a"
+alias btls=btscan
+alias btinfo="hciconfig -a"  # bt-adapter --info ...
+alias btservices="sdptool browse"  # MEMO: pass a macadress
+
+alias fileprint=lp
+alias printfile=lp
+alias printersls="lpstat -s"
+
+alias swapls="swapon -s || cat /proc/swaps"
+
+alias zipappend="zip -j --grow"
+ziplatest() { 7z l "$1" | grep -F "....A" | sort | tail -n2 ; }
+#zipfindbiggest() { 7z l "$1" | grep -F "....A" | sort -t " " -k3 | tail -n2 ; }
+zipsize() { 7z l "$1" | tail -n1  ; } # 2FIX: #| numfmt --to=iec -d\t --field 3
+zippreviewsize() { echo "original size: " ; du -s -h --apparent-size "$@" ; echo "deflate compressed size: " ; tar --create --gzip "$1" | { pv -b > /dev/null || wc -c | { numfmt --to=iec || cat ; } ; }  ; }  # derived from https://superuser.com/questions/1263920/do-a-compression-dry-run-i-e-no-file-output/1485172?noredirect=1#comment2240847_1485172
+# TODO: rarpreview
+7zpreviewsize() { echo "original size: " ; du -s -h --apparent-size "$@" ;  echo "lzma compressed size: " ; tar --create --lzma "$1" | { pv -b > /dev/null || wc -c | { numfmt --to=iec || cat ; } ; }  ; }  # derived from  https://superuser.com/questions/1263920/do-a-compression-dry-run-i-e-no-file-output/1485172?noredirect=1#comment2240847_1485172
+#alias zdu=zippreviewsize
+#alias zippedsize=zippreviewsize
+alias 7zdu=7zpreviewsize
+alias 7zippedsize=7zpreviewsize
+
+findext() { fd -e "$1" || find . -iname "*.$1" ; }
+#alias fext=findext
+#alias findexec="fd --type executable"
+
+alias findlatestchanged="ls -a -R -t1 -l -p -h |  grep -v / |  head -n 10"  # https://unix.stackexchange.com/questions/132340/how-do-i-get-the-latest-file-from-a-list-of-files-in-a-particular-directory
+alias findchangedtoday="find -mtime -1 -ls"
+alias lslatest=findlatestchanged  
+
+alias findbrokensymlinks="find . -xtype l"
+#TODO: symlink2hardlink=find -type l -exec bash -c 'ln -f "$(readlink -m "$0")" "$0"' {} \;
+#  https://stackoverflow.com/questions/8377312/how-to-convert-symlink-to-regular-file
+
+alias finddup=dupfind
+alias findup=dupfind
+#alias fdupes=dupfind
+alias duplicates=dupfind
+
+#if which czkawka >/dev/null 2>&1 ; then
+#findbig() { czkawka big --directories $( pwd ) ; }
+alias findbiggest="du -cks * | sort -rn | head"  # TODO: humanized sizes  https://www.cyberciti.biz/faq/linux-find-largest-file-in-directory-recursively-using-find-du/
+
+alias findempty="find . -empty"
+alias rmemptysubdirs="find . -type d -empty -delete"
+alias flattensubdirs="find . -mindepth 2 -type f -print -exec mv {} . \; ; rmemptysubdirs"
+
+alias rmempty="find . -size 0 -print -delete"
+alias rmzerosizedfiles=rmempty
+alias rmemptyretroarchsaves=rmemptysrm
+
+#vimpager() { vim -c '1' -c 'set cmdheight=1' -c 'set readonly' -c 'set nomodifiable' -c 'syntax enable' -c 'set guioptions=aiMr' -c 'nmap q :q!<CR>' -c 'nmap <Up> <C-Y>' -c 'nmap <Down> <C-E>' -c 'nmap ^V <C-F><C-G>' "$@" ; }  # source https://vim.fandom.com/wiki/Using_vim_as_a_syntax-highlighting_pager
+#alias vimcat=vimpager
+#alias vimless=vimpager
+#alias vless=vimpager
+
+alias manls="man -k ''"
+alias findman="man -k"  # || find $1 /usr/share/man
+alias manfind=findman
+
+#alias wsearch=websearch
+#alias opensearch=websearch
+
+alias bookmarkopen=webopen
+alias wopen=webopen
+
+#TODO: alias linksls=... https://superuser.com/questions/90845/finding-all-symbolic-and-hard-links-to-a-file-on-unix
+
+alias limitsls="getconf -a ; ulimit -a"
+alias kernelflagsls="getconf -a"
+#alias confls="getconf -a"
+
+alias sdrls="SoapySDRUtil --probe"
+alias radiols=sdrls
+alias wificardsls="iw list"
+#alias wifiapls=wifiscan
+#alias apscan=wifiscan
+#alias wifils=wifiscan
+alias networkcardsls="nmap --iflist ; ip addr"
+#alias nicsls=networkcardsls
+
+alias dvbls="dvb-fe-tool -v" # MEMO: "DELIVERY_SYSTEM" shows the supported formats
+alias dvbstatus="dvb-fe-tool -g"
+alias dvbplay="kaffeine --channel"
+#alias dvbplayra1="kaffeine --channel \"Rai 1\""
+
+alias hdmicec=cec-client
+alias vgacontrol=ddccontrol
+
+if which pip >/dev/null 2>&1 ; then 
+	#alias pip3="python3 -m pip"
+    alias pythonmodulesls="pip2 list ; pip3 list"
+    alias pipinstall="pip3 install --no-deps --prefer-binary"
+    alias pipuninstall="pip3 uninstall"
+    alias piplist="pip3 list"
+    alias pipupdate="pip3 install --upgrade"  # TODO: fix?
+    alias pipselfupdate="pip install --upgrade pip"
+    alias pip2install="pip2 install --no-deps --prefer-binary"
+    alias pip2uninstall="pip2 uninstall"
+    # TODO: pipdeps="pip install --no-install --verbose"   # https://stackoverflow.com/questions/11460681/listing-the-dependencies-of-a-package-using-pip
+    pipinstallgithub() { pip3 install --upgrade git+$@.git ; }
+    
+    alias venvinit="python3 -m venv  --system-site-packages  .venv ; source .venv/bin/activate"  # --relocatable 
+    #alias venvinit='virtualenv --system-site-packages  .venv ; source .venv/local/bin/activate'
+fi
+
+if which go >/dev/null 2>&1 ; then 
+    alias goinstall="go get -v"
+    alias goupdate="go get -v -u"
+    alias gouninstall="go clean -i"  # https://stackoverflow.com/questions/13792254/removing-packages-installed-with-go-get
+fi
+
+if which conan >/dev/null 2>&1 ; then 
+    alias conansearch="conan search --remote=all"
+    #TODO: alias conaninit="echo > conanfile.txt"
+    #TODO: alias conaninstall="conan download "
+fi
+
+alias char2hex=str2hex
+alias hex2char=hex2str
+alias char2dec="sfk char -lit"  # TODO: move in a script, add alternatives
+alias dec2char="sfk char"  # TODO: move in a script, add alternatives
+alias hex2bytes=hex2rawbytes
+
+sci2sci10pow() { sed 's/\([0-9]*.[0-9]*\)E\([0-9]*\)/\1 * 10^\2/g' ; } # https://stackoverflow.com/questions/59427477/how-to-write-numbers-or-a-column-of-numbers-as-power-of-10-in-bash
+
+if which rizin >/dev/null 2>&1 ; then
+    alias asmls="rz-asm -L"
+    alias x86asm2hex="asm2hex -a x86"
+    alias hex2x86asm="asm2hex -d -a x86"
+    alias opcodels=opcodesearch
+    alias hex2numbers="rz-ax -r"   # TODO: add signed values
+    alias hex2carr="rz-ax -i"  # hex string to C array
+    alias ip2hex="rz-ax -I"  # https://stackoverflow.com/questions/461742/how-to-convert-an-ipv4-address-into-a-integer-in-c
+    alias hex2ip="rz-ax -I"
+fi
+
+# TODO: check GNU grep installed
+#alias g="grep -I -n --exclude \*.min.js --color=always --devices=skip"
+
+if which rg >/dev/null 2>&1 ; then
+    alias rg="rg --max-columns 200 --no-binary --no-ignore --hidden --ignore-case --fixed-strings "
+    # --glob '!*.min.*'"  # exclude minified code
+    # ... https://github.com/BurntSushi/ripgrep/
+else
+    # rg not found, provide an alternative:
+    #rg() { grep -r -I -n -H  --exclude \*.min.js --color=always "$@" | cut -c 1-400 ; }
+    alias rg="grep -r -I -n -H  --exclude \*.min.js --color=always"
+fi
+alias rga="rga --rga-no-cache"
+alias ack=rg
+#alias ag=rg
+#alias ripgrep=rg
+
+alias svnget="svn checkout"
+
+# alias mp3gain=replaygain
+alias mp3gainall="mp3gain -r -T -c"
+
+alias imghash=filehash
+alias audiohash=filehash
+alias videohash=filehash
+alias mediahash=filehash
+
+alias filenormalize="strip-nondeterminism -v"  # https://salsa.debian.org/reproducible-builds/strip-nondeterminism
+
+# NLP
+if which tika >/dev/null 2>&1 ; then  # Apache Tika app https://github.com/apache/tika
+	alias langdet="tika --text --language"
+	#alias mimeget="tika --text --detect"
+fi
+#TODO: alias sentiment="polyglot sentiment"
+#TODO: alias categories,topics=opennlp ..."
+
+alias facerec=camera2facerec.py
+alias motiondetect=camera2facerec.py
+
+alias speechrec=mic2speechrec
+alias voicerec=mic2speechrec
+alias voice2text=mic2speechrec
+alias mic2text=mic2speechrec
+alias speech2text=mic2speechrec
+alias voice2command=mic2command.py
+
+#alias facedet=facerec
+#alias facerec=face_recognition
+
+#renext() { rename.ul -vo .$1 .$2 *.$1 ; } 
+renext() { rename.pl -v "s/.$1/.$2/" *.$1 ; } 
+alias chext=renext
+
+# git aliases
+if which git >/dev/null 2>&1 ; then
+	export GIT_EDITOR=nano
+    alias gitstats="git remote -v ; echo -n \"$0: last 5 commits:\" ; git log --oneline -n 5 | cat ; git status"
+    alias gitconfigls="git config --list | cat ; cat .git/config"
+    alias gitaddalluntracked="git add -A --verbose"
+    alias gitaddall="git add -u --verbose"
+    alias gitautoadd=gitaddall
+    alias gitcommitwithmessage="git commit -m"
+    alias gitcommitall="gitaddall ; git commit"
+    gitamend() { git commit --amend -m "$1" ; }
+    alias gitundolastcommit="git reset --soft HEAD~ ; git status"
+    #alias gitreverttocommit="git checkout --"  # NEW ALT.: "git restore"
+    alias gitreverttocommit="git reset --hard"  # then must force-push:  git push --force origin master
+    #alias gitresettohead=""
+    alias gitcommitsls="git log --oneline"  # TODO: check commitslog of all branches
+    alias gitcommitslog=gitcommitsls
+    gitcommitfind() { git log --oneline --all --grep="$@" ; }  # https://stackoverflow.com/questions/7124914/how-to-search-a-git-repository-by-commit-message
+    alias gitpendingcommits="git cherry -v"
+    alias gitunpushed=gitpendingcommits
+    alias gitmelddiff="git difftool"
+    alias gitdifftool="git difftool"
+    alias gitclonerecursive="git clone --recursive"
+    alias gitclonemin="git clone --recursive --depth 1 -b master"  # https://stackoverflow.com/questions/29368837/copy-a-git-repo-without-history
+    alias gitclonedir=gitget
+    alias gitbranchesls="git branch | cat"
+    alias gitswitchbranch="git checkout"
+    alias gitcreatebranch="git checkout -b"
+    alias gitundo="git rebase -i HEAD~1"
+    #alias gitrebase="git rebase -i HEAD~20"
+    #alias gitrebase="git rebase -i --root"
+    #alias gitsquash=gitrebase
+    #alias gitrebasefrommaster="git rebase master"
+    alias gitcancelrebase="git rebase --abort"
+    alias gitcancelmerge="git merge --abort"
+    alias gitpushforced="git push --force origin master"
+    alias gitpushcurrentbranch="git push --force origin HEAD"  # https://stackoverflow.com/questions/14031970/git-push-current-branch-shortcut/20922141
+    gitgrepcommitmsg() { git log --all --grep="$@" ; }
+    alias gitpullallbranches="git featch --all; git pull --all"
+    alias gitui=gitgui
+    alias gitupdatewithupstream="git fetch upstream ; git pull upstream master"
+    alias gitsyncupstream=gitupdatewithupstream
+fi
+
+# pandoc aliases
+if which pandoc >/dev/null 2>&1 ; then
+    man2pdf() { pandoc --verbose -f man -o "$1.pdf" "$1" ; }
+    markdown2pdf() { pandoc --verbose --toc -f markdown -o "$1.pdf" "$1" ; }
+    markdown2html() { pandoc --verbose --toc -f markdown -t html -o "$1.html" "$1" ; }
+    markdownconvert() { pandoc --verbose -f markdown -o "$2" "$1" ; }
+    alias pandoclsinputs="pandoc --list-input-formats"
+    alias pandoclsoutputs="pandoc --list-output-formats"
+fi
+
+# Bliss-Box_CLI aliases
+if which Bliss-Box_CLI >/dev/null 2>&1 ; then
+    # TODO : fix permissions?  https://unix.stackexchange.com/questions/44308/understanding-udev-rules-and-permissions-in-libusb
+    alias blissboxcli="sudo $(which Bliss-Box_CLI)"
+    alias blissboxinfo="blissboxcli get eeprom_settings ; blissboxcli get controller"
+    alias blissboxreset="blissboxcli set reset"
+    alias blissboxresetmapping="blissboxcli set mapper dft"
+    #alias blissboxsetanalogemu="blissboxcli set UDLR 0x10"
+fi
+
+alias testmic=micechotest
+alias mictest=micechotest
+
+alias alternativels="update-alternatives --get-selections ; xdg-settings --list"
+alias setalternative="sudo update-alternatives --config"
+
+alias findmyphone="xdg-open https://www.google.com/android/find?u=0"  # TODO: move in a script
+alias whereismyphone=findmyphone
+alias findmydevices="xdg-open https://myaccount.google.com/find-your-phone"  # TODO: move in a script
+#alias findmycar="xdg-open https://www.unipolsai.it/myportal/area_riservata/telematica-mobilita" # TODO: move in a script
+#alias whereismycar=findmycar
+
+if which wine >/dev/null 2>&1 ; then
+	#alias wine=wine32
+	alias winecmd="wine cmd"
+	alias japwine="LANG='ja_JP.Shift_JIS' wine32"
+	alias wine64tricks='WINEARCH="win64" WINEPREFIX=~/.wine64 winetricks'
+	alias wineuninstaller='wine uninstaller'
+fi
+
+alias setlibrarypath2cwd="export LD_LIBRARY_PATH=."
+
+alias startnointernet="unshare -n -r"  # https://unix.stackexchange.com/questions/252714/is-it-possible-to-run-unshare-n-program-as-an-unprivileged-user
+
+alias torrentget=magnet2torrent
+alias magnetget=magnet2torrent
+
+alias cal=cal.py
+alias calendar=cal.py
+#alias calendar="ncal ; gcalendar"
+#alias cal=calendar
+alias caladd="xdg-open https://www.google.com/calendar/event?action=TEMPLATE&text=Nuovo+Evento"
+alias calnewevent=caladd
+
+# arduino-cli aliases  https://github.com/arduino/arduino-cli
+if which arduino-cli >/dev/null 2>&1 ; then
+    alias arduinodetect="arduino-cli board list"
+    alias arduinoboards=arduinodetect
+    alias arduinolscores="arduino-cli core list"
+    alias arduinolslibs="arduino-cli lib list"
+    alias arduinolibsearch="arduino-cli lib search"
+    alias arduinolibinstall="arduino-cli lib install"
+fi
+
+# esptool aliases
+if which esptool.py >/dev/null 2>&1 ; then
+    alias esptool=esptool.py
+    alias esp32info="esptool.py flash_id"
+    alias esp32backup="esptool.py read_flash 0 ALL "
+    alias esp32erase="esptool erase_flash"
+    alias esp32flash="esptool write_flash 0x0"
+    alias esp32reset="esptool --before default_reset --after hard_reset chip_id"
+fi
+
+# platformio aliases
+if which pio  >/dev/null 2>&1 ; then
+    #alias platformiosdkinit="source $HOME/.platformio/penv/bin/activate"
+    alias platformiodevices="pio device list"
+    alias platformiobuild="pio run"
+    alias platformioclean="pio run --target clean "
+    # ... https://docs.platformio.org/en/stable/core/userguide/index.html
+fi
+
+# micropython aliases
+if which ampy >/dev/null 2>&1 ; then
+	upyrun() { ampy --port $(arduinoserialportguess) run "$@" ; }
+	upyls() { ampy --port $(arduinoserialportguess) ls ; }
+	upyreset() { ampy --port $(arduinoserialportguess) reset ; }
+	#upyflash() { ampy --port $(arduinoserialportguess) "$@" main.py ; }
+	alias upip=pipkin  # https://github.com/aivarannamaa/pipkin
+fi
+
+
+#if which mpremote >/dev/null 2>&1 ; then
+#	alias upyrun="mpremote a0 run"
+#	alias upyreset="mpremote a0 reset"
+#fi
+
+alias vscode=code
+
+alias curl2python=uncurl  # https://github.com/spulec/uncurl
+
+#TODO: alias stderr2null
+#TODO: alias stdout2null
+
+alias neighbourscan=nearbyscan
+alias findnearby=nearbyscan
+#alias fing=nearbyscan
+
+alias matchsearch=netplaysearch
+#alias gamespy=xqf
+alias gamespy=netplaysearch
+
+alias smiley=emoji
+alias emoticon=emoji
+#alias face=emoji
+
+#alias emulelinkadd=amulelinkadd
+#alias ed2klinkadd=amulelinkadd
+#alias amulels="amulecmd -c 'Show DL'"  # show downloads in progress  # moved in SA script
+
+alias regexbuilder=grex
+alias mkregex=grex
+alias suggestregex=grex
+
+alias audiocut=mediacut
+alias videocut=mediacut
+
+#alias setsoftap="service hostapd start"
+alias setsoftap=create_ap
+
+if which zoxide >/dev/null 2>&1 ; then
+	eval "$(zoxide init bash )"  # by default register "z" alias as cd alternative
+	#eval "$(zoxide init bash --cmd cd)"  # replace system cd command
+	# TODO: multiple aliases https://github.com/ajeetdsouza/zoxide/discussions/709
+	#alias z=zoxide
+	alias jump=z
+	alias j=z
+fi
+
+if which eza >/dev/null 2>&1 ; then
+	alias easyls="eza --icons=auto -ahF"  # alt. lsd
+	# eza --long --extended --links --header --git --icons --classify -a -a
+	alias l=easyls
+# detect ls standalone vs busybox ver
+elif [ -L $(which ls) ] ; then
+	# ls is a symlink, use only switches implemented in busybox
+	alias ls="ls -AF --color=auto"
+else
+	alias ls="ls -AF --color=auto -v -h --author --time-style=long-iso"
+	# TODO: case-insensitive filename sorting  https://stackoverflow.com/questions/18413646/making-the-ls-command-sort-a-before-b-vs-a-b-a-b
+	# https://www.topbug.net/blog/2016/11/28/a-better-ls-command/
+fi
+alias dir="l -l"
+[ ! -z "$ANDROID_ROOT" ] && alias dir="l -l -a"
+
+alias easysed=sd  # alt. sad
+alias easyfind=fdfind  # alt. bfs
+alias easydiff=diff-so-fancy
+# TODO: easygit=...
+# TODO: easydd=...
+
+alias help=cmdhelp
+#alias usage=cmdhelp
+alias examples=cmdhelp
+alias cheatsheet=cmdhelp
+
+if which btrfs >/dev/null 2>&1 ; then
+    alias brtfsdf="sudo compsize"
+    # TODO: alias brtfgetcompression="btrfs property get $1 compression"  # check compression of a file
+    alias brtfscompressaszstd="btrfs filesystem defragment -r -v -czstd"
+    # TODO: alias brtfsmkdirumcompressed=""  # https://www.reddit.com/r/linux_gaming/comments/mcfcdz/save_disk_space_for_your_games_btrfs_filesystem/
+    alias brtfsrestore="btrfs restore -Div -t blockid"  # https://www.reddit.com/r/archlinux/comments/61ej37/who_knew_restoring_deleted_files_from_btrfs_is/
+    # ... https://wiki.archlinux.org/title/btrfs
+    # ... https://www.reddit.com/r/linux_gaming/comments/mcfcdz/save_disk_space_for_your_games_btrfs_filesystem/
+fi
+
+#alias usbfdformat="sudo ufiformat -f 1440 -v  /dev/sdb"
+
+# kindle-specific aliases
+if [ ! -z "$KINDLE_TZ" ]; then
+	alias remountrw="mntroot rw"
+	alias remountro="mntroot ro"
+	alias kindlesettingsls="lipc-probe -a"
+	#TODO: alias kindleset...
+	# ...
+fi
+
+if which avahi-publish >/dev/null 2>&1 ; then
+	#mdns_publish_port() { avahi-publish -s "$(hostname):$PORT" _myservic._tcp $PORT }
+	mdns-announce() { avahi-publish -a -R $(hostname).local $(ipget) ;  }
+	#mdns_publish_host() { avahi-publish -a -R $2.local $1 ;  }
+	# https://pi3g.com/2019/04/10/avahi-how-to-assign-several-local-names-to-same-ip/
+fi
+
+if which putty >/dev/null 2>&1 ; then
+	alias sshsessions="ls $HOME/.putty/sessions/"  # MEMO: easily create more sessions via the putty GUI
+	alias sshlogin=plink
+	alias easyssh=plink
+	complete -W "$(ls $HOME/.putty/sessions/)" sshlogin  # quick setup autocompletion for plink
+	# TODO: more putty aliases 
+fi
+
+# ssh annoyiances
+alias ssh="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+alias firewallrules="iptables --list-rules"
+
+alias zipapp="python -m zipapp"
+alias pyapp=zipapp
+
+if which ir-keytable >/dev/null 2>&1 ; then
+	alias irls=ir-keytable
+	alias remotels=irls
+	#alias remoteset=irset
+	alias irclear="ir-keytable --clear"
+	# ...
+fi
+
+if which minimodem >/dev/null 2>&1 ; then
+	#alias file2audio="minimodem --tx 300"
+	alias ascii2audio="minimodem --tx --ascii 300"
+	alias audio2ascii="minimodem --rx --ascii 300"
+	alias ascii2flac="minimodem --tx --ascii 300 --file"
+fi
+# TODO: replace with https://github.com/ggerganov/ggwave/tree/master/examples/ggwave-cli
+
+alias media2subs=transcribe
+
+alias hashsearch=findmyhash
+
+alias watchfile="tail -F"  # alternative: less +F
+
+# alias watchfileschanges="inotifywait --monitor --recursive" # moved in a script
+alias watchdirchanges=watchfileschanges
+alias monitorfilechanges=watchfileschanges
+
+if which fzf >/dev/null 2>&1 ; then
+	# https://github.com/junegunn/fzf/wiki/Examples
+	# https://github.com/beauwilliams/awesome-fzf
+	
+	#alias fzfind="fzf --no-sort --no-extended -f"
+	
+	# cdf - cd into the directory of the selected file
+	cdf() {
+	   local file
+	   local dir
+	   file=$(fzf +m -q "$1") && dir=$(dirname "$file") && cd "$dir"
+	}
+
+	# fh - repeat history
+	fh() {
+	  print -z $( ([ -n "$ZSH_NAME" ] && fc -l 1 || history) | fzf +s --tac | sed -E 's/ *[0-9]*\*? *//' | sed -E 's/\\/\\\\/g')
+	}
+
+	# fkill - kill processes - list only the ones you can kill. Modified the earlier script.
+	fkill() {
+		local pid 
+		if [ "$UID" != "0" ]; then
+			pid=$(ps -f -u $UID | sed 1d | fzf -m | awk '{print $2}')
+		else
+			pid=$(ps -ef | sed 1d | fzf -m | awk '{print $2}')
+		fi  
+
+		if [ "x$pid" != "x" ]
+		then
+			echo $pid | xargs kill -${1:-9}
+		fi  
+	}
+fi
+
+alias uptimepretty="uptime -p || date -u -d @$(cat /proc/uptime | cut -f1 -d' ') +'%T'"  # https://unix.stackexchange.com/questions/34017/convert-linux-sysuptime-to-well-format-date/774374#774374
+
+if which go >/dev/null 2>&1 ; then
+	alias gobuildwin64="env GOOS=windows GOARCH=amd64 go build"  # https://stackoverflow.com/questions/65843413/cross-compile-a-shared-library-under-linux-for-windows?rq=3
+	# ...
+fi
+
+alias igo=gore  # https://github.com/x-motemen/gore/
+
+unset THIS_SCRIPT_DIR

@@ -1,0 +1,4 @@
+
+xgamma -gamma $*
+
+# TODO: more alteranatives

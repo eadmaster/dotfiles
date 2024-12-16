@@ -1,0 +1,24 @@
+
+# turn on BT https://wiki.archlinux.org/index.php/bluetooth#Auto_power-on_after_boot
+#sudo hciconfig hci0 up
+# TODO: check errors, may also need systemctl start bluetooth.service
+power on bluetooth
+
+sudo hcitool scan  | while read line; do
+	# TODO: check empty line
+	macaddr = $(echo "$line" | cut -d' ' -f1)
+	echo "$(basename $0) info: checking $macaddr..."   >&2
+	# list services
+	sdptool browse $macaddr
+done
+
+echo "$(basename $0): scanning BTLE devices..."   >&2
+sudo timeout -sINT 10s hcitool lescan
+# via https://github.com/Ernst79/bleparser
+bleparser
+# via https://github.com/frawau/aioblescan
+aioblescan
+# TODO: betterscan  https://www.bettercap.org/modules/ble/
+
+# ALTERNATIVEs:
+#  NO? btscanner (ncurses-based)

@@ -1,0 +1,213 @@
+#!/bin/sh
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUT_FILE [OUTPUT_FILE]"
+	echo
+	exit 0
+elif [ -z "$1" ] || [ "$1" = "-" ]; then
+	echo "$(basename $0) warn: reading input file from stdin" >&2
+	INPUTFILE="$TMPDIR/$$.tmp"
+	cat > $INPUTFILE
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+elif [ ! -z "$2" ]; then
+	# iterate over passed args and recursive call
+	for CURR_FILE in "$@"
+	do
+		$0 "$CURR_FILE"
+	done
+	exit $?
+fi
+
+INPUTFILE="$1"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+INPUTFILENAME="`basename \"$INPUTFILE\" | rev | cut -d'.' -f2- | rev`"
+INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
+# try to detect the input file type according on its extension (useful if file is missing or buggy)
+case $INPUTFILEEXT in
+	jpg|gif|png|tiff|tif|bmp|xpm|pbm|pgm|ppm|tga|ico|dng|crw ) INPUTFILETYPE=image/$INPUTFILEEXT ;;
+	avi|mkv|ogm|mpg|mpeg|mp4|mp3|mp2|ogg|flac|aac|ac3|a52|dts|asf|rm|wav ) INPUTFILETYPE=video/$INPUTFILEEXT ;;
+	xml ) INPUTFILETYPE=application/xml ;;
+	json ) INPUTFILETYPE=application/json ;;
+	html|htm ) INPUTFILETYPE=text/html ;;
+esac
+
+OUTPUTFILE="$2"
+[ -z "$OUTPUTFILE" ] && OUTPUTFILE="${INPUTFILENAME}_FIXED.$INPUTFILEEXT"
+
+# look for a specific tool in the system (e.g. pngfix, etc. )
+CUSTOMTOOLPATH=$( findcommand ${INPUTFILEEXT}fix | head -n1 )
+[ -z "$CUSTOMTOOLPATH" ] && CUSTOMTOOLPATH=$( findcommand ${INPUTFILEEXT}recover | head -n1 )
+if [ ! -z "$CUSTOMTOOLPATH" ]; then
+	$CUSTOMTOOLPATH "$INPUTFILE"
+	#exit $?
+fi
+
+# switch by input file extension
+case "$INPUTFILEEXT" in
+
+	#mid|midi|kar|mod|xm|s3m|stm|it )
+		#	timidity -Ol "$INPUTFILE"
+		#	exit $?
+	
+	#rtf|odt|odp|odg|ods|doc|xls|mdb|docx|pptx|xlsx|csv|tsv|dbf|txt ) # office
+	#	
+	
+	zip )
+		zip -FF "$INPUTFILE" --out
+		[ $? -ne 127 ] && exit $?
+		;&  # fallthru
+	rar )
+		rar r "$INPUTFILE"
+		exit $?
+		;;
+	#WANTED: 7z|arj|bz2|cab|cpio|gz|lha|lzh|tar|tgz|tbz|wim|iso|img|ima|vhd|
+
+	vdi|vhd|vmdk )
+		vbox-img repair --filename "$INPUTFILE"
+		exit $?
+		;;
+
+	qcow|qcow2|vdi|qed )
+		qemu-img check --output=human -r "$INPUTFILE"
+		exit $?
+		;;
+		
+	par2 ) 
+		par2 r "$INPUTFILE"
+		exit $?
+		;;
+
+	smc|sfc|fig|gb|gbc|gba|nds|n64|z64|smd|gen|md|32x|pce|nes|fds|sms|gg|ws|wsc|jag|ngp|ngc|vb )
+		ucon64 --chk --nbak "$INPUTFILE"
+		exit $?
+		;;
+		
+	#crc|crc32|sfv|md5|ed2k|emulecollection|hash )
+	#	rhash -u "$INPUTFILE"
+	#	exit $?
+	#	;;
+	
+	#pgp|sig|asc|sign ) # signature files
+	#	gpg --verbose --verify "$INPUTFILE"
+	#	# ALTERNATIVE: openssl (req. certificate path)
+	#	exit $?
+	#	;;
+	
+	#csv|tsv|isv )  # comma-separated-value (not detected correctly by file?)
+	#	csvfix "$INPUTFILE"
+	#	csvclean -n "$INPUTFILE"
+	#	csvtool check "$INPUTFILE"
+	#	exit $?
+	#	;;
+
+	#py )  # python source code (not detected correctly by file?)
+	#	pep8 "$INPUTFILE"
+	#	pyflakes "$INPUTFILE"
+	#	pylint --errors-only "$INPUTFILE"
+	#	flake8 "$INPUTFILE"
+	#	exit $?
+	#	;;
+		
+	#js )  # javascript source code (not detected correctly by file?)
+	#	jslint "$INPUTFILE"
+	#	jshint "$INPUTFILE"
+	#	exit $?
+	#	;;
+		
+	# TODO: custom xml documents formats: sgml|xsd|xsl|opml|kml|poi|wis|nzb )
+	
+	#db ) # BSD dbm
+	#	db_recover -v "$INPUTFILE"
+	#	exit $?
+	#	;;
+esac
+
+
+# switch by input file mime type
+case "$INPUTFILETYPE" in
+	image* )
+		echo "$(basename $0) info: if no error is shown then probably the file is fine" >&2
+		imconvert "$INPUTFILE" "$OUTPUTFILE"   # from ImageMagick package
+		exit $?
+		;;
+	
+	video*|audio* )
+		echo "$(basename $0) info: if no error is shown then probably the original file was fine" >&2
+		ffmpeg -i "$INPUTFILE" -c copy "$OUTPUTFILE"
+		exit $?
+		;;
+	
+	#text/x-shellscript )
+	#	checkbashisms "$INPUTFILE"
+	#	export POSIXLY_CORRECT=1
+	#	sh -n "$INPUTFILE"
+	#	exit $?
+	#	;;
+
+	#text/x-c* ) # c-like source code
+	#	lint "$INPUTFILE"
+	#	#splint "$INPUTFILE"
+	#	cppcheck "$INPUTFILE"
+	#	#oclint "$INPUTFILE"
+	#	#rats "$INPUTFILE"
+	#	clang-tidy "$INPUTFILE"
+	#	gcc -Wall -Wextra -pedantic -Wundef -Wshadow -Winit-self -o NUL -c "$INPUTFILE" > /dev/null
+	#	exit $?
+	#	;;
+	
+	#text/x-java )
+	#	jlint "$INPUTFILE"
+	#	checkstyle "$INPUTFILE"
+	#	# not working with jdk 1.8? http://stackoverflow.com/questions/20689204/is-there-any-way-to-run-javac-turning-off-code-generation
+	#	javac -proc:only "$INPUTFILE"
+	#	javac -d /dev/null "$INPUTFILE"
+	#	exit $?
+	#	;;
+	
+	# WANTED: text/x-php
+	
+	application/pdf )
+		pdftk "$INPUTFILE" output "$OUTPUTFILE"
+		exit $?
+		;;
+	
+	text/html )
+		tidy -output "$OUTPUTFILE" "$INPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		# (not working)? alternative using xmlstarlet
+		# xmlstarlet fo --html --indent-tab --encode utf-8 "$@"
+		# _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		# alternative using xmllint
+		xmllint --html --format "$@"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		# else alternative using php (req. libtidy?) http://php.net/manual/en/tidy.examples.basic.php
+		cat "$INPUTFILE" | php -c '$tidy = new tidy; $tidy->parseString(trim(fgets(STDIN)), array('indent' => true,), 'utf8'); $tidy->cleanRepair(); print($tidy);'
+		exit $?
+		;;
+		
+	application/xml )
+		xmlstarlet fo --recover "$INPUTFILE" > "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		xmllint --recover --format   $INPUTFILE" --output  "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		exit $?
+		;;
+		
+	#application/json )
+	#	#WANTED tool
+	#	#exit $?
+	#	;;
+	
+	#text/plain )  # plaintext: replace mispelled words
+	#	hunspell
+	#	exit $?
+	#	;;
+	
+esac
+
+echo "$(basename $0): extension \"$INPUTFILEEXT\" not supported" >&2
+exit 1

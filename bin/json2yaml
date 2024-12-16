@@ -1,0 +1,21 @@
+#!/bin/sh
+
+if [ -f "$1" ]; then
+	# read from file
+	INPUT=$(cat "$1")
+elif [ -z "$1" ]; then
+	# read from stdin
+	INPUT=$(cat)
+else
+	# read from passed args
+	INPUT="$@"
+fi
+
+# TODO: handle multiple json of the same file -> "Extra data" error https://stackoverflow.com/questions/54121686/how-to-solve-problem-decoding-from-wrong-json-format
+echo "$INPUT" | python -c 'import sys, yaml, json; yaml.safe_dump(json.load(sys.stdin), sys.stdout, default_flow_style=False)'
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+echo "$INPUT" | catmandu convert JSON --multiline 1 to YAML
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+ 
+# MORE ALTERNATIVES: https://www.commandlinefu.com/commands/view/12221/convert-json-to-yaml

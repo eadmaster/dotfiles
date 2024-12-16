@@ -1,0 +1,2 @@
+
+nohup gnirehtet run $ANDROID_SERIAL  > /tmp/gnirehtet.log

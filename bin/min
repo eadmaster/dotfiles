@@ -1,0 +1,13 @@
+#!/bin/sh
+
+INPUT="$(echo $@ | tr ' ' '\n')"  # replace spaces with newlines
+[ -z "$1" ] && INPUT="$(cat)"
+[ -f "$1" ] && INPUT="$(cat $1)"
+
+echo "$INPUT" | sort | head -1 
+
+# ALTERNATIVES:
+# numbound -l
+# csvtool min  # only for files
+# datamash min 1
+

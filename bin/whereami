@@ -1,0 +1,81 @@
+#!/bin/sh
+
+command -p whereami "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+if [ ! -z "$ANDROID_ROOT" ]; then
+	# using the Termux:API add-on
+	termux-location "$@"
+	#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+	
+	# TODO: alternative using P4A
+	#exit 127
+fi
+
+# else alternative using public web apis
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) [-r|--raw][-f human]"
+	# TODO: remove -f human option
+	echo
+	exit 0
+fi
+
+# read from envvars
+if [ ! -z "$LAT" ] && [ ! -z "$LON" ]; then  #  && [ -z "$1" ]
+	echo "$(basename $0) info: coords from envvars LAT,LON:" >&2
+	echo "$LAT,$LON"
+	#exit 0
+fi
+
+# alternative via GPS-enabled WWAN cards  https://wiki.archlinux.org/title/GPS
+mmcli -m 0 --location-enable-gps-raw --location-enable-gps-nmea
+mmcli -m 0 --location-get
+
+# alternative using DBUS GeoClue https://trollheaven.wordpress.com/2016/09/26/spionage-bei-linux-systemen/  https://unix.stackexchange.com/questions/121269/how-to-talk-to-geoclue-through-its-dbus-interface
+echo "\n$(basename $0) info: DBUS GeoClue output:" >&2
+#FILTER="tr '\n' ','"
+#[ ! "$1" = "--raw" ] && FILTER="tr '\n' ',' | cut -d',' -f3,4"
+if [ -z "$1" ]; then
+	qdbus --literal org.freedesktop.Geoclue.Providers.UbuntuGeoIP /org/freedesktop/Geoclue/Providers/UbuntuGeoIP org.freedesktop.Geoclue.Position.GetPosition | tr '\n' ',' | cut -d',' -f3,4
+elif [ "$1" = "--raw" ]; then
+	qdbus --literal org.freedesktop.Geoclue.Providers.UbuntuGeoIP /org/freedesktop/Geoclue/Providers/UbuntuGeoIP org.freedesktop.Geoclue.Position.GetPosition
+	# TODO: show field names
+elif [ "$1" = "-f" ] && [ "$2" = "human" ]; then
+	# TODO: extract city only
+	qdbus --literal org.freedesktop.Geoclue.Providers.UbuntuGeoIP /org/freedesktop/Geoclue/Providers/UbuntuGeoIP  org.freedesktop.Geoclue.Address.GetAddress
+fi
+#[ $? -eq 0 ] && exit $?
+
+#NO(SLOW)? alternative using gpsd
+#echo "\n$(basename $0) info: gpsd output:" >&2
+#service gpsd start
+#gpspipe -w -n 10 | grep -m 1 lon
+#[ $? -eq 0 ] && exit $?
+
+if [ -z "$1" ]; then
+	echo "\n$(basename $0) info: freegeoip.app output:" >&2
+	FILTER="jq .latitude,.longitude"
+	[ "$1" = "--raw" ] && FILTER="python -m json.tool"
+	[ "$1" = "-f" ] && [ "$2" = "human" ] && FILTER="jq -r .city,.region_name,.country_name"
+	wget -q -O-  https://freegeoip.app/json/ | $FILTER | tr '\n' ',' | head -c-1
+	[ $? -eq 0 ] && exit $?
+
+	echo "\n$(basename $0) info: ip-api.com output:" >&2
+	FILTER="jq .lat,.lon"
+	[ "$1" = "--raw" ] && FILTER="python -m json.tool"
+	[ "$1" = "-f" ] && [ "$2" = "human" ] && FILTER="jq -r .city,.regionName,.country"
+	wget -q -O- -T2 "http://ip-api.com/json/" | $FILTER | tr '\n' ',' | head -c-1
+	[ $? -eq 0 ] && exit $?
+elif [ "$1" = "--raw" ]; then
+	echo "\n$(basename $0) info: freegeoip.app output:" >&2
+	wget -q -O-  "https://freegeoip.app/json/" | jq .
+	echo
+	echo "\n$(basename $0) info: ip-api.com output:" >&2
+	wget -q -O-  "http://ip-api.com/json/" | jq .
+fi
+# more alternatives:
+#  http://geoip.ubuntu.com/lookup
+#  https://location.services.mozilla.com/v1/geolocate?key=geoclue
+

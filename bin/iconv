@@ -1,0 +1,26 @@
+#!/bin/bash
+
+command -p iconv "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+recode $FROM_ENC..$TO_ENC "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else alternative using php
+# args checking
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" != "-f" ] || [ "$3" != "-t" ] ; then
+	echo "usage: $(basename $0) -f from-encoding -t to-encoding INPUT_FILE"
+	exit 0
+fi
+FROM_ENC=$2
+TO_ENC=$4
+INPUT="$5"
+[ -z "$5" ] && INPUT=$(cat)
+[ -f "$5" ] && INPUT=$(cat "$5")
+php -c "iconv("$FROM_ENC", "$TO_ENC", "$INPUT");" "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# more alternatives: http://www.localizingjapan.com/blog/2012/07/
+
+# else
+exit 127

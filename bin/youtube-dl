@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [ ! -f "$TMPDIR/youtube-dl/youtube-dl" ]; then
+	mkdir -p "$TMPDIR/youtube-dl"
+	wget https://yt-dl.org/latest/youtube-dl -O "$TMPDIR/youtube-dl/youtube-dl"
+	chmod u+rx "$TMPDIR/youtube-dl/youtube-dl"
+fi
+
+"$TMPDIR/youtube-dl/youtube-dl" -f mp4 "$@"

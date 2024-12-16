@@ -1,0 +1,23 @@
+#!/bin/sh
+
+INPUT=$1
+[ -z "$1" ] && INPUT=$(cat)
+[ -f "$1" ] && INPUT=$(cat "$1")
+
+# Common log format:
+date -d @$INPUT  +'%d/%b/%Y:%H:%M:%S %z'
+[ $? -eq 0 ] && exit 0
+
+# TODO: ALT.: ISO 8601 formatted string (eg. "2012-04-23T18:25:43.511Z")
+
+awk "BEGIN { print strftime(\"%d/%b/%Y:%H:%M:%S %z\", $INPUT); }"
+[ $? -eq 0 ] && exit 0
+
+# locale's format:
+date -d @$INPUT
+[ $? -eq 0 ] && exit 0
+
+awk "BEGIN { print strftime(\"%c\", $INPUT); }"
+[ $? -eq 0 ] && exit 0
+
+# MORE ALTERNATIVES: https://unix.stackexchange.com/questions/2987/how-do-i-convert-an-epoch-timestamp-to-a-human-readable-format-on-the-cli

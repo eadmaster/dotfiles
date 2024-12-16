@@ -1,0 +1,13 @@
+#!/bin/sh
+
+command -p iotop "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# tip: enable the IO_RATE column http://unix.stackexchange.com/questions/169279/alternative-to-iotop-for-non-root-user-without-sudo-privileges
+htop
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# TODO MORE ALTERNATIVES: http://serverfault.com/questions/61510/linux-how-can-i-see-whats-waiting-for-disk-io?noredirect=1&lq=1
+#watch -n 1 "(ps aux | awk '\$8 ~ /D/  { print \$0 }')"
+
+exit 127

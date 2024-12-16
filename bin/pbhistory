@@ -1,0 +1,21 @@
+#!/bin/sh
+
+if [ -f "$HOME/.local/share/klipper/history2.lst" ]; then
+	cat "$HOME/.local/share/klipper/history2.lst" | strings
+	exit $?
+fi
+
+# KDE klipper read via qbus
+text="nothing yet"
+cnt=0
+while [ "$text" != "" ]; do
+  text=`qdbus org.kde.klipper /klipper getClipboardHistoryItem $cnt`
+  echo "==== Clipboard content line $cnt:"
+  echo "$text"                      # to terminal output
+  #echo "$text" > /path/to/file      # to file (EDIT this)
+  cnt=$((cnt + 1))
+done
+
+# TODO: more alternatives  https://askubuntu.com/questions/96181/how-do-i-copy-the-whole-history-of-the-clipboard-to-a-text-file
+
+exit 127

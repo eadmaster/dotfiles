@@ -1,0 +1,17 @@
+
+
+curl -o /dev/null  "http://webtests.100percent.info/100mb.test"
+[ $? -eq 0 ] && exit 0
+
+curl -o /dev/null  "http://speedtest.sea01.softlayer.com/downloads/test100.zip"
+[ $? -eq 0 ] && exit 0
+
+curl -o /dev/null  "http://speedtest.qsc.de/1GB.qsc"
+[ $? -eq 0 ] && exit 0
+
+speedtest-cli
+[ $? -eq 0 ] && exit 0
+
+# TODO: more alternatives
+
+# more test urls: https://raw.githubusercontent.com/blackdotsh/curl-speedtest/master/speedtest.sh

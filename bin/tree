@@ -1,0 +1,15 @@
+#!/bin/bash
+
+command -p tree "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# rclone alternative https://rclone.org/commands/rclone_tree/
+rclone tree  "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# busybox alternative (req. v>=1.36.0)
+busybox tree "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# pure bash alternative  https://stackoverflow.com/questions/3455625/linux-command-to-print-directory-structure-in-the-form-of-a-tree
+find ${1:-.} | sed -e "s/[^-][^\/]*\//  |/g" -e "s/|\([^ ]\)/|-\1/"

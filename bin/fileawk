@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ -f "$1" ]; then
+	#echo "usage: $(basename $0) PATTERN FILE [FILE]..."
+	#echo
+	awk "$@"
+	exit 0
+fi
+
+# iterate over args
+for ARG in "$@"
+do
+	if [ -f "$ARG" ]; then
+		# TODO: fix patterns with spaces
+		file2txt "$ARG" | awk $PATTERN
+	else
+		# append to the query pattern
+		PATTERN="$PATTERN $ARG"
+	fi
+done

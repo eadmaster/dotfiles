@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] | [ -z "$1" ]; then
+	echo "usage: $(basename $0) ROMSETNAME"
+	echo
+	exit 1
+fi
+
+curl --fail --remote-time --time-cond "$1.zip" "https://archive.org/download/fbnarcade-fullnonmerged/arcade/$1.zip" -o "$1.zip"
+
+# OLD:
+#wget -N "https://archive.org/download/2020_01_06_fbn/roms/arcade.zip/arcade%2F$1.zip" -o "$1.zip"
+# MEMO: "-f" prevent writing 0-bytes files on 404  https://superuser.com/questions/166387/wget-o-writes-empty-files-on-failure
+# MEMO: "-N" only download if newer

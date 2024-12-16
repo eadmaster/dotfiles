@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Android check
+if [ ! -z "$ANDROID_ROOT" ]; then
+	#TODO: input keyevent 26
+	exit $?
+fi
+# MacOSX check (UNTESTED)
+if [ "$(uname)" = "Darwin" ]; then
+	"/System/Library/CoreServices/Menu Extras/User.menu/Contents/Resources/CGSession" -suspend
+	[ $? -ne 127 ] && exit $?
+fi
+
+#TODO: check if X11 is not running
+if [ -z "$DISPLAY" ]; then
+	vlock "$@"
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+	busybox vlock "$@"
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+	#else
+	exit 127
+fi
+
+command -p xlock "$@"
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+xdg-screensaver lock
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+xscreensaver-command -lock
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+gnome-screensaver-command --lock
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+# from suckless-tools
+#slock
+#_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+xdotool key Ctrl+alt+l
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+#else
+exit 127

@@ -1,0 +1,78 @@
+#!/bin/sh
+
+#
+# command line MESS emulator auto launcher
+# by eadmaster
+#
+
+INPUTFILE="$1"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+SYSTEM=""
+
+case $INPUTFILEEXT in
+	gb ) SYSTEM=gameboy && DEVICE=cart ;;
+	gg ) SYSTEM=gamegear && DEVICE=cart ;;
+	ws ) SYSTEM=wswan && DEVICE=cart ;;
+	gbc ) SYSTEM=gbcolor && DEVICE=cart ;;
+	gen ) SYSTEM=genesis && DEVICE=cart ;;
+	#TODO: detect region: gen ) SYSTEM=megadrij && DEVICE=cart ;;
+	smd ) SYSTEM=genesis && DEVICE=cart ;;
+	32x ) SYSTEM=32x && DEVICE=cart ;;
+	sms ) SYSTEM=sms && DEVICE=cart ;;
+	nes ) SYSTEM=nes && DEVICE=cart ;;
+	fds ) SYSTEM=famicom && DEVICE="cart disksys -flop" ;;
+	smc ) SYSTEM=snes && DEVICE=cart ;;
+	sfc ) SYSTEM=snes && DEVICE=cart ;;
+	pce ) SYSTEM=pce && DEVICE=cart ;;
+	sgx ) SYSTEM=sgx && DEVICE=cart ;;
+	jag ) SYSTEM=jaguar && DEVICE=cart ;;
+	wsc ) SYSTEM=wscolor && DEVICE=cart ;;
+	z80 ) SYSTEM=spectrum && DEVICE=dump ;;
+	sv ) SYSTEM=svision && DEVICE=cart ;;
+	a26 ) SYSTEM=a2600 && DEVICE=cart ;;
+	lnx ) SYSTEM=lynx && DEVICE=cart ;;
+	col ) SYSTEM=coleco && DEVICE=cart ;;
+	int ) SYSTEM=intv && DEVICE=cart ;;
+	vec ) SYSTEM=vectrex DEVICE=cart ;;
+	d64 ) SYSTEM=c64 DEVICE=flop1 ;;
+	crt ) SYSTEM=c64 DEVICE=cart1 ;;
+	t64 ) SYSTEM=c64 DEVICE=quik ;;
+	adf ) SYSTEM=a500n DEVICE=flop1 ;;
+	mx1 ) SYSTEM=msx2p DEVICE=cart1 ;;
+	mx2 ) SYSTEM=msx2p DEVICE=cart1 ;;
+	d88 ) SYSTEM=pc8801 DEVICE=flop1 ;;
+	dim ) SYSTEM=x68000 DEVICE=flop1 ;;
+	xdf ) SYSTEM=x68000 DEVICE=flop1 ;;
+esac
+
+if [ -f "$1" ] && [ -z "$SYSTEM" ]; then
+	echo "$(basename $0) error: file extension not recognized, try to specify manually the system and device: $1" >&2
+	exit 1
+elif [ -f "$1" ]; then
+	echo "$(basename $0): system detected: $SYSTEM"
+	echo "$(basename $0): device detected: $DEVICE"
+	_APPENDED_ARGS="$SYSTEM -$DEVICE"
+fi
+
+# start mess
+
+#_APPENDED_ARGS="-verbose $_APPENDED_ARGS"
+_APPENDED_ARGS="-debug $_APPENDED_ARGS"
+
+[ "$0" = "messdebug" ] && _APPENDED_ARGS="-debug $_APPENDED_ARGS"
+
+mame $_APPENDED_ARGS "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+extractrun mess -inipath /tmp/mess/Data/.mess/ini/ -rompath $PENDRIVE/Documents/rom/bios/mess $_APPENDED_ARGS "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+command -p mess $_APPENDED_ARGS "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+sdlmess $_APPENDED_ARGS "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

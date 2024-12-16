@@ -1,0 +1,118 @@
+#!/bin/bash
+
+# Windows detection
+if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
+	cmd.exe /C play "$@"
+	exit $?
+fi
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUT_FILE|keyword|random"
+	echo
+	exit 0
+elif [ -f "$1" ]; then
+	# play a single file
+	xdg-open "$1"
+	exit $?
+fi
+
+if [ -z "$1" ]; then
+	# assume command to media player
+	if [ ! -z "$ANDROID_ROOT" ]; then
+		input keyevent 85  # play_pause
+		# TODO: fix: not working in termux https://github.com/termux/termux-app/discussions/3093
+		#termux-media-player play
+		exit $?
+	fi
+	playerctl -a play
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+	omnipause play
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+	xdotool key XF86AudioPlay
+	exit $?
+	# TODO: more alternatives https://wiki.archlinux.org/title/MPRIS
+fi
+
+# else
+
+QUERY="$@"
+
+SONGS_BASE_PATH=$XDG_MUSIC_DIR
+[ -z "$XDG_MUSIC_DIR" ] && SONGS_BASE_PATH=$HOME/Music
+[ ! -z "$ANDROID_ROOT" ] && SONGS_BASE_PATH=$HOME/storage/external-1/../../../../Music
+#[ "$(hostname)" = "BOSS2" ] && SONGS_BASE_PATH=$PENDRIVE/Documents/mus
+
+#SOURCE_SONGS_PLAYLIST=$PENDRIVE/Documents/fav/songs_gdrive.m3u
+SOURCE_SONGS_PLAYLIST=$PENDRIVE/Documents/fav/songs_onedrive.m3u
+
+TEMP_PLAYLIST_FILE=$TMPDIR/.$$.m3u
+
+printf "#EXTM3U\r\n" > $TEMP_PLAYLIST_FILE
+
+echo "$(basename $0) info: created $TEMP_PLAYLIST_FILE" >&2
+
+play_or_enqueue() {
+	# setup lyrics viewer
+	#[ ! -d /tmp/lyrics ] && 7z x -o"/tmp/lyrics" "$PENDRIVE/Documents/mus/lyrics.zip" > /dev/null
+	#gtk-launch  osdlyrics  # start detached from the terminal
+	
+	if [ "$_ENQUEUE" = "1" ]; then
+		enqueue $TEMP_PLAYLIST_FILE
+	else
+		setsid xdg-open $TEMP_PLAYLIST_FILE
+		[ $? -eq 127 ] && xdg-open $TEMP_PLAYLIST_FILE
+	fi
+	# sleep 5
+	# rm $TEMP_PLAYLIST_FILE
+}
+
+if [ "$1" = "random" ] || [ "$1" = "shuffle" ]; then
+	#find "$SONGS_BASE_PATH" -iname "*.mp3" -printf '#EXTINF:-1,%P\n%p\n' | sed 's/^#EXTINF/\x00/g' | shuf -z | sed ' s/\x00/#EXTINF/g' | head -n-1  >> $TEMP_PLAYLIST_FILE
+	#[ $? -ne 0 ] && 
+	printf "#EXTINF" >> $TEMP_PLAYLIST_FILE
+	sed 's/^#EXTINF/\x00/g' "$SOURCE_SONGS_PLAYLIST" | shuf -z | sed ' s/\x00/#EXTINF/g' | head -n-1  >> $TEMP_PLAYLIST_FILE
+	play_or_enqueue  $TEMP_PLAYLIST_FILE
+	exit $?
+elif [ "$1" = "radio" ] && [ -z "$2" ] ; then
+	play_or_enqueue $PENDRIVE/Documents/fav/webradio_top.m3u
+	exit $?
+elif [ "$1" = "radio" ] && [ ! -z "$2" ] ; then
+	QUERY="$2"
+	wget -q -O- "http://de1.api.radio-browser.info/m3u/stations/byname/$(urlencode "$QUERY")" | tail -n +2  >> $TEMP_PLAYLIST_FILE
+	play_or_enqueue  $TEMP_PLAYLIST_FILE
+	exit $?
+elif [ "$1" = "tv" ] && [ -z "$2" ] ; then
+	play_or_enqueue $PENDRIVE/Documents/fav/webtv_top.m3u
+	exit $?
+#elif [ "$1" = "tv" ] && [ ! -z "$2" ] ; then
+# TODO: use https://github.com/iptv-org/iptv   https://github.com/streamlink/streamlink  + fuzzy match
+fi
+
+#find "$SONGS_BASE_PATH" -iname "*${QUERY}*.mp3" -printf '#EXTINF:-1,%P\n%p\n'  >> $TEMP_PLAYLIST_FILE
+#[ $? -ne 0 ] && 
+# fuzzy match, incl. common mispellings
+ugrep --no-group-separator  -A1 -w -i "$QUERY" "$SOURCE_SONGS_PLAYLIST"  >> $TEMP_PLAYLIST_FILE  # -Z2
+#[ $? -eq 127 ] && tre-agrep -B -E4 -D1 -d"#EXTINF:-1," -i "$QUERY" "$SOURCE_SONGS_PLAYLIST" >> $TEMP_PLAYLIST_FILE
+[ $? -eq 127 ] && grep -A1 -w -i "$QUERY" "$SOURCE_SONGS_PLAYLIST" >> $TEMP_PLAYLIST_FILE
+
+# NO? ALTERNATIVE: retrieve songs id from: rclone lsjson "gdrive:backup/MP3_player" --include "*Abenobashi*.mp3" ->  append https://docs.google.com/uc...
+
+# if nothing found search on youtube
+if [ $( stat -c'%s' "$TEMP_PLAYLIST_FILE" ) -eq 8 ]; then
+	#youtube-dl --ignore-errors --get-title --get-id  "http://youtube.com/results?search_query=$(urlencode -m "$QUERY")" 2> /dev/null | sed -e '1~2 s/^/#EXTINF:-1,/' -e '2~2 s#^#http://youtube.com/watch?v=#'  >> $TEMP_PLAYLIST_FILE
+	# ALTERNATIVE: generate direct audio urls with youtube-dl (works in any player but they expires after a while)
+	youtube-dl --ignore-errors --format mp4 --get-title --get-url "http://youtube.com/results?search_query=$(urlencode -m "$QUERY")" | sed '1~2 s/^/#EXTINF:-1,/' | sed '2~2 s#^##'  >> $TEMP_PLAYLIST_FILE
+	# TODO: replace with mirror with more quota
+	#echo "http://jaimemf.github.io/youtube-dl-web/api/play?format=m4a&url=youtube.com/results?search_query=$(urlencode -m "$QUERY")"  >> $TEMP_PLAYLIST_FILE
+	#echo "http://youtube.com/results?search_query=$(urlencode -m "$QUERY")"  >> $TEMP_PLAYLIST_FILE
+fi
+
+# check if no results
+if [ $( stat -c'%s' "$TEMP_PLAYLIST_FILE" ) -eq 8 ]; then
+	echo "$(basename $0) err: nothing found"  >&2
+	rm $TEMP_PLAYLIST_FILE
+	exit 1
+fi
+
+play_or_enqueue  $TEMP_PLAYLIST_FILE

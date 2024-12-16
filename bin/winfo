@@ -1,0 +1,17 @@
+
+# output infos on a remote file
+
+curl --head --verbose --output /dev/null "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# json output
+curl -XHEAD -s -m2  -w '%{json}' "$@" | jq .
+#_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+wget -S --spider "$@"  # MEMO: "--spider" is supported in busybox
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# TODO: cloudflare bypass 
+
+#else
+exit 127

@@ -1,0 +1,130 @@
+#!/bin/sh
+
+#OPENWEATHERMAP_APPID="..."
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) [CITY_NAME]"
+	echo
+	echo "will use CITY, LAT, LON envvars if defined"
+	exit 0
+fi
+
+# parse args
+[ -z "$TZ" ] && [ -f /etc/timezone ] && export TZ=$(cat /etc/timezone)
+#[ -z "$TZ" ] && echo "$(basename $0) warn: TZ env var is not defined" >&2
+#[ -z "$CITY" ] && CITY=$(whereami -f human | cut -d, -f1)
+[ -z "$CITY" ] && CITY=$(echo $TZ | cut -d"/" -f2)
+[ ! -z "$1" ] && CITY=$1
+if [ ! -z "$CITY" ]; then
+	echo "$(basename $0): query using city: $CITY" >&2
+	[ -z "$LAT" ] && export LAT=$(geocode "$CITY" | jq -r .[].lat)
+	[ -z "$LON" ] && export LON=$(geocode "$CITY" | jq -r .[].lon)
+else
+	echo "$(basename $0) err: unable to find current location" >&2
+	exit 1
+fi
+#if [ -z "$LAT" ] && [ -z "$LON" ] ; then
+#	# obtain current position
+#	LAT=$(whereami | cut -d, -f1)
+#	LON=$(whereami | cut -d, -f2)
+#fi
+
+# TODO: quiet mode
+#if [ "$1" = "-q" ]; then
+	#CITY=$2
+	#[ -z "$CITY" ] && CITY=$(whereami -f human | cut -d, -f1)
+	#LAT=$(geocode "$CITY" | jq .lat)
+	#LON=$(geocode "$CITY" | jq .lng)
+	## using wttr.in
+	##wget -q -O- "http://wttr.in/$LAT,$LON?Q" | head -n1 | tr -d ' '
+	## using yahoo api
+	#wget -q -U Firefox -O- "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20u%3D%22c%22%20and%20woeid%20in%20(select%20woeid%20from%20geo.places(1)%20where%20text%3D%22$CITY%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys"  |  jq -r '.query.results.channel.item.condition.text'
+	#exit $?
+#fi
+
+#echo
+
+#echo "$(basename $0): Yahoo:" >&2
+#echo
+
+#wget -q -U Firefox -O- "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20u%3D%22c%22%20and%20woeid%20in%20(select%20woeid%20from%20geo.places(1)%20where%20text%3D%22$CITY%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys"  |  python -m json.tool
+
+#echo
+
+#echo "$(basename $0): OpenWeatherMap:" >&2
+#echo
+
+#wget -q -O- "https://api.openweathermap.org/data/2.5/weather?q=$CITY&appid=$OPENWEATHERMAP_APPID&units=metric"  |  python -m json.tool
+
+echo
+
+command -p weather "$CITY"
+
+echo
+
+weather-util "$CITY"
+
+echo
+
+inxi -w -W "$LAT,$LON"
+
+# TODO: more tools https://askubuntu.com/questions/390329/weather-from-terminal#comment1153501_738127
+# TODO: more web APIs: https://github.com/toddmotto/public-apis#weather
+# TODO: add https://weather.com/swagger-docs/call-for-code  https://www.programmableweb.com/api/weather-channel
+
+echo
+
+if which ansiweather >/dev/null 2>&1 ; then
+	ansiweather -l "$CITY"
+else
+	# download the script and execute
+	curl -s https://raw.githubusercontent.com/fcambus/ansiweather/master/ansiweather | bash
+fi
+
+echo
+
+# https://github.com/Rayrsn/Weather-Cli/
+weather-Cli get $CITY
+
+echo
+
+# https://github.com/tobealive/wthrr-the-weathercrab
+wthrr
+
+wget -U "wget" -q -O- "http://v2.wttr.in/$CITY?1n"
+#wget -q -O- "http://wttr.in/$LAT,$LON?1n"
+
+echo
+
+echo "UV index: " #>&2
+
+# from https://openweathermap.org/api/uvi
+wget -q -O- "http://api.openweathermap.org/data/2.5/uvi?appid=$OPENWEATHERMAP_APPID&lat=$LAT&lon=$LON" |  jq .value
+
+echo
+
+echo "air quality:" #>&2
+
+wget -q -O- "https://api.openaq.org/v1/latest?coordinates=$LAT,$LON&limit=1"  |  jq -r '.results[].measurements[] | "\(.parameter | ascii_upcase): \(.value) \(.unit)"'
+
+#TODO:
+#echo "CO (at sea level):" >&2
+#wget -q -O- "http://api.openweathermap.org/pollution/v1/co/$LAT,$LON/current.json?appid=$OPENWEATHERMAP_APPID" | jq '.data[] | select(.pressure >= 90 and .pressure <= 110)'
+#echo "O3:" >&2
+#wget -q -O- "http://api.openweathermap.org/pollution/v1/o3/$LAT,$LON/current.json?appid=$OPENWEATHERMAP_APPID" | jq '.data'
+#echo "NO2:" >&2
+#wget -q -O- "http://api.openweathermap.org/pollution/v1/no2/$LAT,$LON/current.json?appid=$OPENWEATHERMAP_APPID" | jq '.data'
+#echo "SO2 (at sea level):" >&2
+#wget -q -O- "http://api.openweathermap.org/pollution/v1/so2/$LAT,$LON/current.json?appid=$OPENWEATHERMAP_APPID" | jq '.data[] | select(.pressure >= 90 and .pressure <= 110)'
+
+echo
+
+# http://ec.europa.eu/environment/air/quality/standards.htm
+echo "$(basename $0): MEMO: safe limits are PM2.5<25, PM10<40, SO2<125, NO2<40, lead(Pb)<0.5, CO<10000, benzene(C6H6)<5, ozone(O3)<120, UVI<3" >&2
+echo
+
+#TODO: echo "earthquakes:" #>&2
+#wget -q -O- "http://webservices.ingv.it/fdsnws/event/1/query?starttime=$(date -d '-1 day' +'%Y-%m-%dT%H:%M:%S')&endtime=$(date -d '+1 day' +'%Y-%m-%dT%H:%M:%S')&latitude=$LAT&longitude=$LON&maxradius=0.5&format=text" | csvjson | jq .   # minmagnitude=1"  # | rows convert test.csv json:- | jq .
+#wget -q -O- "http://beta-service.geonet.org.nz/fdsnws/event/1/query?endtime=$(date +'%Y-%m-%dT%H:%M:%S')&latitude=$LAT&longitude=$LON&maxradius=100&format=text"  # minmagnitude=5
+# WANTED: predictions
+#  (DISCONT.)? https://www.openhazards.com/data/GetEarthquakeProbability

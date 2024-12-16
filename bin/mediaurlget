@@ -1,0 +1,13 @@
+#!/bin/sh
+
+yt-dlp --get-url "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+youtube-dl --get-url "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# TODO: ALTERNATIVES via web apis:
+# wget -q -O- "http://youtube-dl.appspot.com/api/play?format=m4a&url=youtube.com/results?search_query=$(urlencode -m "$QUERY")&playlist_items=1" | jq ...
+
+#else
+exit 127

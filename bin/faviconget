@@ -1,0 +1,21 @@
+ 
+
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) DOMAIN_NAME"
+	echo
+	exit 0
+fi
+
+wget -q -O- -T2 "http://$1/favicon.ico"
+[ $? -eq 0 ] && exit 0
+
+wget -q -O- -T2 "http://$1/favicon.png"
+[ $? -eq 0 ] && exit 0
+
+wget -q -O- -T2 "http://www.google.com/s2/favicons?domain=$1"
+[ $? -eq 0 ] && exit 0
+
+# TODO: more alternatives https://superuser.com/questions/157925/how-to-download-favicon-from-website
+
+#else
+exit 1

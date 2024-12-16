@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# extract an archive to a subdir and cd to it
+
+INPUTFILE="$1"
+INPUTFILENAME="`basename \"$INPUTFILE\" | rev | cut -d'.' -f2- | rev`"
+PWD="$(pwd)"
+_OUTDIR=$PWD/$INPUTFILENAME
+
+echo "$(basename $0): extracting $1 to $_OUTDIR..."  >&2
+
+fileunpack "$1" "$_OUTDIR" > /dev/null
+
+# start a subshell in $_OUTDIR (cannot change curent shell PWD)
+# WANTED: change parent shell cwd instead?  (/proc/$PPID/cwd) | rewrite as a function in macinit | create an alias in macinit souring this script
+
+cd "$_OUTDIR"
+
+bash
+
+#echo "$(basename $0): type 'exit' to clear the extracted files"  >&2
+
+#exec $SHELL
+#$SHELL
+
+#rm -rf "$_OUTDIR"
+
+# alternatives:
+#	cd "$HOME/.avfs$PWD/$*#"

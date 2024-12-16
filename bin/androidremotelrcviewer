@@ -1,0 +1,58 @@
+#!/bin/bash
+
+PORT_USED=3000
+
+# check free ports
+if fuser $PORT_USED/tcp ; then
+    echo "$0: port $PORT_USED is in use, make sure it is not already started..."
+    exit 1
+fi
+
+androidunlock
+
+# start service https://github.com/NyaomiDEV/Sunamu
+# set useElectron: false, in $HOME/.config/sunamu/config.json5
+nohup sunamu -w >/dev/null 2>&1  &  # disable nohup.out creation
+echo "$(basename $0): server started on http://localhost:$PORT_USED/"
+
+# https://stackoverflow.com/questions/9887621/accessing-localhost-of-pc-from-usb-connected-android-mobile-device
+# https://stackoverflow.com/questions/4779963/how-can-i-access-my-localhost-from-my-android-device#46795769
+adb reverse tcp:$PORT_USED tcp:$PORT_USED
+
+# increase brightness
+adb shell settings put system screen_brightness 150
+
+# disable auto rotation
+adb shell content insert --uri content://settings/system --bind name:s:accelerometer_rotation --bind value:i:0
+# set forced landscape mode
+adb shell content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1
+
+# disable lockscreen  https://android.stackexchange.com/questions/233921/adb-bypass-lock-screen
+adb shell settings put secure lockscreen.disabled 1
+
+sleep 3
+
+adb shell am start -a android.intent.action.VIEW -d "http://localhost:$PORT_USED"
+
+# hide both Status and Navigation bars  https://xdaforums.com/t/full-immersive-mode.3936671/
+adb shell settings put global policy_control immersive.full=*
+
+echo "$(basename $0): press ENTER to quit"
+read
+
+# unhide both Status and Navigation bars
+adb shell settings put global policy_control null*
+
+# close the browser tab with the back button  https://stackoverflow.com/questions/57631090/send-ctrl-t-over-adb-using-sendevent-or-input-keyevent
+adb shell input keyevent KEYCODE_BACK
+
+adb forward --remove tcp:$PORT_USED
+
+killall -v  sunamu
+
+# restore low brightness
+adb shell settings put system screen_brightness 0
+
+# lock again
+adb shell input keyevent 26
+

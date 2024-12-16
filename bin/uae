@@ -1,0 +1,31 @@
+#!/bin/bash
+
+[[ "$@" =~ "AGA" ]] && OPTIONS="--amiga_model=A1200 $@"
+
+# TODO: check if input = .adf
+# TODO: add support for hdf:  --hard_drive_0=...
+if [[ -f "$@" && "$@" =~ "Disk" ]]; then
+	c=0
+	#2FIX: echo "extractrun fs-uae --floppy-drive-0=\""$@"\" $(for f in ${1%% *}*.adf; do echo -n " --floppy_image_$c=\"$f\" " && c=$((c+1)) ; done ) $OPTIONS &"
+elif [ -f "$@" ]; then
+	OPTIONS="$OPTIONS --floppy-drive-0=$@"
+fi
+[ -z "$OPTIONS" ] && OPTIONS="$@"
+
+$HOME/opt/fsuae/Launcher "$@" #"$OPTIONS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+fs-uae "$OPTIONS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+extractrun fs-uae "$OPTIONS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+command -p uae "$OPTIONS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127
+
+#sleep 5
+#xdotool key --window "$(xdotool search --limit 1 --class FS-UAE)" Next

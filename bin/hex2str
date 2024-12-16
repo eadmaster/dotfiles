@@ -1,0 +1,27 @@
+#!/bin/bash
+
+INPUT="$@"
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+echo "$INPUT" | tr -d ' ' | xxd -r -p  # TODO: add newline
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using radare2
+rax2 -s "$INPUT"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using rizin
+rz-ax -s "$INPUT"
+[ $? -eq 0 ] && exit 0
+
+# using sttr
+sttr hex-decode "$INPUT"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using python
+echo "$INPUT" | tr -d ' ' | python -c "print(raw_input().decode('hex')+'\n')"
+
+# else pure bash conversion from https://stackoverflow.com/questions/12847328/bash-ascii-to-hex
+#TODO: echo -en "'${INPUT:-""// /\\x}'"
+

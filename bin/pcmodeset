@@ -1,0 +1,61 @@
+#!/bin/sh
+
+# enable autolock
+#loginctl lock-session
+
+if [ "$(hostname)" = "BOSS2" ]; then
+	#lgtv_serial poweron
+	# TODO: check current status, if it is off then
+	#sleep 5
+	lgtv_serial inputhdmi1
+	lgtv_serial energysavingmax
+	# TODO: turn on tv speaker if off
+	lgtv_serial unmute
+	lgtv_serial volume20
+	lgtv_serial brightness50
+	
+	cpuset 80
+
+elif [ "$(hostname)" = "PICCIOTTO3" ]; then
+
+	# set performance governor
+	sudo cpupower frequency-set -g powersave
+	
+	# disable turbo boost
+	echo 1|sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
+	
+	# set GPU reduced max freq.
+	gpuset 50
+	
+	# switch to KDE activity "gaming"  https://blog.hanschen.org/2011/05/20/switch-to-specific-activities-with-keyboard-shortcuts/
+	qdbus org.kde.ActivityManager /ActivityManager/Activities SetCurrentActivity da9a261c-328d-454e-9f97-e4d417b1331a
+	
+	resolutionset 1920x1080
+
+elif [ ! -z "$ANDROID_ROOT" ]; then  # Android detection
+
+	settings put system screen_brightness 100
+	# termux-brightness 100
+	
+	exit 0
+fi
+
+
+gamma 1.0
+
+volumeset 85
+
+# set a warmer color temperature
+redshift -O 5000
+
+# resume CPU-hungry processes
+pkill -CONT firefox
+pkill -CONT chromium-browser
+pkill -CONT plugin-container
+pkill -CONT "python $PENDRIVE/SharedPrograms/eventsmon.py"
+
+# cpusetgovernor powersave
+
+# TODO: disable gamemode ... https://github.com/FeralInteractive/gamemode
+
+

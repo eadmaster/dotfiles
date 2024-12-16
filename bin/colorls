@@ -1,0 +1,53 @@
+#!/bin/bash
+ 
+# https://askubuntu.com/questions/27314/script-to-display-all-terminal-colors
+
+msgcat --color=test
+
+colortest-16b
+
+
+# pure bash, derived from https://misc.flogisoft.com/bash/tip_colors_and_formatting
+
+#Foreground
+echo "$0: formatting strings:"
+for clfg in {30..37} {90..97} 39 ; do
+	#Formatting
+	for attr in 0 1 2 4 5 7 ; do
+		#Print the result
+		echo -en "\e[${attr}${clbg};${clfg}m \\\\033[${attr}${clbg};${clfg}m \e[0m"
+	done
+	echo #Newline
+done
+
+echo
+
+echo -e "\e[39mDefault"
+echo -e "\e[30mBlack"
+echo -e "\e[31mRed"
+echo -e "\e[32mGreen"
+echo -e "\e[33mYellow"
+echo -e "\e[34mBlue"
+echo -e "\e[35mMagenta"
+echo -e "\e[36mCyan"
+echo -e "\e[37mLight gray"
+echo -e "\e[90mDark gray"
+echo -e "\e[91mLight red"
+echo -e "\e[92mLight green"
+echo -e "\e[93mLight yellow"
+echo -e "\e[94mLight blue"
+echo -e "\e[95mLight magenta"
+echo -e "\e[96mLight cyan"
+echo -e "\e[97mWhite"
+
+
+#echo -e "\033[0mNC (No color)"
+#echo -e "\033[1;37mWHITE\t\033[0;30mBLACK"
+#echo -e "\033[0;34mBLUE\t\033[1;34mLIGHT_BLUE"
+#echo -e "\033[0;32mGREEN\t\033[1;32mLIGHT_GREEN"
+#echo -e "\033[0;36mCYAN\t\033[1;36mLIGHT_CYAN"
+#echo -e "\033[0;31mRED\t\033[1;31mLIGHT_RED"
+#echo -e "\033[0;35mPURPLE\t\033[1;35mLIGHT_PURPLE"
+#echo -e "\033[0;33mYELLOW\t\033[1;33mLIGHT_YELLOW"
+#echo -e "\033[1;30mGRAY\t\033[0;37mLIGHT_GRAY"
+# TODO: add more

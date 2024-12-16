@@ -1,0 +1,15 @@
+
+
+case "$@" in
+	http*|ftp* ) wcat "$@" | $0 ;;
+esac
+
+# from https://github.com/grobian/html2text 
+#command -p html2text "$@"
+/usr/bin/html2text "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+pandoc -f html -t plain  "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+html2txt.sed "$@"

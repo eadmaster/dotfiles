@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# quickfix for unmovable snapshots
+#mv /r/snapshot.vsf /root/snapshot.vsf
+
+x64sc "$@"
+[ $? -ne 127 ] && exit ?
+
+x64 "$@"
+[ $? -ne 127 ] && exit $?
+
+flatpak run --filesystem=host --filesystem=home --share=network --device=dri --socket=pulseaudio --socket=system-bus --socket=session-bus   net.sf.VICE "$@"
+[ $? -ne 127 ] && exit $?
+
+extractrun x64sc "$@"
+[ $? -ne 127 ] && exit $?
+
+#else
+#exit 127 
+
+# quickfix for unmovable snapshots
+#mv /root/snapshot.vsf /r/snapshot.vsf

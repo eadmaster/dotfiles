@@ -1,0 +1,41 @@
+#!/bin/sh
+
+#command -p ftpd "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+DIR_SERVED="$PWD"
+[ ! -z "$1" ] && DIR_SERVED="$1"
+cd "$DIR_SERVED"
+
+PORT=2121
+
+_MYIP=$( ip -f inet -o addr show dev $IFACE | cut -d\  -f 7 | cut -d/ -f 1 | tail -n1 )
+_HOSTNAME=$(hostname)  # $HOSTNAME envvar is only defined in bash
+echo "$(basename $0): serving $DIR_SERVED at ftp://$_MYIP:2121/ or ftp://${_HOSTNAME}.local:$2121/"
+echo "$(basename $0): press CTRL+C to abort"
+
+# using rclone v>1.44  https://rclone.org/commands/rclone_serve_ftp/
+rclone serve ftp --vfs-cache-mode off --addr :$PORT "$DIR_SERVED"
+[ $? -eq 0 ] && exit 0
+
+# using sfk http://stahlworks.com/dev/index.php?tool=ftpserv
+sfk ftpserv -rw -anysize -verbose -port $PORT
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+# netwox alternative
+netwox 168 --allow-put --allowed-clients all --rootdir $DIR_SERVED
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using python+3rd party modules
+sudo twistd ftp --port=2121 --root=$DIR_SERVED
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+#sudo python -m pyftpdlib "$@"
+#_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+#_ES=$? ; [ $_ES -ne 127 -a $_ES -ne 1 ] && exit $_ES
+
+# busybox alternative  https://serverfault.com/questions/770954/how-do-i-use-busybox-and-ftpd-to-get-access-to-my-embedded-system
+#tcpsvd -vE 0.0.0.0 21 busybox ftpd -v -w "$DIR_SERVED"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

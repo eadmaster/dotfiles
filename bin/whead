@@ -1,0 +1,22 @@
+#!/bin/sh
+
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUTURL [MAXBYTES]"
+	echo
+	exit 0
+fi
+
+URL=$1
+#MAXBYTES=1024
+MAXBYTES=1024
+[ ! -z "$2" ] && MAXBYTES=$2
+
+curl -k -m5 --range 0-$MAXBYTES -s -L "$URL"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# not working? https://stackoverflow.com/questions/20317945/limit-size-wget-can-download
+#(ulimit -f 1024 ; wget -q -U Firefox -O - "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

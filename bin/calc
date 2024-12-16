@@ -1,0 +1,78 @@
+#!/bin/sh
+
+INPUT="$@"
+
+if [ "$#" -ge 1 ]; then
+
+	if which qalc >/dev/null 2>&1 ; then
+		if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+			echo "$0 example usages:" >&2
+			echo "  units conversion syntax: calc 15in to cm" >&2
+			echo "  currency conversion syntax: calc 15usd to eur" >&2
+			echo "  time math syntax: calc 13:56:12h - 1:25h to s, 10:31 + 8:30 to time, now to utc, timestamp(today - 5 days), 2020-05-20 + 523d"  >&2 #  https://github.com/Qalculate/libqalculate/issues/5
+			echo "  percent calculation: calc 500 - 20% " >&2
+			echo "  current calculation: calc \"50ohm * 2A\" " >&2
+			echo "  bytes calculation: calc 5000 byte to MB" >&2
+			#echo "  ---" >&2
+			# more examples: https://github.com/Qalculate/libqalculate
+			exit 0
+		fi
+	fi
+
+	# via qalc -> most user-friendly, also provides units normalization (but supports less units than GNU units)
+	qalc -s "exp mode 0"  "$INPUT"   #  -s "maxdeci 3"  https://github.com/Qalculate/libqalculate/issues/149
+	[ $? -ne 127 ] && exit $?
+	# TODO: disable checks for updating rates
+	
+	# via units -> exponential notation by default, also provides units normalization (e.g. "12cm+1in") 
+	units --history '' -v  "$INPUT"  # --compact -1  
+	[ $? -ne 127 ] && exit $?
+
+	# via calc -> c-style https://github.com/lcn2/calc
+	command -p calc "$INPUT"
+	[ $? -ne 127 ] && exit $?
+
+	# via awk -> in busybox, exponential notation by default
+	awk "BEGIN { printf \"%g\n\", $INPUT }"
+	[ $? -ne 127 ] && exit $?
+	
+	# via bc -> in busybox
+	echo "$INPUT" | bc -l
+	[ $? -ne 127 ] && exit $?
+	echo "$INPUT" | busybox bc -l
+	[ $? -ne 127 ] && exit $?
+
+	# via python sympy
+	echo "$INPUT" | isympy
+	[ $? -ne 127 ] && exit $?
+	
+	# TODO: more alternatives: python, ... https://unix.stackexchange.com/questions/480121/simple-command-line-calculator
+
+	exit $?
+fi
+
+echo "$(basename $0) warn: no args detected, calling GUI calc..." >&2
+
+#wine calc "$@"
+#[ $? -ne 2 ] && exit $?
+
+qalculate "$@"  # most feature-rich, can perform calculus, algebrae, units conversion
+[ $? -ne 127 ] && exit $?
+
+speedcrunch "$@" 
+[ $? -ne 127 ] && exit $?
+
+galculator "$@"  # nicer Windows-like UI
+[ $? -ne 127 ] && exit $?
+
+kcalc "$@"
+[ $? -ne 127 ] && exit $?
+
+xcalc "$@"
+[ $? -ne 127 ] && exit $?
+
+ycalc "$@"
+[ $? -ne 127 ] && exit $?
+
+#else
+exit 127

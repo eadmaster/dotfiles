@@ -1,0 +1,49 @@
+#!/bin/sh
+
+# using srm from secure-delete
+command -p srm -v -l -l -r "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+wipe -c -r -q -Q 1 "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using shred from coreutils
+# MEMO: no recursive move supported
+shred --iterations=1 --zero --verbose --force --remove=unlink  "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# https://github.com/uutils/coreutils/
+coreutils shred --iterations=1 --zero --verbose --force --remove "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#toybox wipe "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# TODO: scrub ... "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# alternative using dd (1 pass)
+if [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+fi
+
+# TODO: detect real blocksize
+#_DISKBLOCKSIZE=4096
+_DISKBLOCKSIZE=65536
+
+# ask interactive confirmation
+echo "$(basename $0): about to zerofill the file \"$1\""
+echo "$(basename $0): press Enter to continue or Ctrl-C to abort... "
+read
+
+#dd if=/dev/zero of="$1" bs=$_DISKBLOCKSIZE count=$(( 1 + $(stat -c%s "$1") / $_DISKBLOCKSIZE )) conv=noerror  # MEMO: req bash
+#dd if=/dev/zero of="$1" bs=$_DISKBLOCKSIZE count=$( echo "( 1 + $(stat -c%s "$1") / $_DISKBLOCKSIZE )" | bc ) conv=noerror  # MEMO: req bc
+dd if=/dev/zero of="$1" bs=$_DISKBLOCKSIZE count=$(awk "BEGIN {printf \"%d\", ( 1 + $(stat -c%s "$1") / $_DISKBLOCKSIZE )}") conv=noerror  # MEMO: req awk
+
+# rename file with random name and delete it
+NEW_FILENAME_RANDOM="$(dirname "$1")/$RANDOM"
+
+mv "$1" "$NEW_FILENAME_RANDOM"
+
+rm -f "$NEW_FILENAME_RANDOM"

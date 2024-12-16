@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# TODO? no args: invoke standby
+
+pkill -STOP "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

@@ -1,0 +1,116 @@
+#!/bin/sh
+
+
+# list kernel config options
+echo "$(basename $0): kernel config options:"
+#  http://stackoverflow.com/questions/14376540/view-linux-kernel-config-options
+cat /boot/config-$(uname -r)
+cat /proc/config.gz | gunzip
+echo
+
+echo "$(basename $0): installed LKMs: "
+lsmod
+#ls -R /lib/modules/`uname -r`/kernel/
+#modprobe -c | less
+
+echo "$(basename $0): SysRq status: "
+cat /proc/sys/kernel/sysrq
+
+echo
+
+echo "$(basename $0): configuration values: "
+getconf -a
+
+
+echo
+
+echo "$(basename $0): current user limits: "
+ulimit -a
+
+echo
+
+echo "$(basename $0): default build flags: "
+dpkg-buildflags
+
+echo
+
+echo "$(basename $0): environment variables: "
+env
+
+echo
+
+echo "$(basename $0): kernel params: "
+sysctl -a
+[ $? -ne 0 ] && sysctl -a
+
+echo "$(basename $0): kernel supported filesystems:"
+cat /proc/filesystems
+echo
+
+
+# ubuntu/debian-specific
+[ -f /etc/issue ] && cat /etc/issue
+
+echo
+
+# debian-specific
+if [ -f /etc/debian_version ]; then
+	echo -n "debian_version: "
+	cat /etc/debian_version
+	echo
+fi
+
+# puppy linux-specific
+if [ -f /etc/DISTRO_SPECS ]; then
+	source /etc/DISTRO_SPECS
+	cat /etc/DISTRO_SPECS
+	echo
+fi
+
+cat /etc/*release
+
+echo
+
+cat /proc/version
+
+echo
+
+uname -a
+[ $? -eq 127 ] && busybox uname -a
+
+echo
+
+lsb_release -a
+
+echo
+
+hostnamectl
+
+echo
+
+python -m platform
+
+echo
+
+inxi -S
+
+echo
+
+neofetch
+
+echo
+
+fastfetch
+
+
+# Android check
+if [ ! -z "$ANDROID_ROOT" ]; then
+	grep ro.build.version.release system/build.prop
+	#exit $?
+fi
+# MacOSX check
+if [ "$(uname)" = "Darwin" ]; then
+	sw_vers
+	system_profiler
+	#exit $?
+fi

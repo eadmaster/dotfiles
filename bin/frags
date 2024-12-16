@@ -1,0 +1,13 @@
+
+# works on FAT32 too:
+hdparm --fibmap "$@"  # | count lines?
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES	
+
+# ALTERNATIVES:
+#   NO(ext only) filefrag -v "$@"
+#   ? debugfs -R "stat /path/to/file" /dev/<partition>
+#   ... http://serverfault.com/questions/29886/how-do-i-list-a-files-data-blocks-on-linux
+#   ... http://unix.stackexchange.com/questions/68189/a-clever-way-to-defragment-a-fat-filesystem
+	
+#else
+exit 127

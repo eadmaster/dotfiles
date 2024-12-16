@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) LAYOUT"
+	exit 0
+fi
+
+setxkbmap -layout "$@"
+[ $? -eq 0 ] && exit 0
+
+sudo loadkeys "$@"
+
+
+
+ 

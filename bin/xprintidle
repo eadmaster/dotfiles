@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Windows detection
+if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
+	# TODO
+	exit 127
+fi
+
+# Android detection
+if [ ! -z "$ANDROID_ROOT" ]; then
+	# TODO
+	exit 127
+fi
+
+command -p xprintidle "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+if [ -z "$DISPLAY" ]; then
+	# just return an high value if X is not running
+	echo 99999
+	exit 0
+fi
+
+# from suckless-tools https://tools.suckless.org/x/xssstate/
+xssstate -i
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+#else
+exit 127

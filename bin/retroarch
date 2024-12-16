@@ -1,0 +1,168 @@
+#!/bin/bash
+
+RETROARCH_CONFIG_PATH=$HOME/.config/retroarch/config
+RETROARCH_CORES_PATH=$HOME/.config/retroarch/cores
+
+#if grep -q -i puppy /etc/DISTRO_SPECS &> /dev/null ; then
+#if [ "$USER" = "puppy" ]; then
+if [ "$0" = "retroarch32" ]; then
+	RETROARCH_CONFIG_PATH=/tmp/retroarch/Data/retroarch
+	RETROARCH_CORES_PATH=/tmp/retroarch/App/lib
+fi
+
+
+if [ -f "$1" ] ; then
+	INPUTFILE="$1"
+	INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+	INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+
+if [ "$INPUTFILEEXT" = "zip" ] || [ "$INPUTFILEEXT" = "7z" ]; then
+	# check the extension of the last file in the archive
+	INPUTFILEEXT=$( 7z l -slt "$INPUTFILE"  | grep Path | tail -n1 | rev | cut -d'.' -f1 | rev )
+fi
+
+case $INPUTFILEEXT in
+	#nes|fds ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mesen_libretro.so -c "$RETROARCH_CONFIG_PATH/mesen.cfg"" ;;
+	nes|fds ) _APPENDED_OPTIONS="-L $HOME/github/nestopia/libretro/nestopia_libretro.so -c "$RETROARCH_CONFIG_PATH/nestopia.cfg"" ;;
+	#smc|sfc ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/bsnes_hd_beta_libretro.so -c "$RETROARCH_CONFIG_PATH/bsnes.cfg"" ;;
+	#smc|sfc ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/snes9x_libretro.so -c "$RETROARCH_CONFIG_PATH/snes9x.cfg"" ;;
+	smc|sfc ) _APPENDED_OPTIONS="-L $HOME/github/snes9x/libretro/snes9x_libretro.so -c "$RETROARCH_CONFIG_PATH/snes9x.cfg"" ;;
+	v64|n64|z64 ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mupen64plus_next_libretro.so -c "$RETROARCH_CONFIG_PATH/mupen64.cfg"" ;;
+	#v64|n64|z64 ) _APPENDED_OPTIONS="-L $HOME/github/mupen64plus-libretro-nx/mupen64plus_next_libretro.so -c "$RETROARCH_CONFIG_PATH/mupen64.cfg"" ;;
+	#v64|n64|z64 ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/parallel_n64_libretro.so -c "$RETROARCH_CONFIG_PATH/parallel_n64.cfg"" ;;
+	gb|gbc ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mgba_libretro.so -c "$RETROARCH_CONFIG_PATH/mgba.cfg"" ;;
+	#gb|gbc ) _APPENDED_OPTIONS="-L $HOME/github/mgba/mgba_libretro.so -c "$RETROARCH_CONFIG_PATH/mgba.cfg"" ;;
+	#echo "$INPUTFILE" | grep -qF "[S]" && _APPENDED_OPTIONS="-c "$RETROARCH_CONFIG_PATH/bsnes.cfg" \"$RETROARCH_CONFIG_PATH/system/Super Gameboy (J) (V1.2) [R-Euro+USA][!].sfc\" --subsystem sgb"
+	vb ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_vb_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-vb.cfg"" ;;
+	gba ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mgba_libretro.so -c "$RETROARCH_CONFIG_PATH/mgba.cfg"" ;;
+	#nds ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/desmume_libretro.so -c "$RETROARCH_CONFIG_PATH/desmume.cfg"" ;;
+	nds ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/melonds_libretro.so -c "$RETROARCH_CONFIG_PATH/melonds.cfg"" ;  [ "$(hostname)" = "PICCIOTTO3" ] && export MESA_GL_VERSION_OVERRIDE=3.30 ;;
+	sms|smd|md|gen ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/genesis_plus_gx_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus.cfg"" ;;
+	#sms|smd|md|gen ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/genesis_plus_gx_wide_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus.cfg"" ;;
+	#sms|smd|md|gen ) _APPENDED_OPTIONS="-L $HOME/github/Genesis-Plus-GX/genesis_plus_gx_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus.cfg"" ;;
+	32x ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/picodrive_libretro.so -c "$RETROARCH_CONFIG_PATH/picodrive.cfg"" ;;
+	#grep -q "(32X)" <<< "$INPUTFILE" && _APPENDED_OPTIONS="-c "$RETROARCH_CONFIG_PATH/picodrive.cfg"" ;;
+	gg ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/genesis_plus_gx_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus-gg.cfg"" ;;
+	#pce ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_pce_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-pce.cfg"" ;;
+	pce ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_pce_fast_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-pce.cfg"" ;;
+	#pce ) _APPENDED_OPTIONS="-L $HOME/CANCELLARE/beetle-pce-fast-libretro/mednafen_pce_fast_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-pce.cfg"" ;;
+	sgx ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_sgx_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-sgx.cfg"" ;;
+	#grep -q "(SGX)" <<< "$INPUTFILE" && _APPENDED_OPTIONS="-c "$RETROARCH_CONFIG_PATH/mednafen-sgx.cfg"" ;;
+	# ws ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_wswan_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-wswan.cfg"" ;;
+	ws ) _APPENDED_OPTIONS="-L $HOME/github/beetle-wswan-libretro/mednafen_wswan_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-wswan.cfg"" ;;
+	wsc ) _APPENDED_OPTIONS="-L $HOME/github/beetle-wswan-libretro/mednafen_wswan_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-wswanc.cfg"" ;;
+	#wsc ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_wswan_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-wswanc.cfg"" ;;
+	ngp ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_ngp_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-ngp.cfg"" ;;
+	ngc ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_ngp_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-ngc.cfg"" ;;
+	#lnx|lyx ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/....so -c "$RETROARCH_CONFIG_PATH/mednafen-lynx.cfg"" ;;
+	jag ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/virtualjaguar_libretro.so -c "$RETROARCH_CONFIG_PATH/virtualjaguar.cfg"" ;;
+	d88 ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/quasi88_libretro.so -c "$RETROARCH_CONFIG_PATH/quasi88.cfg"" ;;
+	mx1|mx2|dsk ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/bluemsx_libretro.so -c "$RETROARCH_CONFIG_PATH/bluemsx.cfg"" ;;
+	dim|hdf|xdf ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/px68k_libretro.so -c "$RETROARCH_CONFIG_PATH/px68k.cfg"" ;;
+	#fdi|hdi ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/np2kai_libretro.so -c "$RETROARCH_CONFIG_PATH/np2kai.cfg"" ;;
+	fdi|hdi ) _APPENDED_OPTIONS="-L $HOME/github/NP2kai/sdl/np2kai_libretro.so -c "$RETROARCH_CONFIG_PATH/np2kai.cfg"" ;;
+	d64|t64 ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/vice_x64_libretro.so -c "$RETROARCH_CONFIG_PATH/vice.cfg"" ;;
+	#d64|t64 ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/vice_x64sc_libretro.so -c "$RETROARCH_CONFIG_PATH/vice.cfg"" ;;
+	adf|hdf|lha ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/puae_libretro.so -c "$RETROARCH_CONFIG_PATH/puae.cfg"" ;;
+	exe|bat ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/dosbox_pure_libretro.so -c "$RETROARCH_CONFIG_PATH/dosbox.cfg"" ;;
+	lua|lutro ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/lutro_libretro.so -c "$RETROARCH_CONFIG_PATH/lutro.cfg"" ;;
+	#chai|chailove ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/lutro_libretro.so -c "$RETROARCH_CONFIG_PATH/lutro.cfg"" ;;
+	qst ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/zc210_libretro.so -c "$RETROARCH_CONFIG_PATH/zc210.cfg"" ;;
+	mgw ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/gw_libretro.so -c "$RETROARCH_CONFIG_PATH/gw.cfg"" ;;
+	jar ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/squirreljme_libretro.so -c "$RETROARCH_CONFIG_PATH/squirreljme.cfg"" ;;
+	cdi ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/flycast_libretro.so -c "$RETROARCH_CONFIG_PATH/flycast.cfg"" ;;
+	cue|iso|bin|chd )
+		## TODO: detect image type
+		#case "$(readlink -f $1)" in
+			_APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/duckstation_libretro.so -c "$RETROARCH_CONFIG_PATH/duckstation.cfg""
+			#*scd*|*scd* )  _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/genesis_plus_gx_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus.cfg""  ;;
+			#*pce*|*engine* ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_pce_fast_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-pce.cfg""  ;;
+			#*pcfx*|*PCFX* ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_pcfx_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-pcfx.cfg""  ;;
+			#*sat* ) _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_saturn_libretro.so -c "$RETROARCH_CONFIG_PATH/saturn.cfg""  ;;
+		#esac
+		;;
+	#NO(WONT CHECK 2nd arg)? * ) echo "$(basename $0): unsupported file extension: $INPUTFILEEXT" ; exit 1 ;;
+esac
+fi
+
+# core override with 2nd arg
+[ "$2" = "fceu" ] || [ "$2" = "fceux" ] || [ "$2" = "fceumm" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/fceumm_libretro.so -c "$RETROARCH_CONFIG_PATH/fceumm.cfg""
+[ "$2" = "mesen" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mesen_libretro.so -c "$RETROARCH_CONFIG_PATH/mesen.cfg""
+[ "$2" = "sameboy" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/sameboy_libretro.so -c "$RETROARCH_CONFIG_PATH/sameboy.cfg""
+[ "$2" = "vbam" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/vbam_libretro.so -c "$RETROARCH_CONFIG_PATH/vbam.cfg""
+#[ "$2" = "mgba_hack" ] && _APPENDED_OPTIONS="-L $HOME/eadmaster_github/mgba/mgba_libretro.dll -c "$RETROARCH_CONFIG_PATH/mgba.cfg""
+[ "$2" = "bsnes" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/bsnes_hd_beta_libretro.so -c "$RETROARCH_CONFIG_PATH/bsnes.cfg""
+[ "$2" = "snes9x" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/snes9x_libretro.so -c "$RETROARCH_CONFIG_PATH/snes9x.cfg""
+[ "$2" = "snes9x2010" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/snes9x2010_libretro.so -c "$RETROARCH_CONFIG_PATH/snes9x.cfg""
+[ "$2" = "snes9x2002" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/snes9x2002_libretro.so -c "$RETROARCH_CONFIG_PATH/snes9x.cfg""
+#TODO: [ "$2" = "sgb" ]
+[ "$2" = "gambatte" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/gambatte_libretro.so -c "$RETROARCH_CONFIG_PATH/gambatte.cfg""
+#[ "$2" = "gambatte-mine" ] && _APPENDED_OPTIONS="-L $HOME/github/gambatte-libretro/gambatte_libretro.so -c "$RETROARCH_CONFIG_PATH/gambatte.cfg""
+#[ "$2" = "pcefast" ] &&  _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_pce_fast_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-pce.cfg""
+[ "$2" = "pcecd" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_pce_fast_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-pce.cfg""
+[ "$2" = "sgx" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_sgx_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-pce.cfg""
+[ "$2" = "pcfx" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_pcfx_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-pcfx.cfg""
+[ "$2" = "blastem" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/blastem_libretro.so -c "$RETROARCH_CONFIG_PATH/blastem.cfg""
+[ "$2" = "pico" ] || [ "$2" = "picodrive" ] &&  _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/picodrive_libretro.so -c "$RETROARCH_CONFIG_PATH/picodrive.cfg""
+#[ "$2" = "fmt" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mame_libretro.so -c "$RETROARCH_CONFIG_PATH/mame.cfg"" ;;
+[ "$2" = "ngcd" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/neocd_libretro.so -c "$RETROARCH_CONFIG_PATH/neocd.cfg""
+[ "$2" = "3do" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/opera_libretro.so -c "$RETROARCH_CONFIG_PATH/opera.cfg""
+[ "$2" = "scd" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/genesis_plus_gx_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus.cfg""
+#[ "$2" = "scd" ] && _APPENDED_OPTIONS="-L $HOME/github/Genesis-Plus-GX/genesis_plus_gx_libretro.so -c "$RETROARCH_CONFIG_PATH/genplus.cfg""
+#[ "$2" = "sat" ] || [ "$2" = "ss" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mednafen_saturn_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-saturn.cfg""
+[ "$2" = "sat" ] || [ "$2" = "ss" ] && _APPENDED_OPTIONS="-L $HOME/github/beetle-saturn-libretro/mednafen_saturn_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-saturn.cfg""
+[ "$2" = "yaba" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/yabause_libretro.so -c "$RETROARCH_CONFIG_PATH/yabause.cfg""
+#[ "$2" = "yaba" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/yabasanshiro_libretro.so -c "$RETROARCH_CONFIG_PATH/yabasanshiro.cfg""
+#[ "$2" = "yaba" ] && _APPENDED_OPTIONS="-L $HOME/Documents/eadmaster_github/yabause/yabause/src/libretro/yabasanshiro_libretro.so -c "$RETROARCH_CONFIG_PATH/yabasanshiro.cfg""
+#[ "$2" = "yaba" ] && [ "$(hostname)" = "PICCIOTTO3" ] && export MESA_GL_VERSION_OVERRIDE=3.30
+[ "$2" = "kronos" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/kronos_libretro.so -c "$RETROARCH_CONFIG_PATH/kronos.cfg""
+[ "$2" = "psxold" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/_OLD/mednafen_psx_hw_libretro.so -c "$RETROARCH_CONFIG_PATH/mednafen-psx.cfg""
+[ "$2" = "pcsx" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/pcsx_rearmed_libretro.so -c "$RETROARCH_CONFIG_PATH/pcsx_rearmed.cfg""
+#[ "$2" = "pcsx" ] && _APPENDED_OPTIONS="-L $HOME/github/pcsx_rearmed/pcsx_rearmed_libretro.so -c "$RETROARCH_CONFIG_PATH/pcsx_rearmed.cfg""
+[ "$2" = "dc" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/flycast_libretro.so -c "$RETROARCH_CONFIG_PATH/flycast.cfg""
+[ "$2" = "play" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/play_libretro.so -c "$RETROARCH_CONFIG_PATH/play.cfg""
+[ "$2" = "ps2" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/play_libretro.so -c "$RETROARCH_CONFIG_PATH/play.cfg""
+[ "$2" = "psp" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/ppsspp_libretro.so -c "$RETROARCH_CONFIG_PATH/ppsspp.cfg""
+[ "$2" = "msx" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/bluemsx_libretro.so -c "$RETROARCH_CONFIG_PATH/bluemsx.cfg""
+[ "$2" = "fmsx" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/fmsx_libretro.so -c "$RETROARCH_CONFIG_PATH/fmsx.cfg""
+[ "$2" = "x68k" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/px68k_libretro.so -c "$RETROARCH_CONFIG_PATH/px68k.cfg""
+[ "$2" = "pc88" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/quasi88_libretro.so -c "$RETROARCH_CONFIG_PATH/quasi88.cfg""
+[ "$2" = "pc98" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/np2kai_libretro.so -c "$RETROARCH_CONFIG_PATH/np2kai.cfg""
+[ "$2" = "c64" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/vice_x64_libretro.so -c "$RETROARCH_CONFIG_PATH/vice.cfg""
+[ "$2" = "amiga" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/puae_libretro.so -c "$RETROARCH_CONFIG_PATH/puae.cfg""
+[ "$2" = "pc" ] || [ "$2" = "dos" ] || [ "$2" = "dosbox" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/dosbox_pure_libretro.so -c "$RETROARCH_CONFIG_PATH/dosbox.cfg""
+[ "$2" = "mame" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/mame_libretro.so -c "$RETROARCH_CONFIG_PATH/mame.cfg""
+#[ "$2" = "fba" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/fbneo_libretro.so -c "$RETROARCH_CONFIG_PATH/fbneo.cfg""
+[ "$2" = "fba" ] && _APPENDED_OPTIONS="-L $HOME/github/FBNeo-chvolmod/src/burner/libretro/fbneo_libretro.so -c "$RETROARCH_CONFIG_PATH/fbneo.cfg""
+#[ "$2" = "fbneo" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/fbneo_libretro.so -c "$RETROARCH_CONFIG_PATH/fbneo.cfg""
+[ "$2" = "dolphin" ] && _APPENDED_OPTIONS="-L $RETROARCH_CORES_PATH/dolphin_libretro.so -c "$RETROARCH_CONFIG_PATH/dolphin.cfg""
+
+# fix for menu start
+[ "$1" = "--menu" ] && _APPENDED_OPTIONS="-c "$RETROARCH_CONFIG_PATH/retroarch.cfg""
+
+# start retroarch with the appended options
+
+# override OGL versions, needed by some cores...
+#if [ "$(hostname)" = "PICCIOTTO3" ]; then
+	#export MESA_GL_VERSION_OVERRIDE=3.30
+	#export MESA_GLSL_VERSION_OVERRIDE=330
+#fi
+
+if [ "$0" = "retroarch32" ]; then
+	# run an old 32-bit version
+	extractrun retroarch $_APPENDED_OPTIONS "$@"
+	exit $?
+fi
+
+#echo "_APPENDED_OPTIONS=$_APPENDED_OPTIONS"
+
+$HOME/github/RetroArch/retroarch --verbose $_APPENDED_OPTIONS "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#enable -n command
+#command -p retroarch --verbose $_APPENDED_OPTIONS "$@"  # --verbose --log-file /r/retroarch_log.txt  
+/usr/games/retroarch  $_APPENDED_OPTIONS --verbose "$@"  # 
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

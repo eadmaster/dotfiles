@@ -1,0 +1,10 @@
+
+# using rig (English only)
+rig  "$@"
+
+# using faker (multilang) https://github.com/joke2k/faker
+faker -l it_IT  profile  #| pydict2json.py   TODO: pretty json output  https://github.com/joke2k/faker/issues/672
+#[ $? -eq 0 ] && exit 0
+
+# TODO: more alternatives
+# https://github.com/public-apis/public-apis#test-data

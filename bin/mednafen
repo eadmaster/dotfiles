@@ -1,0 +1,33 @@
+#!/bin/sh
+
+#if [ "$(hostname)" = "BOSS3" ]; then
+#	#NO? export LD_LIBRARY_PATH=/usr/local/lib/arm-linux-gnueabihf/glshim
+#	export LD_LIBRARY_PATH=/usr/local/lib/arm-linux-gnueabihf/gl4es
+#fi
+
+[ "$2" = "sat" ] || [ "$2" = "ss" ] && _APPENDED_OPTIONS="-loadcd ss"
+[ "$2" = "pce" ] && _APPENDED_OPTIONS="-loadcd pce"  # pce_fast
+[ "$2" = "pcfx" ] && _APPENDED_OPTIONS="-loadcd pcfx"
+[ "$2" = "psx" ] && _APPENDED_OPTIONS="-loadcd psx"
+
+/usr/games/mednafen $_APPENDED_OPTIONS "$@"
+[ $? -ne 127 ] && exit $?
+
+enable -n command
+command -p mednafen $_APPENDED_OPTIONS "$@"
+[ $? -ne 127 ] && exit $?
+
+extractrun mednafen $_APPENDED_OPTIONS "$@"
+[ $? -ne 127 ] && exit $?
+
+#retroarch $_APPENDED_OPTIONS "$@"
+#[ $? -ne 127 ] && exit $?
+
+#else
+exit 127
+
+#sleep 10
+# send Alt+S to enable state rewinding:
+#xdotool key --window "$(xdotool search --limit 1 --class Mednafen)" alt+s
+# send SHIFT+F1 to show FPS
+#xdotool key --window "$(xdotool search --limit 1 --class Mednafen)" shift+F1

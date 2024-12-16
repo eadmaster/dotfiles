@@ -1,0 +1,39 @@
+#!/bin/sh
+
+# Windows detection
+if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
+	cmd.exe /C enqueue "$@"
+	exit $?
+fi
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ -z "$1" ] ; then
+	echo "usage: $(basename $0) FILE_TO_ENQUEUE"
+	echo
+	exit 0
+fi
+
+if [ ! -f "$1" ]; then
+	export _ENQUEUE=1
+	play "$@"
+	exit $?
+fi
+
+# check a process is running
+#pgrep vlc
+ps -e | grep -q vlc
+if [ $? -eq 0 ]; then
+	setsid vlc --one-instance --playlist-enqueue "$1" &
+	exit 0
+fi
+
+ps -e | grep -q smplayer
+if [ $? -eq 0 ]; then
+	setsid smplayer -add-to-playlist "$1"
+	exit 0
+fi
+
+# TODO: more players: audacious, ...
+
+# else
+echo "$(basename $0) err: no compatible media player found running" >&2
+exit 127

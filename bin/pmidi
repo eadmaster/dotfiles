@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# detect current FLUID Synth port
+FLUIDSYNTH_PORT=$(command -p pmidi -l | grep "FLUID Synth" | cut -f1 -d' ')
+
+command -p pmidi -p $FLUIDSYNTH_PORT "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+timidity "$@"
+[ $? -ne 127 ] && exit $?
+
+DEFAULT_SOUNDFONT=$HOME/.local/share/sounds/sf2/Roland_SC-55.sf2
+fluidsynth --audio-driver=alsa --chorus=0 --reverb=0 $DEFAULT_SOUNDFONT "$@"
+[ $? -ne 127 ] && exit $?
+
+vlc "$@"
+[ $? -ne 127 ] && exit $?
+
+APLAYMIDI_PORT=128:0
+# TODO: read port from aplaymidi -l
+aplaymidi -p $APLAYMIDI_PORT "$@"
+[ $? -ne 127 ] && exit $?
+
+#else
+exit 127

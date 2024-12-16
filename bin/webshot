@@ -1,0 +1,27 @@
+
+
+# args checking
+if [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) URL [OUTPUT_FILE.png|pdf]"
+	echo
+	exit 0
+fi
+
+URL="$1"
+OUTPUTFILE=output.pdf
+[ ! -z "$2" ] && OUTPUTFILE="$2"
+OUTPUTFILEEXT=$( echo -n "$OUTPUTFILE" | rev | cut -d'.' -f1 | rev )
+OUTPUTFILEEXT=$( echo -n $OUTPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+
+echo "$OUTPUTFILEEXT"
+case $OUTPUTFILEEXT in
+	pdf ) CHROME_ARG="--print-to-pdf=$OUTPUT_FILE"  ;;  #  --no-pdf-header-footer
+	png ) CHROME_ARG="--screenshot=$OUTPUT_FILE" ;;
+	* ) echo "err: unsupported format: " ; exit 1 ;;
+esac
+
+chrome --headless --disable-gpu $CHROME_ARG  "$URL"
+
+# TODO: bypass clouflare
+
+# TODO: more alternatives

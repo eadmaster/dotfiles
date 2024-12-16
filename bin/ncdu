@@ -1,0 +1,12 @@
+#!/bin/sh
+
+command -p ncdu "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# rclone alternative https://rclone.org/commands/rclone_ncdu/
+rclone ncdu  "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# TODO: more alternatives
+
+du -hcx

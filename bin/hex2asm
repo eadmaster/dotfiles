@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) arch opcode(s)"
+	echo
+	exit 0
+fi
+
+INPUT=$1
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+# via Rizin
+rz-asm -d -a "$INPUT"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# via radare2
+rasm2 -d -a "$INPUT"
+
+

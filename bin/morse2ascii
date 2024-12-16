@@ -1,0 +1,86 @@
+#!/bin/sh
+
+command -p morse2ascii "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# https://github.com/dhondta/python-codext
+codext decode morse "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# alternative using sed
+INPUT="$1"
+[ -z "$1" ] && INPUT=$(cat)
+[ -f "$1" ] && INPUT=$(cat "$1")
+echo "$INPUT" | sed -e '
+#replace daw and dits
+s/ daw/-/g
+s/ dit/./g
+# decode
+s/\.----\./'\''/g
+s/\.\.\.-\.\.-/\$/g
+s/\.-\.-\.-/\./g
+s/-\.--\.-/\]/g
+s/\.-\.\.-\./\\/g
+s/-\.--\.-/)/g
+s/--\.\.--/,/g
+s/-\.\.\.\.-/-/g
+s/-\.\.-\./\//g
+s/---\.\.\./:/g
+s/-\.-\.-\./;/g
+s/\.\.--\.\./?/g
+s/\.--\.-\./@/g
+s/\.\.--\.-/_/g
+s/-\.--\./\[/g
+s/-\.--\./(/g
+s/\.-\.-\./+/g
+s/-\.\.\.-/=/g
+s/-----/0/g
+s/\.----/1/g
+s/\.\.---/2/g
+s/\.\.\.--/3/g
+s/\.\.\.\.-/4/g
+s/\.\.\.\.\./5/g
+s/-\.\.\.\./6/g
+s/--\.\.\./7/g
+s/---\.\./8/g
+s/----\./9/g
+s/---\./!/g
+s/-\.\.\./B/g
+s/-\.-\./C/g
+s/\.\.-\./F/g
+s/\.---/J/g
+s/\.\.\.\./H/g
+s/\.-\.\./L/g
+s/\.--\./P/g
+s/--\.-/Q/g
+s/\.\.\.-/V/g
+s/-\.\.-/X/g
+s/-\.--/Y/g
+s/--\.\./Z/g
+s/-\.\./D/g
+s/--\./G/g
+s/-\.-/K/g
+s/---/O/g
+s/\.-\./R/g
+s/\.\.\./s/g
+s/\.\.-/U/g
+s/\.--/W/g
+s/\.\./I/g
+s/\.-/A/g
+s/--/M/g
+s/-\./N/g
+s/\./E/g
+s/-/T/g
+# transform multiple spaces to newlines
+s/[ \t][ \t][ \t]*/\
+/g
+# transform "/" to newlines
+s/\//\
+/g
+# remove remaining single spaces
+s/[ \t]//g
+# transform newslines to spaces
+#:a;{N;s/\n/ /};ba
+' | tr '\n' ' '
+
+echo

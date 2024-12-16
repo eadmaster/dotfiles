@@ -1,0 +1,23 @@
+#!/bin/sh
+
+command -p strings "$@"  2> /dev/null
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+busybox strings "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# alternative using sed or tr
+INPUT="$1"
+[ -z "$1" ] && INPUT=$(cat)
+[ -f "$1" ] && INPUT=$(cat "$1")
+
+LANG=C  # workaround for invalid collation character
+echo "$INPUT" | sed 's/[\d128-\d255]//g'
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#echo "$INPUT" | tr -cd '\000-\177'
+#echo "$INPUT" | tr -d '\200-\377'
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

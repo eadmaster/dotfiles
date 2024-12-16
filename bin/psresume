@@ -1,0 +1,7 @@
+#!/bin/sh
+ 
+pkill -CONT "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

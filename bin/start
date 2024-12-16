@@ -1,0 +1,17 @@
+#!/bin/sh
+
+if [ ! -e "$1" ]; then 
+	# new Ubuntu service starter from the upstart package (also wine "start" command)
+	#command -p start "$@"
+	/sbin/start "$@"
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+	
+	service $1 start
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+	
+	exit 1
+fi
+
+# else
+# setsid
+xdg-open "$@"

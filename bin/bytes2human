@@ -1,0 +1,23 @@
+#!/bin/sh
+
+INPUT=$1
+INPUT=$(echo $INPUT | tr -d '\r')
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+#numfmt --to=iec-i --suffix=B $INPUT
+numfmt --to=iec $INPUT
+[ $? -eq 0 ] && exit 0
+
+# from radare2
+rax2 -u $INPUT
+[ $? -eq 0 ] && exit 0
+
+# from rizin
+rz-ax -u $INPUT
+[ $? -eq 0 ] && exit 0
+
+# original awk script from http://www.commandlinefu.com/commands/view/9807/convert-number-of-bytes-to-human-readable-filesize
+awk -v sum="$INPUT" ' BEGIN {hum[1024^3]="G"; hum[1024^2]="M"; hum[1024]="K"; for (x=1024^3; x>=1024; x/=1024) { if (sum>=x) { printf "%.1f%s\n",sum/x,hum[x]; break; } } if (sum<1024) print sum; } '
+
+# MORE ALTERNATIVES:  https://unix.stackexchange.com/questions/44040/a-standard-tool-to-convert-a-byte-count-into-human-kib-mib-etc-like-du-ls1

@@ -1,0 +1,25 @@
+#!/bin/sh
+
+#command -p strlen "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# else
+INPUT="$1"
+[ -z "$1" ] && INPUT=$(cat)
+[ -f "$1" ] && INPUT=$(cat "$1")
+
+echo -n "$INPUT" | wc -m
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+expr length "$INPUT"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+length "$INPUT"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+exit 0
+
+# MORE ALTERNATIVEs:
+#echo "${#1}" (req. bash)
+#awk "BEGIN {printf \"%d\n\", length(\"$*\")}"
+#awk "BEGIN {print length(\"$*\")}"

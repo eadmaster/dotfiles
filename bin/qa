@@ -1,0 +1,19 @@
+#!/bin/sh 
+# question-answer AI machine
+
+# args checking
+if [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] ; then
+	echo "usage: $(basename $0) QUESTION"
+	echo
+	exit 0
+fi
+
+# using WolframAlpha https://github.com/ASzc/tungsten
+tungsten.sh "$@"
+[ $? -eq 0 ] && exit 0
+
+# using Google
+google "$@"
+# TODO: output results in console
+
+# TODO: more alternatives

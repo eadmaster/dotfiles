@@ -1,0 +1,6 @@
+
+
+comm -23 <(sort "$1" | uniq) <(sort "$2" | uniq) | head -1
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+setop --subset

@@ -1,0 +1,8 @@
+
+sudo showkey
+#sudo showkey --scancodes
+
+#sudo evtest
+
+# https://wiki.archlinux.org/title/Keyboard_input
+

@@ -1,0 +1,160 @@
+
+
+# TODO: check args
+
+MACADDR_DB_FILE=$PENDRIVE/Documents/db/mynicmac.csv
+
+echo "$(basename $0): scanning local network (any interface)..." >&2
+
+ip neigh | grep REACHABLE
+
+echo
+
+#OLD:
+#echo "$(basename $0): quick nmap OS scan:" # https://serverfault.com/questions/522596/ping-only-os-detection-with-nmap
+#nmap --top-ports 20 --exclude 127.0.0.1 -T5 -A 192.168.1.* --open  # --host-timeout 1s
+# NO? sudo nmap -sn -O 192.168.1.*  # -sn: Ping Scan - disable port scan
+#[ $? -ne 0 ] && ip neigh #| grep REACHABLE | cut -d' ' -f1 | ...
+#echo
+#echo "$(basename $0): ARP scan:"  # https://www.linux-magazine.com/Online/Features/Using-ARP-for-Network-Recon
+# TIP: get sanitized IEEE OUI Data here https://linuxnet.ca/ieee/oui/
+#sudo arp-scan --localnet  # --quiet 
+#echo "arp:"
+#arp -i $IFACE  # no root req., best executed AFTER arp-scan? https://unix.stackexchange.com/questions/188367/get-names-of-devices-on-the-network
+#echo
+#sudo netdiscover -f -P  # 2FIX: slower than arp-scan?
+
+ARPSCAN="$(sudo arp-scan --localnet)"
+echo "$ARPSCAN"
+
+# check individual mac addresses
+while read -r line
+do
+	#case "$line" in #*) echo "skipped: $line" ; esac  # skip lines starting with "#"
+	curr_mac_addr=$(echo $line | cut -d, -f1)
+	curr_device=$(echo $line | tr -d '\r' | cut -d, -f2-)
+	echo "$ARPSCAN" | grep -i -q "$curr_mac_addr"
+	[ $? -eq 0 ] && echo -e "$(basename $0): \e[33m$curr_device\e[39m is\e[32m online \e[39m" >&2
+	# TODO: also check a db of well-known devices
+done  <  "$MACADDR_DB_FILE"
+
+echo
+
+# wifi scan
+if [ $(nmcli radio wifi) = "disabled" ]; then
+	echo "$(basename $0) info: wifi is turned off, cannot scan for APs..." >&2
+else
+	echo "$(basename $0) info: scanning wifi APs..." >&2
+	#NO(TOO VERBOSE)? sudo iwlist wlan0 scan 
+	#NO(TOO VERBOSE)? sudo iw dev wlan0 scan
+	nmcli dev wifi list
+fi
+
+echo
+
+echo "$(basename $0): zeroconf/mDNS/Bonjour scan..." >&2
+avahi-browse -a --ignore-local --terminate #--parsable 
+[ $? -ne 0 ] && mdns-scan
+#[ $? -ne 0 ] && nmap --script=broadcast-dns-service-discovery 192.168.1.*
+#gssdp-discover -i $IFACE --timeout=3
+#upnpinfo 192.168.1.*"  # TODO: filter localhost?
+
+echo
+
+# UPNP scan
+# gssdp-discover -i $IFACE --timeout=3 
+
+echo
+
+# discover WebServices using https://pypi.org/project/WSDiscovery/
+#echo "$(basename $0): WS-Discovery scan.."
+# wsdiscover
+
+#OLD:
+[ -z "$IFACE" ] && IFACE=$( route | grep '^default' | grep -o '[^ ]*$' | head -n1 )
+MYIP=$( ip -f inet -o addr show dev $IFACE | cut -d\  -f 7 | cut -d/ -f 1 | tail -n1 )
+[ -z "$MYIP" ] && MYIP=$( ifconfig $IFACE | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}' )
+
+echo "$(basename $0): this computer IP is: $MYIP"
+
+# ping 10 IPs in (MYIP-5 ; MYIP+5 range)
+#BASEADDR=$( echo -n $MYIP | cut -d. -f 1-3 )
+#VARADDR=$( echo -n $MYIP | cut -d. -f 4 )
+#VARADDRMIN=$( expr $VARADDR - 5 )
+#VARADDRMAX=$( expr $VARADDR + 5 )
+#for var in $(seq $VARADDRMIN $VARADDRMAX); do
+#	[ "$MYIP" = "$BASEADDR$var" ] && continue
+#	
+#	# ALTERNATIVEs: nmap -sn | nmap --script broadcast-ping
+#	echo -n "$(basename $0): pinging $BASEADDR.$var... "
+#	sudo ping -c 1 -W 2 $BASEADDR.$var >/dev/null
+#	if [ $? -eq 0 ]; then
+#		# host is online, do further scans
+#		echo "PONG"
+#		
+#		# look for opened ports and try to identify the OS
+#		#tput setaf 1  # set the red color
+#		sudo nmap $BASEADDR.$var -F -O -oG - | grep OS
+#		# http://nmap.org/book/man-host-discovery.html
+#		#tput sgr0  # back to normal color
+#		
+#		# get the MAC address
+#		#sudo nmap -sP -n $BASEADDR.$var | grep MAC
+#	fi
+#	echo
+#done
+#echo "$(basename $0): tip: for more infos use nmap -O IPADDR"
+
+echo
+
+# find DNS names using dig from the "dnsutils" package
+#dig -t axfr 
+# find DNS names using dig from the "bind9utils" package
+# rndc dumpdb -zones
+
+# NetBIOS scan (windows machines)
+echo "$(basename $0) info: NetBIOS scan..." >&2
+# sudo nbtscan -q ${BASEADDR}.1/16
+sudo nbtscan 192.168.1.0/24 
+[ $? -ne 0 ] && nmap --script smb-os-discovery -p 445 ${BASEADDR}.1.*  #-v
+#nmblookup -A $BASEADDR*
+
+# TODO: more alternatives:
+# https://superuser.com/questions/311019/display-list-of-computers-on-a-lan-in-linux
+# https://unix.stackexchange.com/questions/307399/how-can-i-view-all-device-names-on-lan
+
+# TODO: sudo bettercap ... net.show
+
+echo
+
+# bluetooth devices scan
+hciconfig | grep -q DOWN  # check if BT radio is tuned on:  https://askubuntu.com/questions/144655/how-to-check-bluetooth-status-via-terminal
+if [ $? -eq 0 ]; then
+	echo "$(basename $0) info: BT is turned off or not available..." >&2
+else
+	echo "$(basename $0) info: scanning BT devices..." >&2
+	#NO(TOO VERBOSE)? btscan
+	hcitool scan --info --oui --class
+	# BLE scan
+	sudo timeout -sINT 5s hcitool lescan
+fi
+
+echo
+
+# SDR radio scan
+SoapySDRUtil --find 2> /dev/null | grep -q "rtlsdr"  # check if a SDR device is connected  # TODO: ALT.: if [ -d /dev/?? ]
+if [ $? -ne 0 ]; then
+	echo "$(basename $0) info: no SDR device found..." >&2
+else
+	rfscan
+fi
+
+# python-broadlink  https://github.com/mjg59/python-broadlink/tree/master/cli
+broadlink_discovery #--timeout 10
+
+# tinytuya  https://github.com/jasonacox/tinytuya
+#python -m tinytuya scan 10  # 10=MAX_TIME  # TODO: disable saving snapshot.json
+
+# smartphones paired with KDEconnect
+kdeconnect-cli --list-available
+# TODO: scan ADB over Wi-Fi devices

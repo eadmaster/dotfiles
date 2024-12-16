@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# TODO: android alternative
+
+is_binary() { ! file --mime-type "$1" | grep -q 'text/' ; }
+#console_open() { is_binary "$f" && xdg-open "$f" || cat "$f"; }
+console_open() { f="$1"; [ -z "$f" ] && read -r f ;  is_binary "$f" && xdg-open "$f" || cat "$f"; }
+
+if which fzf >/dev/null 2>&1 ; then
+    find "$2" -type f | fzf --no-extended --query="$1" | console_open
+#TODO: elif which ugrep ...
+else
+    # just prints the matching names
+    find "$2" -type f -not -name "*.txt" -not -name "*.md" -iname "*$1*" -print
+fi

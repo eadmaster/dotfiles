@@ -1,0 +1,586 @@
+#!/bin/bash
+
+case "$1" in
+
+	install|add )
+		export PACKAGE_NAME="$2"
+		[ -z "$PACKAGE_NAME" ] && echo "$(basename $0): missing package name" >&2 && exit 1
+
+		if [ ! -z "$ANDROID_ROOT" ]; then
+			# using the Termux Package Manager  https://wiki.termux.com/wiki/Package_Management#Installing_packages_from_APT_repository
+			pkg install "$PACKAGE_NAME"
+			_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+			
+			pm install "$PACKAGE_NAME"
+			exit $?
+		fi
+
+		#if [ -f "$@" ]; then
+		if [ -f "$2" ]; then
+			# switch on the extension
+			INPUTFILE="$2"
+			INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+			INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+			case $INPUTFILEEXT in
+				deb )
+					sudo dpkg -i "$INPUTFILE"
+					sudo apt-get -f install  # fix any unmet dependencies -- TODO: merge with prev command?
+					exit $?
+				;;
+				whl )
+					pip3 install "$INPUTFILE"
+					exit $?
+				;;
+				appimage )
+					#AppImageLauncher "$INPUTFILE"
+					#ail-cli integrate "$INPUTFILE"
+					zap install --from "file://$INPUTFILE" "$INPUTFILE"
+					exit $?
+				;;
+				flatpak )
+					flatpak install --bundle "$INPUTFILE"
+					exit $?
+				;;
+				snap )
+					sudo snap install "$INPUTFILE"
+					exit $?
+				;;
+			esac
+			# else
+			echo "$(basename $0) err: unsupported package format: $INPUTFILEEXT" >&2
+			exit 1
+		fi
+
+		if [ -f "/etc/openwrt_release" ]; then
+			opkg install "$PACKAGE_NAME"
+			exit $?
+		fi
+		
+		# TODO: always ask confirmation
+		
+		#apt --no-install-recommends? install "$PACKAGE_NAME"
+		#apt clean
+		#_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		sudo apt-get install "$PACKAGE_NAME"  # --no-install-recommends
+		sudo apt-get clean
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		sudo yum install "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		sudo dnf install "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		sudo pkg install "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		sudo apk add  --allow-untrusted  "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		sudo apk add  --allow-untrusted  "$PACKAGE_NAME@testing"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		sudo apk add  --allow-untrusted  "$PACKAGE_NAME@edge"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		sudo apk add  --allow-untrusted  "$PACKAGE_NAME@community"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		sudo pacman -S "$PACKAGE_NAME"  # TODO: clean package cache
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		# brew is also available for linux: https://docs.brew.sh/Homebrew-on-Linux
+		# http://hints.macworld.com/article.php?story=20030614230204397
+		#[ -f "$1" ] && sudo installer -pkg "$PACKAGE_NAME" -target /
+		brew install "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		#brew cask install "$PACKAGE_NAME"
+		#_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		nix-env --prebuilt-only --install "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		rpm -i "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		read -e -i "n" -p "$0: no system package found, try with programming libraries? (yN) " REPLY
+		[ "$REPLY" = "n" ] && exit 1
+		
+		cpan -i "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		pip3 install --user --no-dependencies "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		pip install --user --no-dependencies "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		npm install "$PACKAGE_NAME" -g  # --no-optional
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		yarn global add "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		gem install "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		conan search --remote=all "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		snap install --classic "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		flatpak install "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		# else
+		#exit 127
+		;;
+		
+		
+	uninstall|delete|del|remove|erase|rm )
+		export PACKAGE_NAME=$2
+		[ -z "$PACKAGE_NAME" ] && echo "$(basename $0): missing package name" >&2 && exit 1
+		
+		if [ ! -z "$ANDROID_ROOT" ]; then
+			# using the Termux Package Manager  https://wiki.termux.com/wiki/Package_Management#Installing_packages_from_APT_repository
+			pkg uninstall "$PACKAGE_NAME"
+			_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+			
+			# MEMO: must specify full package name (eg. com.growingwiththeweb.example)
+			pm uninstall "$PACKAGE_NAME"
+			#exit $?
+		fi
+		
+		# MacOSX check
+		if [ "$(uname)" = "Darwin" ]; then
+			pkgutil --unlink --forget "$PACKAGE_NAME"
+			exit $?
+		fi
+		
+		if [ -f "/etc/openwrt_release" ]; then
+			opkg remove --autoremove "$PACKAGE_NAME"
+			exit $?
+		fi
+
+		sudo apt remove "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		sudo apt-get remove --auto-remove "$PACKAGE_NAME"
+		# optional:
+		# will remove package user settings
+		# sudo apt-get purge "$PACKAGE_NAME"
+		# will remove package orphaned dependencies
+		# apt-get autoremove "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		sudo yum remove "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		sudo dnf erase "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		sudo pkg delete "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		sudo apk del "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		sudo pacman -R "$PACKAGE_NAME"
+		sudo yay -R "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		rpm -e "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		brew remove "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		nix-env -e "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		zap uninstall "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		pip uninstall "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		npm uninstall "$PACKAGE_NAME" -g
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		yarn global remove "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		gem uninstall "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+				
+		snap remove "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		flatpak uninstall "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		# else
+		#exit 127
+		;;
+
+	update|upgrade )
+		export PACKAGE_NAME=$2
+		[ -z "$PACKAGE_NAME" ] && echo "$(basename $0): missing package name" >&2 && exit 1
+		
+		if [ -f "/etc/openwrt_release" ]; then
+			opkg upgrade "$PACKAGE_NAME"
+			exit $?
+		fi
+		
+		sudo apt-get install --only-upgrade "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		
+		# TODO: more alternatives
+		
+		snap refresh "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		flatpak update "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		zap update "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		brew install --force "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		pip3 install --user --upgrade "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		pip install --user --upgrade "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		npm update -g "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		yarn global upgrade "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		
+		gem update "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+		# else
+		#exit 127
+		;;
+		
+		
+	ver*|rel* )
+		export PACKAGE_NAME=$2
+		[ -z "$PACKAGE_NAME" ] && echo "$(basename $0): missing package name" >&2 && exit 1
+		
+		apt-cache policy $PACKAGE_NAME
+		# apt policy python
+		
+		# TODO: more package managers
+		
+		# recursive call for other package managers
+		package info $PACKAGE_NAME | grep -i version
+		
+		exit 0
+		;;
+	
+	info|desc*|detail*|spec*|files|show )
+		export PACKAGE_NAME=$2
+		[ -z "$PACKAGE_NAME" ] && echo "$(basename $0): missing package name" >&2 && exit 1
+		
+		if [ ! -z "$ANDROID_ROOT" ]; then
+			# using the Termux Package Manager  https://wiki.termux.com/wiki/Package_Management#Installing_packages_from_APT_repository
+			pkg show "$PACKAGE_NAME"
+			pkg files "$PACKAGE_NAME"
+			
+			# TODO: search installed apks
+
+			exit 0
+		fi
+
+		if [ "$(uname)" = "Darwin" ]; then
+			pkgutil --pkg-info "$PACKAGE_NAME"
+			exit $?
+		fi
+
+		if [ -f "/etc/openwrt_release" ]; then
+			opkg info "$PACKAGE_NAME"
+			opkg files "$PACKAGE_NAME"
+			exit $?
+		fi
+
+		if [ -f "$PACKAGE_NAME" ]; then
+			fileinfo "$PACKAGE_NAME"
+			exit $?
+		fi
+
+		dpkg -L "$PACKAGE_NAME"
+		apt show -a "$PACKAGE_NAME"
+
+		dpkg -L "$PACKAGE_NAME"
+		apt-cache show "$PACKAGE_NAME"
+		
+		apt-cache depends "$PACKAGE_NAME"
+
+		yum info "$PACKAGE_NAME"
+
+		dnf info "$PACKAGE_NAME"
+
+		pkg info "$PACKAGE_NAME"  # only installed?
+		
+		apk info "$PACKAGE_NAME"
+		apk -L info "$PACKAGE_NAME"
+		
+		pacman -Si "$PACKAGE_NAME"
+		yay -Si "$PACKAGE_NAME"
+		
+		#rpm -i "$PACKAGE_NAME"
+
+		brew info  "$PACKAGE_NAME"
+
+		# pip show -f "$PACKAGE_NAME"
+		
+		# npm view "$PACKAGE_NAME" -g
+		
+		# TODO: gem, cpan
+				
+		snap info "$PACKAGE_NAME"
+		find /snap/$PACKAGE_NAME/current/   # list installed files  https://askubuntu.com/questions/979233/how-to-list-files-installed-by-a-snap-package
+
+		flatpak info "$PACKAGE_NAME"
+		
+		# else
+		#exit 127
+		;;
+
+	
+	find|search )
+		export PACKAGE_NAME=$2
+		[ -z "$PACKAGE_NAME" ] && echo "$(basename $0): missing package name" >&2 && exit 1
+		
+		if [ ! -z "$ANDROID_ROOT" ]; then
+			# using the Termux Package Manager  https://wiki.termux.com/wiki/Package_Management#Installing_packages_from_APT_repository
+			pkg search "$PACKAGE_NAME"
+			
+			# TODO search on play.google.com?, fdroid
+			
+			exit 0
+		fi
+
+		if [ "$(uname)" = "Darwin" ]; then
+			# TODO
+			exit $?
+		fi
+
+		if [ -f "/etc/openwrt_release" ]; then
+			opkg find "$PACKAGE_NAME"
+			exit $?
+		fi
+		
+		echo "$0: apt:"
+		apt search "$PACKAGE_NAME"
+		[ $? -ne 0 ] && apt-cache search "$PACKAGE_NAME"
+
+		# alternative remote repositories search
+		. /etc/os-release  #load $UBUNTU_CODENAME
+		CPU_ARCH=$(dpkg --print-architecture)
+		#echo "searching in remote repos..." >&2
+		wget -q -O- "http://screenshots.getdeb.net/dists/$UBUNTU_CODENAME-getdeb/apps/binary-$CPU_ARCH/Packages.gz" | gzip -dc | awk -v RS="\n\n" "/$PACKAGE_NAME/"
+		# TODO: more remote repos
+		
+		# TODO: search PPAs in https://launchpad.net/
+		
+		python $HOME/bin/_OLD/ppasearch.py "$PACKAGE_NAME" 
+		# TODO using official API  https://launchpad.net/+apidoc/1.0.html
+		# https://askubuntu.com/questions/403782/is-there-an-alternative-for-ppasearch-in-newer-versions-of-ubuntu
+		#curl "https://api.launchpad.net/1.0/projects?search?text=$PACKAGE_NAME" | jq -c '.entries[] | pick(.display_name, .summary, .web_link)'
+		#curl "https://launchpad.net/+search?field.text=beignet"
+		#curl "https://api.launchpad.net/1.0/projects/+search?field.text=$PACKAGE_NAME"
+		
+		yum search "$PACKAGE_NAME"
+
+		dnf search "$PACKAGE_NAME"
+
+		echo "$0: pkg:"
+		pkg search -f "$PACKAGE_NAME"
+		
+		echo "$0: apk:"
+		apk search "$PACKAGE_NAME"
+		
+		echo "$0: brew:"
+		brew search "$PACKAGE_NAME"
+		
+		echo "$0: nix:"
+		#nix search "$PACKAGE_NAME" | cat  # NO? no ver. reported
+		nix-env -qa ".*$PACKAGE_NAME.*" | cat
+		
+		pacman -Ss "$PACKAGE_NAME"
+		yay -Ss "$PACKAGE_NAME"
+
+		rpm -qa "$PACKAGE_NAME"
+		
+		conda search "$PACKAGE_NAME"
+		
+		#TODO: echo "$0: maven:"
+		# NO? using sbt-search-maven-plugin  https://stackoverflow.com/questions/14465721/maven-browse-central-repository-via-command-line-client
+		#sbt "searchMaven log4j"
+		# via maven central repository web API  https://search.maven.org/classic/#api
+		#wget -O- "http://search.maven.org/solrsearch/select?q=guice&rows=3&wt=json" | jq 'map(del(.Country, .number, .Language))'  # TODO: remove sections, compact output  https://github.com/stedolan/jq/issues/643
+		
+		echo "$0: pip:"
+		pip search "$PACKAGE_NAME"
+
+		#npm search "$PACKAGE_NAME"
+
+		#gem search "$PACKAGE_NAME"
+
+		conan search "$PACKAGE_NAME"  --remote=all
+
+		#luarocks search "$PACKAGE_NAME"
+		
+		#composer search "$PACKAGE_NAME"
+		
+		# TODO: perl cpan?
+		
+		echo "$0: snap:"
+		snap find "$PACKAGE_NAME"
+
+		echo "$0: flatpak:"
+		flatpak search "$PACKAGE_NAME"
+		
+		# github releases search https://appimage.github.io/apps/
+		zap seach "$PACKAGE_NAME"  # appimages only  https://github.com/srevinsaju/zap
+		
+		# check static builds on 1bin
+		#wget -S  --spider 1bin.org/$(uname)/$PACKAGE_NAME
+		# TODO: show version  https://github.com/nikvdp/1bin/issues/2
+		
+		#exit 0
+		;;
+
+	findfile|searchfile )
+		export FILENAME=$2
+		[ -z "$FILENAME" ] && echo "$(basename $0): missing file name" >&2 && exit 1
+		
+		if [ -f "/etc/openwrt_release" ]; then
+			opkg search "$PACKAGE_NAME"
+			exit $?
+		fi
+		
+		dpkg -S "\/$FILENAME" | grep "$FILENAME$"
+		
+		apt-file search --regex "/$FILENAME\$" 
+		
+		# TODO: nix-env ...
+		# ALTERNATIVE (req. custom index building): https://github.com/bennofs/nix-index
+		#nix-locate $FILENAME
+		
+		exit $?
+		;;
+		
+	history )
+		if [ -d /var/log/apt ]; then
+			zless /var/log/apt/*.gz
+			cat /var/log/apt/history.log
+		fi
+		
+		# TODO: more alternatives
+		exit 0
+		;;
+	
+	list|installed )
+		# no args command
+
+		if [ ! -z "$ANDROID_ROOT" ]; then
+			# using the Termux Package Manager  https://wiki.termux.com/wiki/Package_Management#Installing_packages_from_APT_repository
+			pkg list-installed "$PACKAGE_NAME"
+	
+			pm list packages
+			exit 0
+		fi
+
+		if [ "$(uname)" = "Darwin" ]; then
+			pkgutil --pkgs
+			exit $?
+		fi
+		
+		if [ -f "/etc/openwrt_release" ]; then
+			opkg list-installed "$PACKAGE_NAME"
+			exit $?
+		fi
+		
+		apt list --installed
+
+		dpkg -l
+		
+		yum list installed
+		
+		pkg info
+
+		brew list
+		
+		nix-env -q | cat
+		
+		zap list
+
+		pip list
+		
+		npm ls -g
+		
+		#gem query --local
+		gem list
+		
+		cpan -l
+		
+		snap list
+		
+		flatpak list
+		
+		exit 0
+		;;
+
+	outdated|latest|upgradable )
+		# find outdated packages
+		
+		sudo apt-get update
+		apt list --upgradable
+		[ $? -ne 0 ] && apt-get -u upgrade --assume-no  # old apt version
+	
+		# TODO: more alternatives
+		
+		#brew update
+		brew outdated
+		
+		pip list --outdated
+		
+		npm outdated -g
+		
+		gem outdated
+	
+		exit 0
+		;;
+
+	# TODO: add commands: reconfigure, refresh|reload
+esac
+
+
+if [ ! -z "$PACKAGE_NAME" ] ; then
+	# try package aliases (eg. ffmpeg -> avconv)
+	[ "$PACKAGE_NAME" = "ffmpeg" ] && $0 avconv
+	[ "$PACKAGE_NAME" = "avconv" ] && $0 ffmpeg
+	#else try packages common prefixes
+	#if not 
+	#$0 "lib$PACKAGE_NAME"
+	#$0 "python-$PACKAGE_NAME"
+	#$0 "node-$PACKAGE_NAME"
+	#$0 "ruby-$PACKAGE_NAME"
+	#$0 "perl-$PACKAGE_NAME"
+	# ...
+	
+	echo "$(basename $0): $PACKAGE_NAME: not found " >&2
+	exit 1 
+fi
+
+# else
+echo "usage: $(basename $0) install|uninstall|update|info|find|history|outdated [packagename]"
+echo
+exit 0

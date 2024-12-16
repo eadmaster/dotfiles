@@ -1,0 +1,13 @@
+#!/bin/sh
+
+INPUT=$1
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+echo "obase=10;ibase=2; $INPUT" | bc
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+echo "$((2#$INPUT))"
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+python -c "print(int(\"$INPUT\", base=2));"

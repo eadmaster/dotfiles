@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# open a bookmark from chrome
+# req. sqlite3 package installed
+
+#DEBUG=1
+[ -z "$CHROME_PROFILE_PATH" ] && CHROME_PROFILE_PATH=$HOME/.config/google-chrome/Default
+
+if [ "$1" = "" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) SITE_NAME"
+	echo
+	echo
+	exit 0
+fi
+
+
+QUERY_STRING=".*$1.*"
+echo "$QUERY_STRING"
+
+URL=$( jq -r ".roots.synced.children[] | select(.name | test(\"$QUERY_STRING\"; \"i\")) | pick(.url) | .url" "${CHROME_PROFILE_PATH}/Bookmarks" )
+
+if [ -z "$URL" ]; then
+	echo "$(basename $0) err: no bookmark url found" >&2
+	exit 1
+else
+	[ $DEBUG ] && echo "$0 debug: opening url: $URL"
+fi
+
+xdg-open "$URL"

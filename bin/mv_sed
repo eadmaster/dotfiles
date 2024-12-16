@@ -1,0 +1,27 @@
+#!/bin/sh 
+
+if [ -z "$1" ] || [ -z "$2" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) SEDSCRIPT FILES..."
+	echo
+	exit 0
+fi
+
+if [ -f "$1" ]; then
+	_SED_ARG="-f $1"
+else
+	_SED_ARG="-e $1"
+fi
+
+shift
+
+IFS=$'
+	'
+for f in "$@"
+do
+	NEWFILENAME="$( echo -n "$f" | eval sed "$_SED_ARG" )"
+
+	if [ "$f" != "$NEWFILENAME" ]; then
+		echo "\`$f' -> \`$NEWFILENAME'"
+		mv -i "$f" "$NEWFILENAME"
+	fi
+done

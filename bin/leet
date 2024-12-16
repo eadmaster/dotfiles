@@ -1,0 +1,22 @@
+
+if [ -f "$(dirname $0)/eleet.pl" ]; then
+	perl "$(dirname $0)/eleet.pl" "$@"
+	[ $? -ne 127 ] && exit $?
+fi
+
+eleet "$@"
+[ $? -ne 127 ] && exit $?
+
+warez "$@"
+[ $? -ne 127 ] && exit $?
+
+# sed script (The LEET-2-1337 converter)
+sed -e s/\[cC\]\[kK\]/X/g -e s/[aA]/4/g -e s/B/8/g -e s/D/\|\)/g -e s/E/3/g -e s/F/\|=/g \
+-e s/G/6/g -e s/H/\#/g -e s/[iI]/\!/g -e s/J/_\|/g -e s/K/X/g -e s/L/1/g -e s/M/\|v\|/g \
+-e s/N/\|\\\\\\\\\|/g -e s/[oO]/0/g -e s/P/1\"/g -e s/Q/O_/g -e s/R/\|2/g -e s/[sS]/5/g -e \
+s/T/7/g -e s/U/\|_\|/g -e s\[V\[\\\\\\\\/\[g -e s\[W\[\|/\\\\\\\\\|\[g -e s/X/\>\</g
+exit $?
+
+#else
+#exit 127
+

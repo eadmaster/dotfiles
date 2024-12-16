@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ -z "$1" ]; then
+	echo "usage: $(basename $0) GIT_URL"
+	echo
+	exit 0
+fi
+
+URL=$1
+BASEPATH=$( echo $URL | cut -d'/' -f1-5)
+DOMAIN=$( echo $URL | cut -d'/' -f3)
+USER_REPO=$( echo $URL | cut -d'/' -f4-5)
+SUBPATH=$( echo $URL | cut -d'/' -f6-)
+
+if [ -z "$SUBPATH" ]; then
+	# download the whole repo
+	if [ "$DOMAIN" = "github.com" ]; then
+		wget -O-  "$URL/archive/master.tar.gz" | tar xzfv -
+		#wget -O- "$URL/archive/master.zip" | 7z x -tzip -si
+		exit $?
+	else
+		# TODO:
+		echo "$: unsupported"
+		#git archive --format=tar --remote=$URL.git | tar -t
+		exit $?
+	fi
+fi
+
+# check if $SUBPATH ends with a file
+echo "$SUBPATH" | grep -Fq "."
+if [ $? -eq 0 ]; then
+	# is a file
+	if [ "$DOMAIN" = "github.com" ]; then
+		wget "https://raw.githubusercontent.com/$USER_REPO/$(echo $SUBPATH | sed 's/blob\///g')"
+	else
+		# TODO:
+		echo "unsupported"
+	fi
+	exit $?
+else
+	# is a dir
+	if [ "$DOMAIN" = "github.com" ]; then
+		svn export $(echo $URL | sed 's/tree\/master/trunk/g' )
+	else
+		# TODO:
+		echo "$0: hosting service unsupported"
+		#git archive --format=tar --remote=$URL.git | tar -t
+		#"svn export "  # https://stackoverflow.com/questions/7106012/download-a-single-folder-or-directory-from-a-github-repo
+		#degit  # https://stackoverflow.com/questions/7106012/download-a-single-folder-or-directory-from-a-github-repo
+		
+	fi
+	exit $?
+fi

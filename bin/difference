@@ -1,0 +1,11 @@
+#!/bin/sh
+
+comm -3 <$(sort "$1") <$(sort "$2") | tr -d '\t'
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+setop --symmetric-difference
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+python -c "import sys; set1=set(open(\"$1\").read().splitlines()) ; set2=set(open(\"$2\").read().splitlines()) ; print('\n'.join(map(str, list(set1.difference(set2)))))"
+
+

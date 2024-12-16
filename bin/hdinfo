@@ -1,0 +1,25 @@
+ 
+
+TARGET=/dev/sda
+[ ! -z "$1" ] && TARGET=$1
+# else TODO: iterate over all hdds?
+
+echo "$(basename $0): showing infos for $TARGET"  >&2
+
+sudo smartctl -s on -i $TARGET
+
+sudo smartctl -s on -A $TARGET
+# smartctl output options:
+# 	-f old, brief
+# 	-q errorsonly, silent
+
+# health-status based on self test:
+sudo smartctl -H $TARGET
+
+sudo hdparm -i $TARGET
+
+udisksctl info -b $TARGET
+
+# hdd temperature
+#sudo smartctl -a $TARGET | grep Temperature
+# | cut ...

@@ -1,0 +1,21 @@
+
+sfk dupfind "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+finddup "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+fdupes "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+# rclone alternative  https://rclone.org/commands/rclone_dedupe/
+rclone dedupe "$@"  --by-hash --dedupe-mode list  --dry-run
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+#TODO: czkawka dup ...
+
+# else alternative using find
+echo "duplicates found:"
+find . -type f -size +0 -printf "%-25s%p\n" | sort -n | uniq -D -w 25 | sed 's/^\w* *\(.*\)/md5sum "\1"/' | sh | sort | uniq -w32 --all-repeated=separate
+
+# MORE ALTERNATIVEs: http://www.commandlinefu.com/commands/view/3555/find-duplicate-files-based-on-size-first-then-md5-hash

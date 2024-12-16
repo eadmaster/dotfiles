@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# command aliases  https://github.com/ncw/rclone/issues/1892  https://stackoverflow.com/questions/4827690/how-to-change-a-command-line-argument-in-bash
+[ "$1" = "list" ] && set ls "${@:2}"
+[ "$1" = "cp" ] && set copy "${@:2}"
+[ "$1" = "rm" ] && set delete "${@:2}"
+[ "$1" = "deltree" ] && set purge "${@:2}"
+# ...
+
+# quickfix for local installations
+if [ -f $HOME/.local/bin/rclone ]; then
+	$HOME/.local/bin/rclone "$@"
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+fi
+
+command -p rclone "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+extractrun rclone "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

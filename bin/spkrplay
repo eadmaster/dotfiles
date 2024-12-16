@@ -1,0 +1,23 @@
+
+# play an audio file via the pcspeaker (if present)
+
+# TODO: amplify volume?
+
+#sudo modprobe pcspkr  # MEMO: provides /dev/pcsp
+sudo rmmod pcspkr
+sudo modprobe snd-pcsp
+
+aplay -D plughw:CARD=pcsp,DEV=0 "$1"
+[ $? -eq 0 ] && exit 0
+
+vlc -I dummy --key-quit=Ctrl-c --play-and-exit --aout="alsa" --alsa-audio-device="plughw:CARD=pcsp,DEV=0" "$1"
+[ $? -eq 0 ] && exit 0
+
+mplayer -ao alsa:device=plughw=pcsp "$1"
+[ $? -eq 0 ] && exit 0
+
+#mplayer -ao alsa:device=hw=1.0 "$1"
+#[ $? -eq 0 ] && exit 0
+
+# else
+exit 1

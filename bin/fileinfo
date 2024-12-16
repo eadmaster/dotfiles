@@ -1,0 +1,435 @@
+#!/bin/bash
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUT_FILE"
+	echo
+	exit 0
+elif [ -z "$1" ] || [ "$1" = "-" ]; then
+	echo "$(basename $0) warn: reading input file from stdin" >&2
+	INPUTFILE="$TMPDIR/$$.tmp"
+	cat > $INPUTFILE
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+else
+	INPUTFILE="$1"
+	#stat "$INPUTFILE"
+	echo
+fi
+
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+
+# try to detect the input file type using file
+INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
+
+# try to detect the input file type according on its extension (useful if file is missing or buggy)
+case $INPUTFILEEXT in
+	jpg|gif|png|tiff|tif|bmp|xpm|pbm|pgm|ppm|tga|ico|dng|crw ) INPUTFILETYPE=image/$INPUTFILEEXT ;;
+	avi|mkv|ogm|mpg|mpeg|mp4|mp3|mp2|ogg|flac|aac|ac3|a52|dts|asf|rm|wav ) INPUTFILETYPE=video/$INPUTFILEEXT ;;
+	xml|xsl|xsd ) INPUTFILETYPE=application/xml ;;
+	# xml|xsd|xsl|xslt|xul|opml|svg|rdf|rss|gxl
+	json ) INPUTFILETYPE=application/json ;;
+	html|htm ) INPUTFILETYPE=text/html ;;
+	c|cpp|h|hpp ) INPUTFILETYPE=text/x-c ;;
+	java ) INPUTFILETYPE=text/x-java ;;
+	php ) INPUTFILETYPE=text/x-php ;;
+	py ) INPUTFILETYPE=text/x-python ;;
+	js ) INPUTFILETYPE=application/javascript ;;
+	xml ) INPUTFILETYPE=application/xml ;;
+	txt ) INPUTFILETYPE=text/plain ;;
+	so ) INPUTFILETYPE=application/x-sharedlib ;;
+esac
+
+# look for a specific tool in the system (e.g. isoinfo, pdfinfo, etc. )
+CUSTOMINFOPATH=$( find $(echo -n $PATH|sed 's/:/ /g') -type f -perm /u=x,g=x,o=x  -name $( printf "%sinfo" $INPUTFILEEXT ) 2> /dev/null | head -n1 )
+[ -z "$CUSTOMINFOPATH" ] && CUSTOMINFOPATH=$( find $(echo -n $PATH|sed 's/:/ /g') -type f -perm /u=x,g=x,o=x  -name $( printf "%sdump" $INPUTFILEEXT ) 2> /dev/null | head -n1 )
+if [ ! -z "$CUSTOMINFOPATH" ]; then
+	$CUSTOMINFOPATH "$INPUTFILE"  2> /dev/null 
+	echo
+	#exit $?
+fi
+
+# switch by input file extension
+case $INPUTFILEEXT in
+
+	mid|midi|kar|mod|xm|s3m|stm|it )
+		timidity -Ol "$INPUTFILE"
+		exit $?
+		;;
+
+	# rtf|odt|odp|odg|ods|doc|xls|mdb|docx|pptx|xlsx|dbf ) 
+		# ;;
+	
+	csv|tsv|isv )
+		csvstat "$INPUTFILE"
+		csvtool info "$INPUTFILE"
+		exit $?
+		;;
+	
+	zip|rar|7z|arj|bz2|cab|cpio|gz|lzma|lha|lzh|tar|tgz|tbz|wim )
+		7z l -slt "$INPUTFILE"
+		exit $?
+		;;
+
+	sfs|squashfs )
+		unsquashfs -l "$INPUTFILE"
+		exit $?
+		;;
+
+	#pdf )
+	#	pdfdetach -list "$INPUTFILE"
+	#	;&
+		
+	ps|pdf|xps|djvu|prc|mobi|epub|lit|cbz|cbr|cb7|azw3|azw|kf8|fb2|pdb|chm )
+		ebook-meta "$INPUTFILE"
+		exit $?
+		;;
+
+	ov2|kml|gpx|poi|geojson|shp )
+		# from gdal-bin
+		ogrinfo "$INPUTFILE"
+		# from fiona https://github.com/Toblerity/Fiona/blob/master/docs/cli.rst
+		fiona info "$INPUTFILE"
+		exit $?
+		;;
+
+	iso )
+		#isoinfo -l -i "$INPUTFILE"
+		#[ $? -ne 0 ] && 7z l "$INPUTFILE"
+		7z l "$INPUTFILE"
+		echo
+		isoinfo -d -i "$INPUTFILE"
+		echo
+		;&  # fallthru
+		
+	cue|nrg|mdf|pdi|cdi|b5i|gdi|ccd )
+		aaru image info "$INPUTFILE"
+		#aaru fs list "$INPUTFILE"
+		exit $?
+		;;
+
+	img|ima|vhd|vmdk|qcow|qcow2|raw|vdi|vhd )
+		7z l "$INPUTFILE"
+		echo
+		qemu-img info "$INPUTFILE"
+		echo
+		vbox-img info --filename "$INPUTFILE"
+		echo
+		aaru image info "$INPUTFILE"
+		#aaru fs list "$INPUTFILE"
+		echo
+		file "$INPUTFILE"
+		exit $?
+		;;
+	
+	chd )
+		chdman info -i "$INPUTFILE"
+		exit $?
+		;;
+
+	smc|sfc|fig|gb|gbc|gba|nds|n64|z64|smd|gen|md|32x|pce|nes|fds|sms|gg|ws|wsc|jag|ngp|ngc|vb )
+		ucon64 "$INPUTFILE"
+		#aaru image info "$INPUTFILE"
+		exit $?
+		;;
+	
+	# TODO:
+	#ips|ups|aps|delta|ppf|bps )  # https://datacrystal.romhacking.net/wiki/Patch
+	#	exit $?
+	#	;;
+		
+	nsp|xci|nro|nsz )
+		# https://github.com/garoxas/NX_Game_Info
+		nxgameinfo_cli -z "$INPUTFILE"
+		exit $?
+		;;
+	
+	torrent )
+		tmrr e  "$INPUTFILE"  # print file hashes, only works with v2 torrents  https://github.com/kovalensky/tmrr/
+		#[ $? -ne 1 ] && exit 0
+		aria2 --dry-run=true --show-files=true "$INPUTFILE"
+		[ $? -ne 127 ] && exit 0
+		aria2c --dry-run=true --show-files=true "$INPUTFILE"
+		[ $? -ne 127 ] && exit 0
+		ctorrent -x "$INPUTFILE"
+		exit $?
+		;;
+	
+	xdelta )
+		xdelta3 printhdr "$INPUTFILE"
+		exit $?
+		;;
+		
+	srr )
+		srr -l "$INPUTFILE"
+		exit $?
+		;;
+	
+	rpm )
+		rpm -qli "$INPUTFILE"
+		exit $?
+		;;
+	
+	deb )
+		dpkg -c "$INPUTFILE"
+		dpkg-deb -I "$INPUTFILE"
+		#dpkg-deb --info $*
+		#dpkg-deb --contents $*
+		exit $?
+		;;
+	
+	ttf|ttc|otf )
+		fc-query "$INPUTFILE"
+		otfinfo --info "$INPUTFILE"
+		ftdump -n "$INPUTFILE"
+		exit $?
+		;;
+	
+	exe|dll ) # windows executable
+		pev  "$INPUTFILE"
+		wrestool --extract --raw --type=version "$INPUTFILE"
+		wrestool --list "$INPUTFILE"
+		retdec-fileinfo "$INPUTFILE"
+		sfk ver "$INPUTFILE"  # http://stahlworks.com/sfk-version
+		exit $?
+		;;
+	
+	lnk )
+		# using lnkinfo from liblnk-utils
+		lnkinfo "$INPUTFILE"
+		exit $?
+		;;
+	
+	swf )
+		swfdump  "$INPUTFILE"
+		swfextract  "$INPUTFILE"
+		exit $?
+		;;
+
+	#metalink|meta4 )
+	#	curl --head --verbose --output /dev/null --metalink "file://$INPUTFILE"
+	#	exit $?
+	#	;;
+	
+	db* ) # BSD DBM 
+		db_stat -d "$INPUTFILE"
+		exit $?
+		;;
+	
+	jar|war )
+		7z e -so "$INPUTFILE" 'META-INF/MANIFEST.MF'
+		# TODO: detect java version from class files  https://stackoverflow.com/questions/3313532/what-version-of-javac-built-my-jar
+		# javap -v FILE.class | grep major
+		exit $?
+		;;
+
+	xpi )  # Firefox addons
+		7z e -so "$INPUTFILE" 'install.rdf'
+		7z e -so "$INPUTFILE" 'manifest.json'
+		exit $?
+		;;
+
+	apk )
+		7z e -so "$INPUTFILE" AndroidManifest.xml 2> /dev/null | { androidxml2xml || cat ; } 
+		apkanalyzer apk summary "$INPUTFILE"
+		apkanalyzer apk features  "$INPUTFILE"
+		aapt dump permissions  "$INPUTFILE"
+		# ... https://stackoverflow.com/questions/2097813/how-to-parse-the-androidmanifest-xml-file-inside-an-apk-package
+		exit $?
+		;;
+	
+	ova )
+		7z e -so "$INPUTFILE" '*.ovf'
+		exit $?
+		;;
+	
+	a )
+		nm "$INPUTFILE"
+		exit $?
+		;;
+	
+	ps2 )
+		mymcplus "$INPUTFILE" dir
+		exit $?
+		;;
+	
+	asc )
+		gpg --list-packets < "$INPUTFILE"
+		exit $?
+		;;
+	
+	key )  # rsa public/private keys
+		file "$INPUTFILE"
+		#gpg...
+		#openssl rsa -in "$INPUTFILE" check
+		exit $?
+		;;
+	
+	csr )  # Certificate Signing Request
+		openssl req -text -noout -verify -in "$INPUTFILE"
+		exit $?
+		;;
+
+	crt | pem )  # certificate
+		openssl x509 -text -purpose  -in "$INPUTFILE" -noout
+		exit $?
+		;;
+	
+	der )
+		openssl x509 -inform der -text -in "$INPUTFILE"
+		exit $?
+		;;
+		
+	pfx | p12 )
+		openssl pkcs12 -info -in "$INPUTFILE"
+		exit $?
+		;;
+	
+	#p7m )
+	#	
+
+	pickle|pycle )  # python serialized bins
+		python -m pickle "$INPUTFILE"
+		exit $?
+		;;
+	
+	# TODO: https://en.wikipedia.org/wiki/PHP_serialization_format
+esac
+
+# switch by input file mime type
+case $INPUTFILETYPE in
+	image/* )
+		identify "$INPUTFILE"  # from ImageMagick package
+		[ $? -eq 127 ] && imconvert -identify "$INPUTFILE"  # from ImageMagick package
+		exiftool "$INPUTFILE"
+		oiiotool -v --info "$INPUTFILE"
+		#file "$INPUTFILE"
+		# detect upscaled images  https://github.com/0x09/resdet
+		resdet -v0 "$INPUTFILE" && echo "image upscaled according to resdet"
+		exit $?
+		;;
+
+	audio/* )
+		sox -V "$INPUTFILE" -n stat
+		;;
+		#;&
+		
+	video/* | audio/* )
+		ffprobe -v error -show_format -show_streams "$INPUTFILE"
+		avprobe -v error -show_format -show_streams "$INPUTFILE"
+		exiftool -unknown2 "$INPUTFILE"
+		mutagen-inspect "$INPUTFILE"
+		mediainfo "$INPUTFILE"
+		exit $?
+		;;
+		
+	application/xml | text/html )
+		# print useful header tags
+		grep '^<?' "$INPUTFILE"
+		grep '^<xsl:stylesheet' "$INPUTFILE"
+		# TODO: better parsing with awk
+		echo
+		# print the document structure
+		xml fo --recover "$INPUTFILE" 2> /dev/null | xml el -a
+		xmlstarlet fo --recover "$INPUTFILE" 2> /dev/null | xmlstarlet el -a
+		# TODO: awk alternative
+		exit $?
+		;;
+	
+	application/json )
+		echo "$(basename $0): number of entries: $(tr -cd , < "$INPUTFILE" | wc -c )"  # TODO: exclude commas in values
+		# print the document structure
+		# python alternative 
+		json2paths.py  "$INPUTFILE"
+		[ $? -ne 127 ] && exit 0
+		
+		# NO? xidel alternative   http://stackoverflow.com/questions/37892961/list-all-json-pointers-with-xidel
+		
+		# TODO: awk alternative 
+		exit $?
+		;;
+		
+	text/plain )
+		echo "$(basename $0) info: header lines:" >&2
+		head -n3 "$INPUTFILE"
+		echo
+		echo "$(basename $0) info: higher word frequencies:" >&2
+		cat "$INPUTFILE" | tr -sc '[:alpha:]' '[\n*]' | sort | uniq -c | sort -nr | head -n10
+		# ALTERNATIVES: https://stackoverflow.com/questions/10552803/how-to-create-a-frequency-list-of-every-word-in-a-file
+		echo
+		file -bi "$INPUTFILE"
+		echo "$(basename $0) MEMO: if not reported newlines are Unix-like (LF)" >&2
+		#echo -n "lines: " ; wc -l "$INPUTFILE" | cut -d' ' -f1au
+		echo
+
+		# detect encoding via encguess (part of perl) 
+		encguess "$INPUTFILE"
+		# detect encoding via  https://www.freedesktop.org/wiki/Software/uchardet/
+		uchardet "$INPUTFILE"
+		# detect encoding and newlines via  https://github.com/nijel/enca
+		enca -L none "$INPUTFILE"
+		# detect encoding via  https://github.com/chardet/chardet
+		chardet "$INPUTFILE" || chardetect "$INPUTFILE"
+		# ... https://stackoverflow.com/questions/805418/how-can-i-find-encoding-of-a-file-via-a-script-on-linux
+		
+		#exit $?
+		;;
+
+	application/x-sharedlib )
+		echo "$(basename $0): exported functions list:" >&2
+		nm -D "$INPUTFILE"
+		retdec-fileinfo "$INPUTFILE"
+		#gdb --batch --eval-command="info " "$INPUTFILE"
+		readelf -h -d -A -W "$INPUTFILE"
+		exit $?
+		;;
+	
+	#application/octet-stream )  # unknwon mime type
+	
+	application/dicom )  # medical imaging https://en.wikipedia.org/wiki/DICOM
+		# via ImageIO (needs a plugin)
+		oiiotool -v --info "$INPUTFILE"
+		# from dcmtk
+		dcmdump --print-color "$INPUTFILE"
+		exit $?
+		;;
+esac
+
+# if it is a small file (<1GB) compute the hashes, entropy, etc.
+if [ "$(stat -c'%s' "$INPUTFILE")" -lt 1000000000 ]; then
+	#rhash --bsd --all "$INPUTFILE"
+	#[ $? -eq 127 ] && md5sum "$INPUTFILE"
+	
+	#binwalk --entropy --fast --nplot "$INPUTFILE"
+	
+	# try subfile searching
+	#hachoir-subfile "$INPUTFILE"
+	#binwalk --signature "$INPUTFILE"
+	subfilesearch "$INPUTFILE"
+fi
+
+#echo "$(basename $0): extension \"$INPUTFILEEXT\" not supported, redirecting to file:" >&2
+file -i "$@"
+file "$@"
+#file -z -k "$@"
+
+# try with exiftool
+exiftool "$INPUTFILE"
+
+# try with libextractor
+extract "$INPUTFILE"
+
+# try with hachoir
+hachoir-metadata "$INPUTFILE"
+
+# try with tika  https://github.com/apache/tika
+tika --text --metadata  "$INPUTFILE"
+
+# also try with fq https://github.com/wader/fq/
+fq . "$INPUTFILE"
+
+# try game archives via GameExtractor  http://www.watto.org/game_extractor.html
+# TODO: listing to stdout not supported https://github.com/wattostudios/GameExtractor/issues/7
+#gameextractor -list -input "$(readlink -f "$INPUTFILE")"

@@ -1,0 +1,61 @@
+#!/bin/sh
+
+# Android check
+if [ ! -z "$ANDROID_ROOT" ]; then
+	# ???
+	exit $?
+fi
+# MacOSX check (UNTESTED)
+if [ "$(uname)" = "Darwin" ]; then
+	pmset sleepnow
+	[ $? -ne 127 ] && exit $?
+	osascript -e 'tell application "Finder" to sleep'
+	[ $? -ne 127 ] && exit $?
+fi
+
+# TODO: test if command is successfull using the uptime command before and after
+# if TIME_DIFFERENCE > 10 sec then exit
+ 
+# TODO: lock the screen after restore
+#xlock
+
+sudo systemctl suspend
+[ $? -ne 1 ] && exit $?
+
+sudo uswsusp
+[ $? -ne 1 ] && exit $?
+
+sudo acpitool -s
+[ $? -ne 1 ] && exit $?
+
+sudo pm-suspend
+[ $? -ne 1 ] && exit $?
+
+pmi action suspend
+[ $? -ne 127 ] && exit $?
+
+gnome-power-cmd.sh suspend
+[ $? -ne 127 ] && exit $?
+
+#dbus-send --system --print-reply --dest=org.freedesktop.Hal /org/freedesktop/Hal/devices/computer org.freedesktop.Hal.Device.SystemPowerManagement.Suspend int32:0
+#[ $? -ne 1 ] && exit $?
+#dbus-send --session --dest=org.freedesktop.PowerManagement --type=method_call --print-reply --reply-timeout=2000 /org/freedesktop/PowerManagement org.freedesktop.PowerManagement.suspend
+#[ $? -ne 1 ] && exit $?
+ 
+# quick fix for puppy linux
+#sudo /etc/acpi/actions/suspend.sh
+#[ $? -ne 1 ] && exit $?
+
+sudo /etc/acpi/sleep.sh
+[ $? -ne 1 ] && exit $?
+
+if [ -e /sys/power/state ]; then
+	echo "$(basename $0) warn: this method could have nasty side-effects, press Enter to continue, Ctrl-C to abort."
+	read
+	sudo sync
+	sudo echo -n mem > /sys/power/state
+	exit $?
+fi
+
+#else
+exit 127

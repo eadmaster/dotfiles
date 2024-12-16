@@ -1,0 +1,148 @@
+#!/bin/sh
+
+OUTPUTFILE="$2"
+[ -f "$OUTPUTFILE" ] && echo "$(basename $0) warn: existing file will be overwritten: $OUTPUTFILE" >&2
+
+case $1 in
+	-h|--help|"" )
+		echo "usage: $(basename $0) mic|cam|desktop [OUTFILE]"
+#		echo "       $(basename $0) stream URL [OUTFILE]"
+		echo
+		exit 0
+		# TODO: add desktop+mic, camera+mic, stream
+	;;
+		
+	mic* )
+		[ -z "$OUTPUTFILE" ] && OUTPUTFILE="$(date +'%Y%m%dT%H%M') mic.opus"
+		OUTPUTFILEEXT=$( echo -n "$OUTPUTFILE" | rev | cut -d'.' -f1 | rev )
+		OUTPUTFILEEXT=$( echo -n $OUTPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+
+		echo "$(basename $0) info: recording microphone on $OUTPUTFILE, press CTRL+C to stop..."
+
+		# using ffmpeg  https://trac.ffmpeg.org/wiki/Capture/ALSA
+		# TODO: add "-application voip" switch
+		# -ar 44100
+		ffmpeg -f alsa -ac 1 -i pulse "$OUTPUTFILE"
+		[ $? -eq 0 ] && exit 0
+		ffmpeg -f alsa -ac 1 -i default:CARD=PCH "$OUTPUTFILE"
+		[ $? -eq 0 ] && exit 0
+		ffmpeg -f alsa -ac 1 -i hw:0 "$OUTPUTFILE"
+		[ $? -eq 0 ] && exit 0
+		ffmpeg -f alsa -ac 1 -i hw:1 "$OUTPUTFILE"
+		[ $? -eq 0 ] && exit 0
+
+		# using vlc
+		case $OUTPUTFILEEXT in
+			mp3 ) CODEC=mp3 ; MUX=dummy ;;
+			flac ) CODEC=flac ; MUX=flac ;;
+			ogg ) CODEC=vorb ; MUX=ogg ;;
+			mp4 ) CODEC=mp4a ; MUX=mp4 ;;
+			spx ) CODEC=spx ; MUX=ogg ;; # MEMO: optimized for voice, feat. VAD=Voice activity detection
+			opus ) CODEC=opus ; MUX=ogg ;; # MEMO: speex replacement, req. VLC v2.2.0
+			wav ) CODEC=s16l ; MUX=wav ;;
+			wma ) CODEC=wma2 ; MUX=asf ;;
+		esac
+		# --no-repeat --no-loop  alsa://pulse
+		vlc -I dummy -vvv --key-quit=Ctrl-c --no-sout-video alsa://hw:0,0 --sout-transcode-channels=1 --sout-transcode-samplerate=44100 --sout "#transcode{acodec=$CODEC,channels=1,samplerate=44100}:std{access=file,mux=$MUX,dst=\"$OUTPUTFILE\"}"
+		[ $? -eq 0 ] && exit 0
+
+		# using arecord+ffmpeg pipe (MEMO: arecord only supports uncompressed formats natively: voc, wav, raw and au)
+		arecord -D plughw:0,0 -f cd | ffmpeg -i - -ac 1 -ar 44100 "$OUTPUTFILE"
+		[ $? -eq 0 ] && exit 0
+		
+		# using record from xawtv-tools (only wav files)
+		#command -p record -o "$OUTPUTFILE"
+		#[ $? -eq 0 ] && exit 0
+		
+		# using rec from sox (no opus support?)
+		rec "$OUTPUTFILE" rate 32k silence 1 0.1 3% 1 3.0 3%
+		[ $? -eq 0 ] && exit 0
+		# sox -t alsa default output.wav (also "rec" script)
+		#sox -d "$OUTPUTFILE"
+		#[ $? -eq 0 ] && exit 0
+		
+		# MORE ALTERNATIVEs:
+		# mencoder ...
+
+		#else
+		exit 127
+	;;
+	
+	cam*|webcam )
+		[ -z "$OUTPUTFILE" ] && OUTPUTFILE="$(date +'%Y%m%dT%H%M') camera.mp4"
+		OUTPUTFILEEXT=$( echo -n "$OUTPUTFILE" | rev | cut -d'.' -f1 | rev )
+		OUTPUTFILEEXT=$( echo -n $OUTPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+		
+		echo "$(basename $0) info: recording camera on $OUTPUTFILE, press CTRL+C to stop..."
+		
+		# using vlc
+		case $OUTPUTFILEEXT in
+			mp4 ) VCODEC=h264 ; ACODEC=mp4a ; MUX=mp4 ;;
+			avi ) VCODEC=mp4v ; ACODEC=mp3 ; MUX=avi ;;
+			wmv ) VCODEC=WMV2 ; ACODEC=wma2 ; MUX=asf ;;
+		esac
+		vlc -I dummy -vvv --key-quit=Ctrl-c v4l2:// :input-slave=alsa://  :v4l-vdev="/dev/video0" --sout-x264-qp=26 --sout-x264-preset=veryfast  --sout "#transcode{vcodec=$VCODEC,acodec=$ACODEC,channels=1,samplerate=44100}:std{mux=$MUX,access=file,dst=\"$OUTPUTFILE\"}"
+		[ $? -eq 0 ] && exit 0
+		# :v4l-adev="/dev/pcm"
+		# :v4l-norm=3 :v4l-frequency=-1 :v4l-caching=300 :v4l-chroma="" :v4l-fps=-1.000000 :v4l-samplerate=44100 :v4l-channel=0 :v4l-tuner=-1 :v4l-audio=-1 :v4l-stereo :v4l-width=480 :v4l-height=360 :v4l-brightness=-1 :v4l-colour=-1 :v4l-hue=-1 :v4l-contrast=-1 :no-v4l-mjpeg :v4l-decimation=1 :v4l-quality=100 
+
+		# using ffmpeg  https://trac.ffmpeg.org/wiki/Capture/Webcam
+		ffmpeg -f v4l2 -i /dev/video0 -i /dev/audio2 -vcodec libx264 -preset veryfast -ac 1 "$OUTPUTFILE"
+		[ $? -eq 0 ] && exit 0
+		# -framerate 25 -video_size 640x480
+		
+		#else
+		exit 127
+	;;
+
+	desk*|scr* )
+		[ -z "$OUTPUTFILE" ] && OUTPUTFILE="$(date +'%Y%m%dT%H%M') desktop.mp4"
+		OUTPUTFILEEXT=$( echo -n "$OUTPUTFILE" | rev | cut -d'.' -f1 | rev )
+		OUTPUTFILEEXT=$( echo -n $OUTPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+
+		echo "$(basename $0) info: recording desktop on $OUTPUTFILE, press CTRL+C to stop..."
+		
+		# using vlc
+		case $OUTPUTFILEEXT in
+			mp4 ) VCODEC=h264 ; ACODEC=mp4a ; MUX=mp4 ;;
+			avi ) VCODEC=mp4v ; ACODEC=mp3 ; MUX=avi ;;
+			wmv ) VCODEC=WMV2 ; ACODEC=wma2 ; MUX=asf ;;
+		esac
+		vlc -I dummy -vvv --key-quit=Ctrl-c screen:// :screen-fps=10 :screen-follow-mouse --sout-x264-qp=26 --sout-x264-preset=veryfast --sout-x264-nr=0  --sout "#transcode{vcodec=$VCODEC,acodec=$ACODEC,channels=1,samplerate=44100}:std{mux=$MUX,access=file,dst=\"$OUTPUTFILE\"}"
+		[ $? -eq 0 ] && exit 0
+		# useful options:  -sout-x264-tune=stillimage, venc=x264{scenecut=100,bframes=0,keyint=10}, scale=1.0, vfilter=croppadd{cropleft=0,croptop=0,cropright=0,cropbottom=0}
+		# WANTED: record audio from microphone with acodec=mp4a | --no-sout-audio
+	
+		# using ffmpeg
+		# lossy h264+aac
+		ffmpeg -f x11grab -i $DISPLAY -vcodec libx264 -preset veryfast -f alsa -i pulse -acodec libfdk_aac -ac 1 "$OUTPUTFILE"
+		# lossless mode: -vcodec libx264  -qp 0 -preset veryfast  -f alsa -ac 1 -i pulse -acodec flac "$OUTPUTFILE"
+		# -video_size 1920x1080 -framerate 25  [-vf crop=xwidth:xheight:xleft:xtop]
+		[ $? -eq 0 ] && exit 0
+		
+		#else
+		exit 127
+	;;
+	
+	skype|call )
+		# record desktop+audio on channel 1, microphone on channel 2
+		[ -z "$OUTPUTFILE" ] && OUTPUTFILE="$(date +'%Y%m%dT%H%M') call.opus"
+		OUTPUTFILEEXT=$( echo -n "$OUTPUTFILE" | rev | cut -d'.' -f1 | rev )
+		OUTPUTFILEEXT=$( echo -n $OUTPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+
+		echo "$(basename $0) info: recording mic+desktop on $OUTPUTFILE, press CTRL+C to stop..."
+		echo "$(basename $0) tip: split the channels with ffmpeg -i '$OUTPUTFILE' -map_channel 0.0.0 'left_$OUTPUTFILE' -map_channel 0.0.1 'right_$OUTPUTFILE'"
+		echo "$(basename $0) tip: mix into a single channel with ffmpeg -i '$OUTPUTFILE' -ac 1 'mixed_$OUTPUTFILE'"
+		# https://trac.ffmpeg.org/wiki/AudioChannelManipulation
+		
+		#ffmpeg -f pulse -ac 1 -ar 44100 -i 0 -f alsa -ac 1 -ar 44100 -i pulse  -filter_complex amerge "$OUTPUTFILE"
+		ffmpeg -f pulse -ac 1 -i 0 -f alsa -ac 1 -i pulse  -filter_complex amerge -application voip "$OUTPUTFILE"
+		[ $? -eq 0 ] && exit 0
+		
+		#else
+		exit 127
+esac
+
+# else
+echo "$(basename $0) error: unsupported source: $1" >&2
+exit 1

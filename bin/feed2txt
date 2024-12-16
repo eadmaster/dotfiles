@@ -1,0 +1,13 @@
+ #!/bin/sh
+ 
+# TODO: check root node=="feed"=atom | "rss" (diff. formats)
+
+# faq alternative  https://github.com/jzelinskie/faq/
+faq '.rss.channel.item[] | "\(.creator[0:30])\t\(.pubDate[0:11])\t\(.title[0:60])...\t\(.link)"' -r -o json "$@" | column -ts $'\t'
+# atom:
+#faq '.feed.entry[] | "\(.author.email[0:30])\t\(.issued[0:11])\t\(.title[0:60])..."' -r -o json "$@" | column -ts $'\t'
+#[ $? -ne 127 ] && exit 0
+
+# TODO: alternative using xmlstarlet
+#xmlstarlet sel -t -m "//rec" -v "@id" 
+#[ $? -ne 127 ] && exit 0

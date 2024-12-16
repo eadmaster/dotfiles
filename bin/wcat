@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# args checking
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUTURL"
+	echo
+	exit 0
+elif [ -f "$1" ]; then
+	# if input it is a local file just prints it
+	cat "$1" | html2text
+	exit
+fi
+
+# Android detection
+if [ -z "$ANDROID_ROOT" ]; then
+	chrome  --headless --disable-gpu --dump-dom --enable-javascript --ignore-certificate-errors  "$@" 2> /dev/null  | html2text 
+	# 2fix: no cloudflare support?
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+fi
+
+# https://github.com/lwthiker/curl-impersonate
+curl-impersonate-chrome "$@" | html2text
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+curl -s -H "Accept: text/javascript, text/html, application/xml, */*" "$@" | html2text
+#curl -m5 -s -L -A "Firefox" "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+wget -q -U Firefox -O - "$@" | html2text
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#else
+exit 127

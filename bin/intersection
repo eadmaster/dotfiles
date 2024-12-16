@@ -1,0 +1,9 @@
+#!/bin/sh
+
+comm -12 <(sort "$1") <(sort "$2")
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+setop --intersection "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+python -c "import sys; set1=set(open(\"$1\").read().splitlines()) ; set2=set(open(\"$2\").read().splitlines()) ; print('\n'.join(map(str, list(set1.intersection(set2)))))"

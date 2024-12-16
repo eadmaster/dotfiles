@@ -1,0 +1,440 @@
+#!/bin/sh
+
+# args checking
+if [ "$#" -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUT_FILE OUTPUT_FILE"
+	echo
+	exit 0
+elif [ "$#" -gt 2 ]; then
+	#echo "$(basename $0) warn: more than 2 args passed, assuming you were invoking ImageMagick's convert..." >&2
+	#convert "$@"
+	#exit $?
+	echo "$(basename $0) warn: more than 2 args passed, remember that you cannot use wildcards with this command. Tip: use find+exec instead." >&2
+	exit 1
+elif [ "$1" = "-" ]; then
+	echo "$(basename $0) warn: reading input file from stdin" >&2
+	INPUTFILE="$TMPDIR/$$.tmp"
+	cat > $INPUTFILE
+elif [ "$2" = "-" ]; then
+	echo "$(basename $0) err: stdout redirection not supported" >&2
+	exit 1
+elif [ ! -e "$1" ]; then
+	echo "$(basename $0) err: file does not exist: $1" >&2
+	exit 1
+fi
+
+INPUTFILE="$1"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+INPUTFILEEXTUPPER=$( echo -n $INPUTFILEEXT | tr '[a-z]' '[A-Z]' ) # force uppercase extension
+INPUTFILENAME="`basename \"$INPUTFILE\" | rev | cut -d'.' -f2- | rev`"
+
+OUTPUTFILE="$2"
+OUTPUTFILEEXT=$( echo -n "$OUTPUTFILE" | rev | cut -d'.' -f1 | rev )
+OUTPUTFILEEXT=$( echo -n $OUTPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+OUTPUTFILEEXTUPPER=$( echo -n $OUTPUTFILEEXT | tr '[a-z]' '[A-Z]' ) # force uppercase extension
+OUTPUTFILEDIR="`dirname \"$2\"`"
+
+if [ "$INPUTFILEEXT" = "$OUTPUTFILEEXT" ]; then
+	echo "$(basename $0) warn: input and output file extensions are the same ($INPUTFILEEXT), copying file..." >&2
+	cp "$INPUTFILE" "$OUTPUTFILE"
+	exit $?
+fi
+
+#echo "$(basename $0): converting $1 -> $2..." >&2
+
+# starttime=`date +%s`
+# TODO: monitor long coversion processes and trigger notify-send
+
+# try to detect the input file type using file
+INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
+
+# try to detect the input file type according on its extension (useful if file is missing or buggy)
+case $INPUTFILEEXT in
+	jpg|gif|png|tiff|tif|bmp|xpm|pbm|pgm|ppm|tga|ico|dng|crw ) INPUTFILETYPE=image/$INPUTFILEEXT ;;
+	avi|mkv|ogm|mpg|mpeg|mp4|mp3|mp2|ogg|flac|aac|ac3|a52|dts|asf|rm|wav ) INPUTFILETYPE=video/$INPUTFILEEXT ;;
+	xml ) INPUTFILETYPE=application/xml ;;
+	json ) INPUTFILETYPE=application/json ;;
+	html|htm ) INPUTFILETYPE=text/html ;;
+esac
+
+# extensions aliases
+case $INPUTFILEEXT in
+	rdjson|jsonl )  INPUTFILEEXT=ndjson ;;
+esac
+case $OUTPUTFILEEXT in
+	rdjson|jsonl )  OUTPUTFILEEXT=ndjson ;;
+esac
+
+# look for a specific tool in the system (e.g. ps2pdf, pdf2djvu, etc.)
+CUSTOMCONVERTERPATH=$( findcommand ${INPUTFILEEXT}2${OUTPUTFILEEXT} | head -n1 )
+[ -z "$CUSTOMCONVERTERPATH" ] && CUSTOMCONVERTERPATH=$( findcommand ${INPUTFILEEXT}to${OUTPUTFILEEXT} | head -n1 )
+if [ ! -z "$CUSTOMCONVERTERPATH" ]; then
+	$CUSTOMCONVERTERPATH "$INPUTFILE"
+	# note: syntax and output file location may vary...
+	exit $?
+fi
+ 
+# archives compression from single files
+# TODO: support files wildcards
+#case $OUTPUTFILEEXT in
+	##iso ) genisoimage -J -o "$OUTPUTFILE" "$INPUTFILE" || mkisofs -J -o "$OUTPUTFILE" "$INPUTFILE" ;;  # -l -joliet-long -iso-level 4
+	##squashfs|sfs ) mksquashfs "$INPUTFILE" "$OUTPUTFILE" ;;  # -keep-as-directory
+	#zip|7z|wim ) 7z a -bb1 -r "$OUTPUTFILE" "$INPUTFILE" ;;  # TODO: skip creating subdirs
+	#tgz ) tar czv -f "$OUTPUTFILE" "$INPUTFILE" ;;
+	#tar ) tar cv -f "$OUTPUTFILE" "$INPUTFILE" ;;
+	## TODO: bz2|gz|tar|tgz|tbz ) ;;
+	## TODO: arj, cab, cpio, lha|lzh, wim
+	## TODO: rar
+#esac
+		
+if [ "$OUTPUTFILEEXT" = "txt" ] ; then
+	file2txt "$INPUTFILE" > "$OUTPUTFILE"
+	_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+elif [ "$INPUTFILEEXT" = "tex" ] && [ "$OUTPUTFILEEXT" = "pdf"] ; then
+	# other methods here: http://www-rohan.sdsu.edu/~aty/bibliog/latex/LaTeXtoPDF.html
+	pdftex "$INPUTFILE" -output-directory "$OUTPUTFILEDIR"
+	exit $?
+	
+# sqlite formats
+elif [ "$INPUTFILEEXT" = "sqlite" ] && [ "$OUTPUTFILEEXT" = "sql"] ; then
+	sqlite3 "$INPUTFILE" .dump > "$OUTPUTFILE"
+	# TODO: python, php alternatives
+	exit $?
+elif [ "$INPUTFILEEXT" = "db" ] && [ "$OUTPUTFILEEXT" = "sql"] ; then   # BSD DBM DATABASE FILES
+	db_sql "$INPUTFILE" -f "$OUTPUTFILE"
+	exit $?
+elif [ "$INPUTFILEEXT" = "db" ] && [ "$OUTPUTFILEEXT" = "txt"] ; then
+	db_dump "$INPUTFILE" -f "$OUTPUTFILE"
+	# TODO: python alternative
+	exit $?
+#elif [ "$INPUTFILEEXT" = "db" ] && [ "$OUTPUTFILEEXT" = "csv"] ; then
+	# TODO: using python dbm module  https://docs.python.org/2/library/dbm.html
+#	python - "$INPUTFILE" <<EOF
+#import dbm, sys
+#db = dbm.open(sys.argv[1])
+#EOF
+#	exit $?
+#elif [ "$INPfTFILEEXT" = "a" ] && [ "$OUTPUTFILEEXT" = "so"] ; then  #executable binaries
+#	# NOTE:  if your library wasn't compiled with -fpic/-fPIC, which it probably wasn't, it won't work  http://stackoverflow.com/questions/3919902/method-of-converting-a-static-library-into-a-dynamically-linked-library
+#	gcc -shared -Wl,--whole-archive "$INPUTFILE" -o "$OUTPUTFILE"
+#	exit $?
+#fi
+
+# TODO: flatpak->appimages https://github.com/AppImage/AppImageKit/issues/297
+
+# WANTED: html microdata, microformats extractors
+
+# ROM dumps conversions
+elif [ "$INPUTFILEEXT" = "gen" ] || [ "$INPUTFILEEXT" = "bin" ] && [ "$OUTPUTFILEEXT" = "smd" ] ; then  # ROM DUMPS
+	cp "$INPUTFILE" "$OUTPUTFILE"
+	ucon64 --gen --smd --nbak "$OUTPUTFILE"
+	exit $?
+elif [ "$INPUTFILEEXT" = "smd" ] && [ "$OUTPUTFILEEXT" = "bin" ] || [ "$OUTPUTFILEEXT" = "gen" ] ; then
+	cp "$INPUTFILE" "$OUTPUTFILE"
+	ucon64 --gen --bin --nbak "$OUTPUTFILE"
+	exit $?
+elif [ "$INPUTFILEEXT" = "smc" ] && [ "$OUTPUTFILEEXT" = "sfc" ] ; then
+	cp "$INPUTFILE" "$OUTPUTFILE"
+	# check if there is no Backup unit/emulator header already (many .smc roms are missing the header already and stripping will produce a broken ROM)  http://romhack.wikia.com/wiki/SMC_header
+	ucon64 "$OUTPUTROMFILE" | grep -q 'Backup unit/emulator header: No'
+	[ $? -eq 0 ] && exit 0
+	# else
+	ucon64 --snes --stp --nbak "$OUTPUTFILE"
+	exit $?
+elif [ "$OUTPUTFILEEXT" = "smc" ] ; then
+	cp "$INPUTFILE" "$OUTPUTFILE"
+	ucon64 --snes --smc --nbak "$OUTPUTFILE"
+	exit $?
+# TODO: n64, z64...
+elif [ "$OUTPUTFILEEXT" = "chd" ] ; then
+	chdman createcd -i "$INPUTFILE" -o "$OUTPUTFILE"
+	exit $?
+	
+# savegame / memcard conversion
+elif [ "$INPUTFILEEXT" = "gcs" ] && [ "$OUTPUTFILEEXT" = "gci" ] ; then  # ROM SAVEGAMES
+	# remove the 272 bytes header
+	cp "$INPUTFILE" "$OUTPUTFILE"
+	ucon64 --nbak --stpn=272 "$OUTPUTFILE"
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+	# alternative using dd:
+	dd if="$INPUTFILE" of="$OUTPUTFILE" bs=272 skip=1
+	exit $?
+elif [ "$INPUTFILEEXT" = "gme" ] && [ "$OUTPUTFILEEXT" = "mcr" ] ; then
+	# remove the 3904 bytes header
+	cp "$INPUTFILE" "$OUTPUTFILE"
+	ucon64 --nbak --stpn=3904 "$OUTPUTFILE"
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+	# alternative using dd:
+	dd if="$INPUTFILE" of="$OUTPUTFILE" bs=3904 skip=1
+	exit $?
+elif [ "$INPUTFILEEXT" = "dsv" ] && [ "$OUTPUTFILEEXT" = "sav" ] ; then
+	# remove the 122 bytes trailer
+	cp "$INPUTFILE" "$OUTPUTFILE"
+	ucon64 --nbak --strip=122 "$OUTPUTFILE"
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+	# alternative using truncate:
+	#not supported by busybox: truncate -c -s -122 "$OUTPUTFILE"
+	truncate -c -s $( expr $( stat -c'%s' "$INPUTFILE" ) - 122 ) "$OUTPUTFILE"
+	exit $?
+elif [ "$INPUTFILEEXT" = "mpk" ] || [ "$INPUTFILEEXT" = "eep" ] || [ "$INPUTFILEEXT" = "fla" ] || [ "$INPUTFILEEXT" = "sra" ] && [ "$OUTPUTFILEEXT" = "srm" ] ; then
+	# using https://github.com/drehren/ra_mp64_srm_convert
+	ra_mp64_srm_convert --create-srm "$INPUTFILE" # --output-dir
+	# OLD: https://github.com/heuripedes/pj64tosrm
+	exit $?
+
+# certs conversions
+elif [ "$INPUTFILEEXT" = "crt" ] || [ "$INPUTFILEEXT" = "cer" ] || [ "$INPUTFILEEXT" = "der" ] && [ "$OUTPUTFILEEXT" = "pem" ] ; then
+	openssl x509 -inform der -in "$INPUTFILE" -out "$OUTPUTFILE"
+	exit $?
+elif [ "$INPUTFILEEXT" = "pem" ] && [ "$OUTPUTFILEEXT" = "crt" ] || [ "$OUTPUTFILEEXT" = "cer" ] || [ "$OUTPUTFILEEXT" = "der" ] ; then
+	openssl x509 -outform der -in "$INPUTFILE" -out "$OUTPUTFILE"
+	exit $?
+elif [ "$INPUTFILEEXT" = "pfx" ] || [ "$INPUTFILEEXT" = "p12" ] && [ "$OUTPUTFILEEXT" = "pem" ] ; then
+	openssl pkcs12 -in "$INPUTFILE" -out "$OUTPUTFILE" -nodes
+	exit $?
+	
+# json 2 tables conversion
+elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "ndjson" ] && [ "$OUTPUTFILEEXT" = "csv" ] ; then
+	# using https://github.com/kellyjonbrazil/jtbl
+	jtbl --csv < "$INPUTFILE" > "$OUTPUTFILE"
+	exit $?
+elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "ndjson" ] && [ "$OUTPUTFILEEXT" = "md" ] ; then
+	# using https://github.com/kellyjonbrazil/jtbl
+	jtbl --markdown < "$INPUTFILE" > "$OUTPUTFILE"
+	exit $?
+elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "ndjson" ] && [ "$OUTPUTFILEEXT" = "html" ] ; then
+	# using https://github.com/kellyjonbrazil/jtbl
+	jtbl --html < "$INPUTFILE" > "$OUTPUTFILE"
+	exit $?
+	
+# structured formats conversion
+elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "csv" ] || [ "$INPUTFILEEXT" = "yaml" ] ||  [ "$INPUTFILEEXT" = "xml" ]; then
+	# using yq () https://github.com/mikefarah/yq/
+	yq --prettyPrint --input-format $INPUTFILEEXT --output-format  $OUTPUTFILEEXT   < "$INPUTFILE" > "$OUTPUTFILE" 
+	[ -s "$OUTPUTFILE" ] && exit $?
+	# using oq (no csv support)  https://github.com/blacksmoke16/oq
+	oq -i $INPUTFILEEXT -o $OUTPUTFILEEXT  < "$INPUTFILE" > "$OUTPUTFILE" 
+	[ -s "$OUTPUTFILE" ] && exit $?
+	# using catmandu  https://github.com/LibreCat/Catmandu
+	catmandu convert $INPUTFILEEXTUPPER to $OUTPUTFILEEXTUPPER < "$INPUTFILE" > "$OUTPUTFILE"  # TODO: verbose
+	# TODO: using https://github.com/TomWright/dasel
+	exit $?
+elif [ "$OUTPUTFILEEXT" = "json" ]; then
+	# using jc (supports a lot of formats) https://github.com/kellyjonbrazil/jc
+	#jc --pretty --monochrome --$INPUTFILEEXT < "$INPUTFILE" > "$OUTPUTFILE"
+	#[ -s "$OUTPUTFILE" ] && exit $?
+	# using fq (supports a lot of formats) https://github.com/wader/fq
+	fq --monochrome-output -d $INPUTFILEEXT . "$INPUTFILE" > "$OUTPUTFILE"
+	exit $?
+
+# graph conversions
+elif [ "$INPUTFILEEXT" = "dot" ]; then
+	GRAPHVIZ_TYPE=$OUTPUTFILEEXT
+	#TODO: fix networkx compat.  [ "$OUTPUTFILEEXT" = "json" ] && GRAPHVIZ_TYPE=dot_json # networkx compat.  https://stackoverflow.com/questions/40262441/how-to-transform-a-dot-graph-to-json-graph
+	dot -v -o "$OUTPUTFILE" -T$GRAPHVIZ_TYPE "$INPUTFILE"
+	exit $?
+	# TODO: more alternatives
+
+elif [ "$INPUTFILEEXT" = "pu" ] || [ "$INPUTFILEEXT" = "puml" ] ; then
+	# plantuml  https://plantuml.com/command-line
+	plantuml -v -T$OUTPUTFILEEXT -o "$OUTPUTFILEDIR" "$INPUTFILE"
+	exit $?
+elif [ "$INPUTFILEEXT" = "ipynb" ] ; then
+	jupyter nbconvert --to $OUTPUTFILEEXT "$INPUTFILE" --output "$OUTPUTFILE"
+	exit $?
+fi
+
+
+# switch on mimetype
+case $INPUTFILETYPE in
+	image/* )
+		if [ $OUTPUTFILEEXT = svg ]; then
+			#NOT SUPPORTED? inkscape -f "$INPUTFILE" --verb EditSelectAll --verb SelectionTrace --export-svg="$OUTPUTFILE"  http://graphicdesign.stackexchange.com/questions/26275/command-line-bitmap-tracing-with-inkscape
+			autotrace -report-progress -despeckle-level 10 -despeckle-tightness 5 -remove-adjacent-corners -output-format svg -output-file "$OUTPUTFILE" "$INPUTFILE"  # TODO: cleanup the output
+			# -background-color 000000 -corner-threshold 60 -line-reversion-threshold 0.1 -width-factor 0.1 -centerline 
+			exit $?
+		fi
+		imconvert -verbose "$INPUTFILE" "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		oiiotool -v -i "$INPUTFILE" -o "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		ffmpeg -i "$INPUTFILE" "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		# TODO: iconvert, oiiotool ... (from openimageio-tools)
+		# TODO: gmic    https://github.com/dtschump/gmic/
+		# TODO: vips  (from libvips-tools)
+		# python -c "from PIL import Image; Image.open(\"$INPUTFILE\").save(\"$OUTPUTFILE\")"
+		# else
+		exit 127
+		;;
+	video/* | audio/* )
+		ffmpeg -i "$INPUTFILE" "$OUTPUTFILE"  # bitrate options: -ab ^<fixed bitrate^>k -aq ^<quality/10^>
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		mencoder "$INPUTFILE" -o "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		# using vlc (for audio files only)
+		#if [ "$INPUTFILETYPE" = "audio" ]; then
+			case $OUTPUTFILEEXT in
+				mp3 ) CODEC=mp3 ; MUX=dummy ;;
+				flac ) CODEC=flac ; MUX=flac ;;
+				ogg ) CODEC=vorb ; MUX=ogg ;;
+				mp4 ) CODEC=mp4a ; MUX=mp4 ;;
+				spx ) CODEC=spx ; MUX=ogg ;;
+				opus ) CODEC=opus ; MUX=ogg ;; # MEMO: speex replacement, req. VLC v2.2.0
+				wav ) CODEC=s16l ; MUX=wav ;;
+			esac
+			vlc -I dummy -vvv --no-sout-video "$INPUTFILE" --sout "#transcode{acodec=$CODEC}:std{access=file,mux=$MUX,dst=\"$OUTPUTFILE\"}" vlc://quit
+			_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		#fi
+		# using mplayer for decoding audio files only
+		if [ "$OUTPUTFILEEXT" = "wav" ]; then
+			mplayer -ao pcm:waveheader:file="$OUTPUTFILE" "$INPUTFILE"
+			_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		fi
+		# else
+		exit 127
+		;;
+	inode/directory )
+		case $OUTPUTFILEEXT in
+			iso ) genisoimage -J -o "$OUTPUTFILE" "$INPUTFILE" || mkisofs -J -o "$OUTPUTFILE" "$INPUTFILE" ;;  # -l -joliet-long -iso-level 4
+			squashfs|sfs ) mksquashfs "$INPUTFILE" "$OUTPUTFILE" ;;  # -keep-as-directory
+			zip|7z|wim ) 7z a -bb1 -r "$OUTPUTFILE" "$INPUTFILE" ;;  # TODO: skip creating subdirs
+			tgz ) tar czv -C "$INPUTFILE" -f "$OUTPUTFILE" ;;
+			tar ) tar cv -C "$INPUTFILE" -f "$OUTPUTFILE" ;;
+			# TODO: bz2|gz|tar|tgz|tbz ) ;;
+			# TODO: arj, cab, cpio, lha|lzh, wim
+			# TODO: rar
+		esac
+		exit $?
+		;;
+esac
+
+# try to detect input file type based on its extension
+case $INPUTFILEEXT in
+	mid|midi|kar|mod|xm|s3m|stm|it )
+		musescore3 "$INPUTFILE" --export-to "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		timidity "$INPUTFILE" -Ow -o - | ffmpeg -i - "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		# TODO: fluidsynth --fast-render="$OUTPUTFILE" "$INPUTFILE"
+		#   fluidsynth -nli -r 48000  -T oga -F example.ogg /usr/share/soundfonts/FluidR3_GM.sf2 example.MID
+		exit $?
+		;;
+	rtf|odt|odp|odg|ods|doc|xls|mdb|docx|pptx|xlsx|csv|tsv|dbf )
+		unoconv -o "$OUTPUTFILE" "$INPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		libreoffice --headless --convert-to $OUTPUTFILEEXT --outdir "$OUTPUTFILEDIR" "$INPUTFILE"
+		mv "$OUTPUTFILEDIR/$INPUTFILENAME.$OUTPUTFILEEXT" "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		;;
+	htm|html|xhtml|md|t2t|rst|tex|text )
+		pandoc -o "$OUTPUTFILE" "$INPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		# TODO: try other alternatives
+		exit $?
+		;;
+	zip|rar|7z|arj|bz2|cab|cpio|gz|lzma|lha|lzh|tar|tgz|tbz|wim|iso )
+		patool repack "$INPUTFILE" "$OUTPUTFILE"  # needs tmp extraction https://github.com/wummel/patool/issues/154
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		
+		# else switch on output extension
+		# extract and repack the archive
+		case $OUTPUTFILEEXT in
+			zip|7z|bz2|gz|tar|tgz|tbz )  # https://sevenzip.osdn.jp/chm/general/formats.htm
+				# TODO: via piping: 7z e -so test.zip | 7z a -si test.7z
+				mkdir $TMPDIR/$$_fileconvert
+				7z x -o$TMPDIR/$$_fileconvert "$INPUTFILE"
+				7z a "$OUTPUTFILE" $TMPDIR/$$_fileconvert/*
+				_EXITSTATUS=$?
+				rm -r $TMPDIR/$$_fileconvert
+				exit $_EXITSTATUS
+				;;
+			rar )
+				mkdir $TMPDIR/$$_fileconvert
+				7z x -o$TMPDIR/$$_fileconvert "$INPUTFILE"
+				rar a "$OUTPUTFILE" $TMPDIR/$$_fileconvert/*
+				_EXITSTATUS=$?
+				rm -r $TMPDIR/$$_fileconvert
+				exit $_EXITSTATUS
+				;;
+			cso )
+				maxcso "$INPUTFILE" -o "$OUTPUTFILE"
+				exit $?
+				;;
+			# TODO: arj, cab, cpio, lha|lzh, wim
+		esac
+		# ...
+		exit $?
+		;;
+	ps|xps|pdf|djvu|prc|mobi|epub|txt|lit|cbz|cbr|cb7|azw3|azw|kf8|fb2|pdb|chm )
+		ebook-convert "$INPUTFILE" "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		pandoc -o "$OUTPUTFILE" "$INPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		# else try other alternatives
+		;;
+	bin|nrg|mdf|pdi|cdi|b5i )  # iso
+		iat "$INPUTFILE" "$OUTPUTFILE"
+		exit $?
+		;;
+	vdi|vhd|vmdk|raw )
+		vbox-img convert --srcfilename "$INPUTFILE" --dstfilename "$OUTPUTFILE"
+		exit $?
+		;;
+	img|ima|vhd|vmdk|qcow|qcow2|raw )
+		qemu-img convert "$INPUTFILE" "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		aaru image convert "$INPUTFILE" "$OUTPUTFILE"
+		exit $?
+		;;
+	vmx|ovf )
+		ovftool "$INPUTFILE" "$OUTPUTFILE"
+		# WANTED: open source alternative https://softwarerecs.stackexchange.com/questions/30424/open-source-commandline-tool-to-create-ovf-and-ova-files
+		exit $?
+		;;
+	ov2|kml|gpx|poi|geojson|shp|dxf )
+		# using gpsbabel  https://www.gpsbabel.org/capabilities.html
+		gpsbabel -D 1 -i $INPUTFILEEXT -f "$INPUTFILE" -o $OUTPUTFILEEXT -F "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		# from gdal-bin
+		ogr2ogr "$OUTPUTFILE" "$INPUTFILE"
+		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+		# from fiona (supported drivers: 'ARCGEN', 'DXF', 'CSV', 'OpenFileGDB', 'ESRIJSON', 'ESRI Shapefile', 'FlatGeobuf', 'GeoJSON', 'GeoJSONSeq', 'GPKG', 'GML', 'OGR_GMT', 'GPX', 'GPSTrackMaker', 'Idrisi', 'MapInfo File', 'DGN', 'PCIDSK', 'OGR_PDS', 'S57', 'SQLite', 'TopoJSON') https://github.com/Toblerity/Fiona/blob/master/docs/cli.rst
+		# fio cat "$INPUTFILE" | fio load -f $OUTPUTFILEEXTUPPER "$OUTPUTFILE"  #  https://github.com/Toblerity/Fiona/discussions/1323
+		exit $?
+		;;
+	m3u|xspf|pls|pla|asx )  # multimedia playlist #|b4s|wpl|smil|hypetape|rmp|plist|kpl|mpcpl|plp
+		# using Lizzy (MEMO: no ext.m3u support)  https://sourceforge.net/projects/lizzy/
+		lizzy "$INPUTFILE" -o "$OUTPUTFILE"
+		# TODO: more alternatives
+		exit $?
+		;;
+	srt|sub|ass|smi|sub|lrc )  # subtitles
+		# using SubtitleEdit  https://github.com/SubtitleEdit/subtitleedit
+		SubtitleEdit  /convert "$INPUTFILE" $OUTPUTFILEEXT  /outputfolder:"$OUTPUTFILEDIR"
+		exit $?
+		;;
+	icml|smi|smiles|can|cml|mrv|inchi|mol|mdl|mol2 )  # chemistry
+		obabel "$INPUTFILE" -O"$OUTPUTFILE"
+		# TODO: more alternatives
+		exit $?
+		;;
+	psu|cbs|max|pws|sps|xps )  # PS2 memory card saves
+		if [ $OUTPUTFILEEXT = ps2 ]; then
+			# pip install mymcplus  https://github.com/thestr4ng3r/mymcplus
+			mymcplus "$OUTPUTFILE" format 
+			mymcplus "$OUTPUTFILE" import "$INPUTFILE"
+			exit $?
+		fi
+		# using https://github.com/root670/PS2SaveUtility
+		PS2SaveUtility "$INPUTFILE" "$OUTPUTFILE"
+		exit $?
+		;;
+	#TODO: vcf|lidf )  # addressbook formats   https://sourceforge.net/projects/abook/
+	#	abook --convert -informat ?? --infile "$INPUTFILE" --outfile "$OUTPUTFILE"
+esac
+
+# else
+echo "$(basename $0) error: file formats not supported: $INPUTFILEEXT->$OUTPUTFILEEXT" >&2
+exit 1

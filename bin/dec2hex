@@ -1,0 +1,17 @@
+#!/bin/sh
+
+INPUT=$1
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+qalc "$INPUT to hex"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+sfk hex $INPUT
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+printf "%d = 0x%X\n" $INPUT $INPUT
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+echo "obase=16; $INPUT" | bc
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES

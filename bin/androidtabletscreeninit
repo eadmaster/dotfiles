@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# check free ports
+if fuser 1701/tcp ; then
+    echo "$0: port 1701 is in use, make sure it is not already started..."
+    exit 1
+fi
+if fuser 9001/tcp ; then
+    echo "$0: port 9001 is in use, make sure it is not already started..."
+    # service mosquitto stop  # use port 9001 by default
+    exit 1
+fi
+
+androidunlock
+
+# start service https://github.com/H-M-H/Weylus
+nohup weylus --auto-start --try-vaapi  >/dev/null &  # --no-gui
+
+adb reverse tcp:1701 tcp:1701
+adb reverse tcp:9001 tcp:9001
+# todo: check if successfull
+
+# increase brightness
+adb shell settings put system screen_brightness 150
+
+# disable auto rotation
+adb shell content insert --uri content://settings/system --bind name:s:accelerometer_rotation --bind value:i:0
+# set forced landscape mode
+adb shell content insert --uri content://settings/system --bind name:s:user_rotation --bind value:i:1
+
+# disable lockscreen  https://android.stackexchange.com/questions/233921/adb-bypass-lock-screen
+adb shell settings put secure lockscreen.disabled 1
+
+# MEMO: must use chrome
+#adb shell am start -a android.intent.action.VIEW -d http://127.0.0.1:1701
+adb shell am start -n com.android.chrome/com.google.android.apps.chrome.Main -d http://127.0.0.1:1701
+
+echo "$(basename $0): press ENTER to quit"
+read
+
+# close the browser tab with the back button  https://stackoverflow.com/questions/57631090/send-ctrl-t-over-adb-using-sendevent-or-input-keyevent
+adb shell input keyevent KEYCODE_BACK
+
+killall -v weylus
+
+adb forward --remove tcp:1701
+adb forward --remove tcp:9001
+
+# restore low brightness
+adb shell settings put system screen_brightness 0
+
+# lock again
+adb shell input keyevent 26
+

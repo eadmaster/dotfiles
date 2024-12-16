@@ -1,0 +1,28 @@
+#!/bin/sh
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUT_FILE..."
+	echo
+	exit 0
+elif [ -z "$1" ] || [ "$ARG" = "-" ]; then
+	echo "$(basename $0) warn: reading input file from stdin" >&2
+	INPUTFILE="$TMPDIR/$$.tmp"
+	cat > "$INPUTFILE"
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist (skipped): $1" >&2
+	exit 1
+fi
+
+INPUTFILE="$1"
+
+# alternative from the "zbar-tools" package
+zbarimg --quiet --raw "$INPUTFILE"
+[ $? -eq 0 ] && exit 0
+
+# using ZXing (java-based) https://github.com/zxing/zxing
+zxing "$INPUTFILE"
+
+# using libdmtx-utils 
+dmtxread "$INPUTFILE"
+
+# TODO: more alternatives

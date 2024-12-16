@@ -1,0 +1,76 @@
+#!/bin/sh
+
+# fix extensions according to the detected mimetype (req. file)
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUT_FILE"
+	echo
+	exit 0
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+else
+	INPUTFILE="$1"
+	echo
+fi
+
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+INPUTFILENAME="`basename \"$INPUTFILE\" | rev | cut -d'.' -f2- | rev`"
+
+# try to detect the input file type using file
+INPUTFILETYPE=$( file -b -i "$INPUTFILE" | cut -d';' -f1 )
+
+
+# switch by input file mime type
+case $INPUTFILETYPE in
+	text/html ) CORRECT_EXTENSIONS="html|htm" ;;
+	text/x-c* ) CORRECT_EXTENSIONS="c|cpp|h|hpp" ;;
+	text/x-php ) CORRECT_EXTENSIONS="php" ;;
+	application/xml | text/xml ) CORRECT_EXTENSIONS="xml|xsl|xsd" ;;
+	text/x-java | text/java ) CORRECT_EXTENSIONS=java ;;
+		
+	image/jpeg ) CORRECT_EXTENSIONS=jpg ;;
+	image/gif ) CORRECT_EXTENSIONS=gif ;;
+	image/png ) CORRECT_EXTENSIONS=png ;;
+	#TODO: image/...
+	#TODO:video/*
+	#TODO:audio/* )
+	#	jpg|gif|png|tiff|tif|bmp|xpm|pbm|pgm|ppm|tga|ico|dng|crw ) INPUTFILETYPE=image/$INPUTFILEEXT ;;
+	# avi|mkv|ogm|mpg|mpeg|mp4|mp3|mp2|ogg|flac|aac|ac3|a52|dts|asf|rm|wav ) INPUTFILETYPE=video/$INPUTFILEEXT ;;
+	audio/x-wav ) CORRECT_EXTENSIONS=wav ;;
+	video/x-msvideo ) CORRECT_EXTENSIONS=avi ;;
+
+	application/json ) CORRECT_EXTENSIONS=json ;;
+	application/pdf ) CORRECT_EXTENSIONS=pdf ;;
+	
+	#application/x-sharedlib ) CORRECT_EXTENSIONS=so|1 ;;
+	
+	text/plain | application/octet-stream | inode/x-empty )
+		echo "$(basename $0) warn: $FILENAME detected as $INPUTFILETYPE (left unchanged)" >&2
+		exit 1
+		;;
+esac
+
+if [ -z "$CORRECT_EXTENSIONS" ]; then
+	echo "$(basename $0) warn: $INPUTFILETYPE not supported (left unchanged)" >&2
+	exit 1
+fi
+
+case $INPUTFILEEXT in
+	$CORRECT_EXTENSIONS )
+		# nothing to rename
+		exit 0
+		;;
+esac
+
+# else must rename
+
+
+OUTPUTFILEEXT=$( echo $CORRECT_EXTENSIONS | cut -d\| -f1)
+OUTPUTFILE="${INPUTFILENAME}.$OUTPUTFILEEXT"
+
+echo "$(basename $0) info: renaming $INPUTFILETYPE to $OUTPUTFILE" >&2
+mv -i $INPUTFILE $OUTPUTFILE
+

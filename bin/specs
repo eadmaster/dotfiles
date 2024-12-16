@@ -1,0 +1,48 @@
+
+
+if [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) standard_name"
+	echo
+	exit 1
+fi
+
+# search in a local database
+FILEPATH=$( find $PENDRIVE/Documents/db/standard -iname "$1.*" -type f | head -n1 )
+
+# aliases
+case "$1" in
+	#TODO: 802.xx
+	ascii ) QUERY=rfc20 ;;
+	udp ) QUERY=rfc768 ;;
+	tcp ) QUERY=rfc793 ;;
+	telnet ) QUERY=rfc854 ;;
+	dns ) QUERY=rfc1034 ;;
+	ip|ipv4 ) QUERY=rfc791 ;;
+	ipv6 ) QUERY=rfc2460 ;;
+	http ) QUERY=rfc2616 ;;
+	ftp ) QUERY=rfc959 ;;
+	irc ) QUERY=rfc1459 ;;
+	md5 ) QUERY=rfc1321 ;;
+	ical | vcard ) QUERY=rfc5545 ;;
+	#https )
+	rfc* ) QUERY=$1 ;;
+	[0-9][0-9][0-9][0-9] ) QUERY=rfc$1 ;; # 4-char lenght number
+	# ... https://en.wikipedia.org/wiki/List_of_RFCs
+esac
+
+case QUERY in
+	rfc* ) # starts with "rfc"
+		wget -q -O - "http://tools.ietf.org/rfc/$1.txt"
+		[ $? -eq 0 ] && exit 0
+		curl -s -L "http://tools.ietf.org/rfc/$1.txt"
+		[ $? -eq 0 ] && exit 0
+		;;
+esac
+
+#if [ ! -f "$FILEPATH" ]; then
+#	echo "$(basename $0) error: \"$1\" nothing found" >&2
+#	exit 1
+#fi
+[ ! -f "$FILEPATH" ] && cat "$FILEPATH"
+# else fallback to man
+man $1

@@ -1,0 +1,15 @@
+#!/bin/sh
+
+INPUT=$1
+[ -z "$1" ] && while read -r line ; do $0 "$line" ; done && exit $?
+[ -f "$1" ] && while read -r line ; do $0 "$line" ; done < "$1"  && exit $?
+
+# using qalc
+qalc "${INPUT} seconds to time"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# using date  https://stackoverflow.com/questions/13422743/convert-a-time-span-in-seconds-to-formatted-time-in-shell
+date -u -d @$INPUT +"%T"
+
+# using python
+# python ... print(timedelta(seconds=232))

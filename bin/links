@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# MEMO: elinks is the only 1 with js support  https://www.linuxjournal.com/article/8148  https://askubuntu.com/questions/34687/is-there-a-text-mode-browser-which-supports-javascript
+# By default, JavaScript is not enabled. We'll need to start elinks, press “Esc” twice to access to the top menu, and go to Setup->Options Manager. Expand ECMAScript menu, select Enable, and Edit to set the value to 1. Select Save to update the settings, and create a configuration file in ~/.
+elinks "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+command -p links "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+lynx "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+w3m "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# wget -q -U Firefox -O - "$@" | file2txt
+
+#else
+exit 127
+

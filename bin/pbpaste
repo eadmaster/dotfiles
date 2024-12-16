@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Windows detection
+if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
+	powershell.exe -Command "Get-Clipboard;"
+	exit $?
+fi
+
+# Android detection
+if [ ! -z "$ANDROID_ROOT" ]; then
+	# TODO: alternative without termux
+	
+	# using the Termux:API add-on
+	termux-clipboard-get "$@"
+	exit $?
+fi
+
+# MEMO: MacOSX has builtin pbpaste command
+
+command -p pbpaste "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+#MEMO: xsel is better on Linux https://askubuntu.com/questions/705620/xclip-vs-xsel
+xsel -b -o "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+xclip -selection clipboard -o "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+# from wl-clipboard  https://github.com/bugaevc/wl-clipboard
+wl-paste "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+# from suckless-tools, no args supported  https://tools.suckless.org/x/sselp/
+sselp
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+# MORE ALTERNATIVES:
+# ... https://wiki.archlinux.org/index.php/clipboard
+# ... https://askubuntu.com/questions/11925/a-command-line-clipboard-copy-and-paste-utility
+
+#else
+exit 127

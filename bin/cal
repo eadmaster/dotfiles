@@ -1,0 +1,11 @@
+#!/bin/sh
+
+command -p cal "$@"  2> /dev/null
+[ $? -ne 127 ] && exit $?
+
+# via python
+python -m calendar $(date +%y) $(date +%m)
+
+# TODO: select current events
+#cat "$MY_ICAL_URL" | head -n5 | jq .
+#ical2ndjson.py "$MY_ICAL_URL"

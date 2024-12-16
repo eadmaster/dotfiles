@@ -1,0 +1,32 @@
+#!/bin/sh
+
+if [ "$#" -ne 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) FILE_TO_UNLOCK|PORT/tcp|udp"
+	echo
+	exit 0
+fi
+
+FILETOLOCK="$1"
+PIDS=$( fuser "$FILETOLOCK" 2> /dev/null )
+# ALTERNATIVE: PIDS=$( bb lsof | grep "$FILETOLOCK" | cut -f1 )  http://www.cyberciti.biz/tips/how-do-i-forcefully-unmount-a-disk-partition.html
+# 2FIX: multiple PIDS
+
+if [ -z "$PIDS" ]; then
+	echo "$(basename $0): no process found locking $1:" >&2
+	exit 0
+fi
+# else
+echo "$(basename $0): the following processes are locking $1:" >&2
+for pid in $PIDS
+do
+	#readlink "/proc/$pid/exename"
+	cat "/proc/$pid/cmdline"
+	#ps | grep -q $pid | cut -d':' -f2
+done
+
+fuser -ivk "$FILETOLOCK"
+
+#echo
+#echo "$(basename $0): press Enter to kill them or Ctrl-C to abort."
+#read
+#flock -u "$FILEDESCRIPTORTOUNLOCK"

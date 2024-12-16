@@ -1,0 +1,15 @@
+
+
+if [ "$#" -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) START_TS STOP_TS INPUT_FILE"
+	echo
+	exit 0
+fi
+
+START_TS=$1
+STOP_TS=$2
+INPUT_FILE="$3"
+
+ffmpeg -i "$INPUT_FILE" -ss $START_TS -to $STOP_TS  -codec copy "CUT_$INPUT_FILE"
+
+# NOTE: the args order is important! http://blog.yimingliu.com/2008/10/07/ffmpeg-encoding-gotchas/ 

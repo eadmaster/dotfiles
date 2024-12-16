@@ -1,0 +1,39 @@
+#!/bin/bash
+
+command -p man "$@"
+[ $? -eq 0 ] && exit 0
+
+# else 
+echo "$(basename $0): regular man is not installed, try to retrive the manpage from the web..."
+
+#BASE_URL="http://manpages.ubuntu.com/manpages.gz/xenial/en/man1/$1.1.gz"
+#BASE_URL="http://linux.die.net/man/1/$1"
+HTML_URL="http://man.he.net/man1/$1"
+#RAW_URL="http://manpages.ubuntu.com/manpages.gz/jammy/en/man1/$1.1.gz"
+RAW_URL="https://manned.org/raw/$1.1"  # multidistro, more matches
+# ... https://wiki.archlinux.org/title/man_page#Online_man_pages
+
+# TODO: try multiple urls with curl
+
+pandoc -f man -t plain "$RAW_URL" | less
+#wget --quiet -O- "$RAW_URL"  | less  # TODO: | sed -e 's/<[^>]*>//g'
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+pandoc -f html -t plain "$HTML_URL" | less
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+html2text --ignore-links --decode-errors=ignore  "$HTML_URL"  | less
+_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+
+# try all manpages sections
+# from http://manpages.ubuntu.com/dman
+#DISTRIB_CODENAME=xenial
+#for i in `seq 1 9`; do
+#	echo "http://manpages.ubuntu.com/$DISTRIB_CODENAME/en/man$i/$PAGE.$i.gz"
+#	if wget -O- "http://manpages.ubuntu.com/$DISTRIB_CODENAME/en/man$i/$PAGE.$i.gz" 2>/dev/null | gzip -dc | less
+#	#	man $MAN_ARGS -l "$man" || true
+#done
+
+#else
+exit 16
+

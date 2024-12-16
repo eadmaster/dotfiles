@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# args checking
+if [ "$#" -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) XPATHEXPR XMLFILE"
+	echo
+	exit 0
+elif [ ! -f "$2" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+fi
+
+# sources:
+# http://stackoverflow.com/questions/15461737/how-to-execute-xpath-one-liners-from-shell
+# http://stackoverflow.com/questions/1890690/extracting-and-dumping-elements-using-xmlstarlet
+
+# xml_grep from xml-twig-tools
+xml_grep "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# MEMO: SaxonHE 9.6 is the only one to run XPath 3.x
+saxon-lint --xpath "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#xmlstarlet sel -t -v '.' -n -m "$@"
+xmlstarlet sel -t -c "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+xmllint --xpath "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# TODO: python alternative
+#python -c "import xml.etree.ElementTree as ET; print(ET.parse(open(\"$2\")).getroot().findAll().text)"
+  
+#else
+exit 127

@@ -1,0 +1,10 @@
+
+
+mvn dependency:get -Dartifact=$2:*:jar:nodeps  -DremoteRepositories=$1 -Dtransitive=false -Ddest=./
+
+# https://stackoverflow.com/questions/1895492/how-can-i-download-a-specific-maven-artifact-in-one-command-line
+
+#mvn dependency:get -Dartifact=$2:$3:$4:$5 -DremoteRepositories=$1 -Dtransitive=false
+#mvn dependency:copy -Dartifact=$2:$3:$4:$5 -DremoteRepositories=$1 -Dtransitive=false -DoutputDirectory=.
+
+# TODO: if mvn is missing, direct http download via wget

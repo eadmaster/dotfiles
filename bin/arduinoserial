@@ -1,0 +1,63 @@
+#!/bin/sh
+
+# MEMO: add current user to dialot to be able to access the serial ports  https://askubuntu.com/questions/133235/how-do-i-allow-non-root-access-to-ttyusb0
+# sudo usermod -a -G dialout $USER
+
+#SPEED=9600
+SPEED=115200
+#SPEED=57600
+#  The general observation is that the 3.3V devices usually run at 57600 whereas the 5V devices usually run on 115200 
+
+[ -c /dev/ttyUSB0 ] && SERIAL_DEV=/dev/ttyUSB0
+[ -c /dev/ttyUSB1 ] && SERIAL_DEV=/dev/ttyUSB1
+[ -c /dev/ttyUSB2 ] && SERIAL_DEV=/dev/ttyUSB2
+[ -c /dev/ttyACM0 ] && SERIAL_DEV=/dev/ttyACM0
+[ -c /dev/ttyACM1 ] && SERIAL_DEV=/dev/ttyACM1
+[ -c /dev/ttyACM2 ] && SERIAL_DEV=/dev/ttyACM2
+if [ -z "$SERIAL_DEV" ]; then
+	echo "$(basename $0) error: arduino device not found" >&2
+	exit 1
+fi
+
+if [ -t 0 ]; then
+	echo "$0: stdin is empty, interactive mode"
+	
+	arduino-cli monitor --port $SERIAL_DEV   --config baudrate=$SPEED  # --timestamp 
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+	# using platformio https://docs.platformio.org/en/stable/core/userguide/device/cmd_monitor.html
+	pio device monitor  --port $SERIAL_DEV --baud  $SPEED 
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+fi
+
+# stdin is not empty, command mode
+
+busybox microcom -s $SPEED $SERIAL_DEV  -t 3000
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#echo "arduino-serial: starting terminal mode, press ctrl-x to exit..."
+#some cmds: "setpindir 13 out; writepin 13 0"
+
+# TODO: enable stdin redirection  https://stackoverflow.com/questions/3918032/bash-serial-i-o-and-arduino
+
+minicom -b BAUD_RATE -D $SERIAL_DEV
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+screen  $SERIAL_DEV  $SPEED
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# from pyserial
+python -m serial.tools.miniterm  $SERIAL_DEV  $SPEED  # --raw 
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+python -m serial $SERIAL_DEV $SPEED
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#echo "unable to start an interactive shell, just echo your commands by echo-ing to $SERIAL_DEV" 
+#busybox stty -F $SERIAL_DEV ispeed $SPEED ospeed $SPEED
+#echo "$(cat)" > $SERIAL_DEV
+#cat  $SERIAL_DEV
+
+# TODO: elsa shellscript alternative using:
+#  echo $LINE > $SERIAL_DEV
+#  read -dx -t 1 response < $SERIAL_DEV
+#  echo $response
+# MEMO: as a rule, serial ports don't buffer data. If there's no client app to receive the bytes landing on the serial port, they will simply be discarded.  http://unix.stackexchange.com/questions/96718/how-do-i-use-a-serial-port-on-linux-like-a-pipe-or-netcat

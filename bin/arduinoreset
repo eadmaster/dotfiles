@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# MEMO: add current user to dialot to be able to access the serial ports  https://askubuntu.com/questions/133235/how-do-i-allow-non-root-access-to-ttyusb0
+# sudo usermod -a -G dialout $USER
+
+[ -c /dev/ttyUSB0 ] && SERIAL_DEV=/dev/ttyUSB0
+[ -c /dev/ttyUSB1 ] && SERIAL_DEV=/dev/ttyUSB1
+[ -c /dev/ttyUSB2 ] && SERIAL_DEV=/dev/ttyUSB2
+[ -c /dev/ttyACM0 ] && SERIAL_DEV=/dev/ttyACM0
+[ -c /dev/ttyACM1 ] && SERIAL_DEV=/dev/ttyACM1
+[ -c /dev/ttyACM2 ] && SERIAL_DEV=/dev/ttyACM2
+if [ -z "$SERIAL_DEV" ]; then
+	echo "$(basename $0) error: arduino device not found" >&2
+	exit 1
+fi
+
+ard-reset-arduino --verbose $SERIAL_DEV
+[ $? -ne 127 ] && exit 0
+
+sudo tput reset > $SERIAL_DEV
+
+# esptool --port /dev/ttyUSB0 --before default_reset --after hard_reset chip_id

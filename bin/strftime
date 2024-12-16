@@ -1,0 +1,16 @@
+#!/bin/sh
+
+if [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) FORMAT [EPOCHTIME]"
+	echo
+	exit 0
+fi
+
+INPUT=$2
+[ -z "$2" ] && INPUT=$(cat)
+[ -f "$2" ] && INPUT=$(cat "$2")
+
+date -d @$INPUT  +"$1"
+[ $? -eq 0 ] && exit 0
+
+exit 1

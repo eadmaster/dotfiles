@@ -1,0 +1,78 @@
+
+export XDG_UTILS_INSTALL_MODE=user
+
+# MEMO:
+# http://manpages.ubuntu.com/manpages/maverick/man1/xdg-mime.1.html
+# /etc/mime.types
+# /root/.local/share/applications/
+# /usr/share/mime/packages/*.xml
+
+xdg-mime default geany.desktop "text/plain"
+xdg-mime default geany.desktop "text/x-csrc"
+xdg-mime default geany.desktop "text/x-makefile"
+xdg-mime default geany.desktop "text/x-python"
+xdg-mime default geany.desktop "text/x-lua"
+xdg-mime default geany.desktop "text/x-readme"
+xdg-mime default geany.desktop "text/x-nfo"
+xdg-mime default geany.desktop "text/x-sql"
+xdg-mime default geany.desktop "application/xml"
+
+xdg-mime default xarchive.desktop "application/zip"
+xdg-mime default xarchive.desktop "application/x-rar"
+xdg-mime default xarchive.desktop "application/x-7z-compressed"
+# alternative: peazip.desktop | file-roller
+
+xdg-mime default evince.desktop "application/pdf"
+xdg-mime default evince.desktop "application/x-cbz"
+xdg-mime default evince.desktop "application/x-cbr"
+xdg-mime default evince.desktop "application/x-cb7"
+xdg-mime default evince.desktop "application/x-cbt"
+xdg-mime default evince.desktop "image/vnd.djvu"
+
+xdg-mime default xnview.desktop image/jpeg
+xdg-mime default xnview.desktop image/png
+xdg-mime default xnview.desktop image/bmp
+xdg-mime default xnview.desktop image/tiff
+xdg-mime default xnview.desktop image/x-portable-anymap
+xdg-mime default xnview.desktop image/x-portable-bitmap
+xdg-mime default xnview.desktop image/x-portable-graymap
+xdg-mime default xnview.desktop image/x-portable-pixmap
+
+xdg-mime default vlc.desktop "audio/x-wav"
+xdg-mime default vlc.desktop "audio/mpeg"
+xdg-mime default vlc.desktop "audio/ogg"
+xdg-mime default vlc.desktop "audio/opus"
+xdg-mime default vlc.desktop "audio/mp4"
+xdg-mime default vlc.desktop "video/mp4"
+xdg-mime default vlc.desktop "audio/x-ms-wma"
+xdg-mime default vlc.desktop "audio/vnd.rn-realaudio"
+xdg-mime default vlc.desktop "application/ram"
+xdg-mime default vlc.desktop "video/vnd.rn-realvideo"
+xdg-mime default vlc.desktop "application/vnd.rn-realmedia"
+xdg-mime default vlc.desktop "audio/x-riff"
+xdg-mime default vlc.desktop "video/3gpp"
+xdg-mime default vlc.desktop "audio/x-flac"
+xdg-mime default vlc.desktop "audio/x-mod"
+xdg-mime default vlc.desktop "audio/x-s3m"
+xdg-mime default vlc.desktop "audio/midi" # alternative: timidity
+xdg-mime default vlc.desktop "audio/x-mpegurl"
+xdg-mime default vlc.desktop "audio/x-scpls"
+xdg-mime default vlc.desktop "audio/x-ms-asx"
+xdg-mime default vlc.desktop "audio/x-psf"
+xdg-mime default vlc.desktop "audio/x-minipsf"
+
+xdg-mime default retroarch.desktop "application/x-nes-rom"
+xdg-mime default retroarch.desktop "application/x-nes-disk"
+xdg-mime default retroarch.desktop "application/x-sms-rom"
+xdg-mime default retroarch.desktop "application/x-genesis-rom"
+xdg-mime default retroarch.desktop "application/x-snes-rom"
+xdg-mime default retroarch.desktop "application/x-nintendo-ds-rom"
+xdg-mime default retroarch.desktop "application/x-gameboy-rom"
+xdg-mime default retroarch.desktop "application/x-gba-rom"
+xdg-mime default retroarch.desktop "application/x-n64-rom"
+xdg-mime default retroarch.desktop "application/x-msx-rom"
+xdg-mime default retroarch.desktop "application/x-d64"
+xdg-mime default retroarch.desktop "application/x-pcengine-rom"
+xdg-mime default retroarch.desktop "application/x-wonderswan-rom"
+xdg-mime default retroarch.desktop "application/x-ngpc-rom"
+

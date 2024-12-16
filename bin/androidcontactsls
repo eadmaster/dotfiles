@@ -1,0 +1,13 @@
+
+
+# https://stackoverflow.com/questions/25927731/android-adb-command-to-get-total-contacts-on-device
+
+#adb shell content query --uri content://com.android.contacts/contacts  --projection display_name
+#adb shell content query --uri content://com.android.contacts/raw_contacts
+
+adb shell content query --uri content://contacts/phones/  --projection display_name:number:notes 
+adb shell content query --uri content://com.android.contacts/data --projection display_name:data1:data4:contact_id
+
+# alt. via termux
+androidtermuxshell termux-contact-list
+

@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# args checking
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) [CMD]"
+	echo
+	exit 0
+elif [ -z "$1" ]; then
+	# mimic windows ver command and show system ver
+	uname -a
+	exit 0
+fi
+
+# else check a command ver
+
+echo "$(basename $0): $(which $1) --version" >&2
+$1 --version  #2> /dev/null
+[ $? -eq 0 ] && exit 0
+
+echo "$(basename $0): $(which $1) -version" >&2
+$1 -version   #2> /dev/null
+[ $? -eq 0 ] && exit 0
+
+echo "$(basename $0): $(which $1) -version" >&2
+$1 -V   #2> /dev/null
+[ $? -eq 0 ] && exit 0
+
+echo "$(basename $0): $(which $1) -version" >&2
+$1 -v   #2> /dev/null
+[ $? -eq 0 ] && exit 0
+
+echo "$(basename $0): package version $1"
+package version $1  2> /dev/null
+
+#else
+exit 1

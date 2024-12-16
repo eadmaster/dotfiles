@@ -1,0 +1,9 @@
+#!/bin/sh
+
+sort -u "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+setop --union "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+python -c "import sys; set1=set(open(\"$1\").read().splitlines()) ; set2=set(open(\"$2\").read().splitlines()) ; print('\n'.join(map(str, list(set1.union(set2)))))"

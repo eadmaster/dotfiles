@@ -1,0 +1,13 @@
+#!/bin/sh
+
+trap '' 2 # disable CTRL+C command
+
+TMPFILE=$TMPDIR/$$.flac
+
+echo "press CTRL+C to stop..."
+#record mic $TMPFILE
+rec $TMPFILE
+
+mplayer  $TMPFILE
+
+rm  $TMPFILE

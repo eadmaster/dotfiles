@@ -1,0 +1,60 @@
+#!/bin/sh
+
+# create a new empty file or copy from a template
+
+# args checking
+if [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) OUTPUT_FILENAME"
+	echo
+	exit 0
+fi
+if [ -f "$1" ]; then
+	echo "$(basename $0) error: file already exist: $1" >&2
+	exit 1
+fi
+
+OUTPUTFILE="$1"
+OUTPUTFILEEXT=$( echo -n "$OUTPUTFILE" | rev | cut -d'.' -f1 | rev )
+OUTPUTFILEEXT=$( echo -n $OUTPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+
+SIZE=$2
+[ -z "$SIZE" ] && SIZE=100
+
+# try with an external file creator with some extensions
+case $OUTPUTFILEEXT in
+	jpg|gif|png|tiff|tif|bmp|xpm|pbm|pgm|ppm|tga|ico|dng|crw )
+		imconvert -size $SIZEx$SIZE xc:white "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		;;
+	avi|mkv|ogm|mpg|mpeg|mp4|mp3|mp2|ogg|flac|aac|ac3|a52|dts|asf|rm|wav )
+		ffmpeg -t $SIZE -s 640x480 -f rawvideo -pix_fmt rgb24 -r 25 -i /dev/zero "$OUTPUTFILE"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		;;
+	img|ima|vhd|vmdk|qcow|qcow2 )
+		qemu-img "$@"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		;;
+esac
+
+
+# look for a template file in various paths
+CANDIDATEPATHS="$PENDRIVE/Documents/tem $XDG_TEMPLATES_DIR $HOME/Templates /usr/share/templates/.source/ /usr/share/kde4/templates/.source/ /opt/trinity/share/templates/.source"
+for CURRENT in $CANDIDATEPATHS
+do
+	TEMPLATE_FILE=$( find "$CURRENT" -prune -type f -iname "*.$OUTPUTFILEEXT" -print | head -n1 )
+	[ -f "$CURRENT/example.$OUTPUTFILEEXT" ] && TEMPLATE_FILE="$CURRENT/example.$OUTPUTFILEEXT"
+	[ -f "$CURRENT/hello.$OUTPUTFILEEXT" ] && TEMPLATE_FILE="$CURRENT/hello.$OUTPUTFILEEXT"
+	[ -f "$CURRENT/new.$OUTPUTFILEEXT" ] && TEMPLATE_FILE="$CURRENT/new.$OUTPUTFILEEXT"
+	[ -f "$CURRENT/template.$OUTPUTFILEEXT" ] && TEMPLATE_FILE="$CURRENT/template.$OUTPUTFILEEXT"
+	[ -f "$CURRENT/reference.$OUTPUTFILEEXT" ] && TEMPLATE_FILE="$CURRENT/reference.$OUTPUTFILEEXT"
+	[ ! -z "$TEMPLATE_FILE" ] && break
+done
+
+if [ -z "$TEMPLATE_FILE" ]; then
+	TEMPLATE_FILE=/dev/null
+	echo "$(basename $0): creating new empty file: $OUTPUTFILE"
+else
+	echo "$(basename $0): creating new file from template: $TEMPLATE_FILE -> $OUTPUTFILE"
+fi
+
+cp "$TEMPLATE_FILE" "$OUTPUTFILE"

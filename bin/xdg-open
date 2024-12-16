@@ -1,0 +1,254 @@
+#!/bin/sh
+
+ARGS="$@"
+INPUTFILE="$1"
+INPUTFILEEXT=$( echo -n "$INPUTFILE" | rev | cut -d'.' -f1 | rev )
+INPUTFILEEXT=$( echo $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase extension
+if [ "$INPUTFILEEXT" = "url" ] || [ "$INPUTFILEEXT" = "desktop" ] ; then
+	# parse the url in the shortcut file
+	URL="$( grep URL "$1" | cut -d= -f2- )"
+	#shift
+	ARGS="$URL"
+elif [ "$INPUTFILEEXT" = "lnk" ] ; then
+	# using lnkinfo from liblnk-utils
+	PART1=$(lnkinfo "$1" | grep 'Local path' | cut -d':' -f2-)
+	PART2=$(lnkinfo "$1" | grep 'Command line arguments' | cut -d':' -f2-)
+	echo "$(basename $0): opening $PART1 $PART2" >&2
+	xdg-open "$PART1" "$PART2"
+	[ $? -eq 0 ] && exit 0
+	# using wine
+	#wine start /ProgIDOpen InternetShortcut "$1"
+	wine start "$1"
+	exit $?
+fi
+
+# Android detection
+if [ ! -z "$ANDROID_ROOT" ]; then
+	termux-open --chooser "$ARGS"
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+	# am start "$ARGS"
+	am start -a android.intent.action.VIEW -d "$ARGS"
+	#  may need to specify filetype with "-t" switch?  https://www.georgestinson.net/fun-android-debugging-ii-running-activities-via-adb/
+	exit $?
+fi
+
+# MacOSX check
+if [ "$(uname)" = "Darwin" ]; then
+	open "$ARGS"
+	exit $?
+fi
+
+# Cygwin detection
+if grep -q -i Cygwin /proc/version; then
+	cmd.exe /C start "" "$(cygpath -w "$@")"
+	exit $?
+fi
+
+# BashOnWindows detection
+if grep -q Microsoft /proc/version; then
+	cmd.exe /C start "" "$(wslpath "$@")"
+	exit $?
+fi
+
+if [ -d "$INPUTFILE" ]; then
+	defaultfilemanager "$INPUTFILE"
+	exit $?
+fi
+
+# custom protocol handlers
+# MEMO: these are used by Chrome
+case "$1" in
+	http:*|https:* )
+		[ ! -z "$BROWSER" ] && "$BROWSER" "$1" 2> /dev/null
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		default_web_browser "$1" 2> /dev/null
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		defaultbrowser "$1"  2> /dev/null
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		sensible-browser "$1"  2> /dev/null
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		x-www-browser "$1"  2> /dev/null
+		#exit $?
+		;;
+	ftp:* )
+		filezilla "$1"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		#exit $?
+		;;
+	ssh:* )  # SSH secure remote shell
+		host=$(echo $1 | cut -d/ -f3)
+		putty -ssh "$host"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		# alternative using terminal + ssh
+		xdg-terminal -e "ssh $host"
+		exit $?
+		;;
+	mms:*|rtmp:*|rtsp:* )  # streaming protocols
+		defaultaudioplayer "$1"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		vlc "$1"
+		exit $?
+		;;
+	file:* )
+		url=$(echo $1 | cut -d/ -f2-)
+		xdg-open "$url"
+		exit $?
+		;;
+	smb:* )
+		defaultfilemanager "$1"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		dolphin "$1"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		konqueror "$1"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		mucommander "$1"
+		exit $?
+		;;
+	feed:*|rss:*|atom:* )
+		url=$(echo $1 | cut -d: -f2)
+		# TODO: prefix http if missing from url
+		xdg-open "http://www.feedbucket.com/?src=$url"
+		exit $?
+		;;
+	ppa:* )
+		url=$(echo $1 | cut -d: -f2)
+		user=$(echo $1 | cut -d/ -f1)
+		path=$(echo $1 | cut -d/ -f2)
+		xdg-open "http://launchpad.net/~$user/+archive/ubuntu/$path"
+		exit $?
+		;;
+	apt:* )
+		name=$(echo $1 | cut -d/ -f3)
+		xdg-open "https://packages.ubuntu.com/xenial/$name"
+		exit $?
+		;;
+	man:* )
+		command=$(echo $1 | cut -d: -f2)
+		xdg-open "http://manpages.debian.org/cgi-bin/man.cgi?query=$command&format=html&locale=en"
+		exit $?
+		;;
+	irc:* )
+		xchat --url "$1"
+		exit $?
+		;;
+	apt:* )
+		package=$(echo $1 | cut -d: -f2)
+		xdg-open "http://packages.ubuntu.com/xenial/$package"
+		exit $?
+		;;
+	mailto:* )
+		address=$(echo $1 | cut -d: -f2)
+		xdg-open "https://mail.google.com/mail/?view=cm&fs=1&to=$address"
+		#FULL ARGS: xdg-open "https://mail.google.com/mail/?view=cm&fs=1&to=someone@example.com&su=SUBJECT&body=BODY&bcc=someone.else@example.com"
+		exit $?
+		;;
+	skype:* )
+		user=$(echo $1 | cut -d: -f2)
+		skype "$1"
+		# skype:<username|phonenumber>[?[add|call|chat|sendfile|userinfo]]
+		exit $?
+		;;
+	ed2k:* )
+		hash=$(echo $1 | cut -d'|' -f5)
+		xdg-open "http://edk.peerates.net/check.php?p=$hash"
+		# alternative (will start downloading immediately)
+		#emule "$1"
+		exit $?
+		;;
+	magnet:* )
+		hash=$(echo \"$1\" | cut -d'&' -f1 | cut -d':' -f4)
+		title="$(echo \"$1\" | cut -d'&' -f2  )"
+		# NO? directly download the file http://torcache.net/torrent/$hash.torrent
+		# just google the title and the hash
+		#xdg-open https://www.google.it/search?q=$title+\"$hash\"+torrent
+		#offline? xdg-open "http://www.torrentz.eu/$hash"
+		xdg-open "https://torrentz2.cc/$hash"
+		exit $?
+		;;
+	view-source:* )
+		xdg-open "$1" # MEMO: supported natively in firefox
+		exit $?
+		;;
+	webcal://* )  # example: webcal://p40-calendars.icloud.com/published/2/iCuQ5f61aXVPyKSgKhJrn2gnLgBOLZPH8uxt9rMdNCAXoxtpTTf0TpPYU-vgvShtKcLLvIEg30uIkW2qBSOy8kENOrPtxFUkjyDUJ-ieUV4
+		url=$(echo $1 | cut -d/ -f2-)
+		?ui=html 
+		# TODO: view with https://calendar.google.com/calendar/htmlembed?src=p40-calendars.icloud.com/published/2/iCuQ5f61aXVPyKSgKhJrn2gnLgBOLZPH8uxt9rMdNCAXoxtpTTf0TpPYU-vgvShtKcLLvIEg30uIkW2qBSOy8kENOrPtxFUkjyDUJ-ieUV4
+		xdg-open "http://$1"
+		exit $?
+		;;
+	gopher://* )  # example gopher://gopherpedia.com/1
+		# using http proxy
+		# offline? https://gopherproxy.meulie.net/
+		xdg-open "http://gopher.floodgap.com/gopher/gw.lite?$1"
+		exit $?
+		;;
+	news://* )
+		group=$(echo $1 | cut -d/ -f3)
+		xdg-open "http://findnzb.net/$group/"
+		exit $?
+		;;
+esac
+
+# MORE ALTERNATIVES
+
+# workaround for freedesktop's xdg-open not detecting TDE
+#if [ "$(hostname)" = "BOSS3" ] || [ "$(hostname)" = "BOSS2" ] ; then
+#	#export KDE_FULL_SESSION = "true"
+#	#export XDG_CURRENT_DESKTOP = "KDE"
+#	kfmclient exec "$1"
+#	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+#fi
+
+command -p xdg-open "$ARGS"  &> /dev/null   # avoid stdout/err on console https://stackoverflow.com/questions/21084457/alter-behavior-of-xdg-open
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+exit 1
+gnome-open "$ARGS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+gvfs-open "$ARGS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+kde-open "$ARGS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+kfmclient exec "$ARGS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+exo-open "$ARGS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+sx-open "$ARGS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+ayr "$ARGS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+ 
+whippet "$ARGS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+mimi "$ARGS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+ 
+mimeo "$ARGS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+ 
+linopen "$ARGS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+ 
+busking "$ARGS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+run-mailcap "$ARGS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+defaultfilemanager "$ARGS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+konqueror "$ARGS"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# https://wiki.archlinux.org/index.php/Xdg-open#xdg-open_replacements
+
+# else
+exit 127

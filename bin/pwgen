@@ -1,0 +1,28 @@
+#!/bin/bash
+
+command -p pwgen "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# alternative using python
+#echo "pwgen.py: "
+pwgen.py "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+#echo "gpg: "
+gpg --armor --gen-random 1 32
+
+echo
+
+#echo "openssl: "
+openssl rand -base64 32
+
+echo
+
+#echo "dev/random: "
+dd if=/dev/random bs=8 count=1 status=none | base64 | sed 's/.$//'
+
+echo
+
+# using chrome password generator  https://github.com/jojoee/chromepass
+#echo "chromepass: "
+chromepass

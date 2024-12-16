@@ -1,0 +1,8 @@
+#!/bin/sh
+
+prev_line=""
+
+while read -r curr_line; do
+    [ "$curr_line" != "$prev_line" ] && notify "$curr_line"
+    prev_line="$curr_line"
+done
