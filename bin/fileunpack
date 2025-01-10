@@ -314,8 +314,8 @@ rar x "$INPUTFILE" "$OUTPUTDIR"
 [ $? -eq 0 ] && exit 0
 
 # try game archives via GameExtractor  http://www.watto.org/game_extractor.html
-#gameextractor -extract -input "$(readlink -f "$INPUTFILE")" -output "$OUTPUTDIR"
-#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+gameextractor -extract -input "$(readlink -f "$INPUTFILE")" -output "$OUTPUTDIR"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 # try with Apache Tika app https://github.com/apache/tika
 tika --extract --extract-dir="$OUTPUTDIR"  "$INPUTFILE" 
@@ -328,6 +328,8 @@ binwalk --extract --rm --dd='.*' --directory="$OUTPUTDIR"  "$INPUTFILE"
 
 hachoir-subfile "$INPUTFILE" "$OUTPUTDIR"
 [ $? -eq 0 ] && exit 0
+
+
 
 #if [ "$INPUTFILEEXT" = "zip" ]; then
 #	unzip "$INPUTFILE" -d "$OUTPUTDIR"

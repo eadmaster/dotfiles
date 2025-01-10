@@ -6,11 +6,11 @@ if [ "$#" -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo
 	exit 0
 elif [ "$#" -gt 2 ]; then
-	#echo "$(basename $0) warn: more than 2 args passed, assuming you were invoking ImageMagick's convert..." >&2
-	#convert "$@"
-	#exit $?
-	echo "$(basename $0) warn: more than 2 args passed, remember that you cannot use wildcards with this command. Tip: use find+exec instead." >&2
-	exit 1
+	echo "$(basename $0) warn: more than 2 args passed, assuming you were invoking ImageMagick's convert..." >&2
+	convert "$@"
+	exit $?
+	#echo "$(basename $0) warn: more than 2 args passed, remember that you cannot use wildcards with this command. Tip: use find+exec instead." >&2
+	#exit 1
 elif [ "$1" = "-" ]; then
 	echo "$(basename $0) warn: reading input file from stdin" >&2
 	INPUTFILE="$TMPDIR/$$.tmp"

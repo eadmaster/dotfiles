@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# using sfk  http://stahlworks.com/sfk-partcopy
+#sfk partcopy "$1" -fromto "$2" "$3" "$4"
+sfk partcopy "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+# ALTERNATIVES:
+#  dd if="$INPUTFILE" of="$OUTPUTFILE" bs=1 skip=$STARTADDRDEC count=$COUNT
+#  ucon64 --stpn=$2 $1 ; 
+# ...
+
+
+# pure bash alternative using tail+head only
+
+if [ "$#" -lt 2 ] ||  [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "syntax: $(basename $0) INPUTFILE STARTADDR [ENDADDR] [OUTPUT_FILE]"
+	echo ""
+	exit 0
+elif [ ! -f "$1" ]; then
+	echo "$(basename $0) error: file does not exist: $1" >&2
+	exit 1
+elif [ -z "$3" ]; then
+	echo "$(basename $0) warn: no end address specified, assuming till the end of file" >&2
+fi
+
+INPUTFILE="$1"
+INPUTFILENAME="`basename \"$INPUTFILE\" | rev | cut -d'.' -f2- | rev`"
+INPUTFILESIZE="$(stat -c%s "$1")"
+
+STARTADDR="$2"
+if [ $STARTADDR -gt $INPUTFILESIZE ]; then
+	echo "$(basename $0) error: invalid start address: $STARTADDR" >&2
+	exit 1
+fi
+
+ENDADDR="$3"
+[ -z "$ENDADDR" ] && ENDADDR=$INPUTFILESIZE
+if [ $ENDADDR -gt $INPUTFILESIZE ]; then
+	echo "$(basename $0) error: invalid end address: $ENDADDR" >&2
+	exit 1
+fi
+
+OUTPUTFILE="$4"
+[ -z "$OUTPUTFILE" ] && OUTPUTFILE="$INPUTFILENAME.sub"
+
+STARTADDRDEC=$( printf "%d" $STARTADDR )
+ENDADDRDEC=$( printf "%d" $ENDADDR )
+COUNT=$( expr $ENDADDRDEC - $STARTADDRDEC )
+
+tail -c $STARTADDRDEC "$INPUTFILE" | head -c $COUNT
+

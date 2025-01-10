@@ -1,0 +1,19 @@
+#!/bin/bash 
+
+if [ ! -f "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) INPUT_FILE"
+	echo
+	exit 0
+fi
+
+THIS_SCRIPT_DIR="$( cd $(dirname $0) ; pwd -P )"
+
+INPUTFILE="$1"
+OUTPUTDIR="`basename \"$INPUTFILE\" | rev | cut -d'.' -f2- | rev`"
+
+mkdir $OUTPUTDIR
+
+for i in {1..1000}
+do
+  timeout 5  quickbms -a $i  $THIS_SCRIPT_DIR/quickbms_comtype_scan2.bms  "$1"  $OUTPUTDIR
+done

@@ -430,6 +430,3 @@ tika --text --metadata  "$INPUTFILE"
 # also try with fq https://github.com/wader/fq/
 fq . "$INPUTFILE"
 
-# try game archives via GameExtractor  http://www.watto.org/game_extractor.html
-# TODO: listing to stdout not supported https://github.com/wattostudios/GameExtractor/issues/7
-#gameextractor -list -input "$(readlink -f "$INPUTFILE")"

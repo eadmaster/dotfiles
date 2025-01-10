@@ -1,8 +1,16 @@
 
 # https://github.com/ReFirmLabs/binwalk/wiki/Usage
+echo "$0: binwalk scan..."
 binwalk --verbose --extract --signature --carve "$@"
 # WANTED: better magic file: --magic=/usr/share/misc/magic.mgc
 
+echo "$0: hachoir-subfile scan..."
 hachoir-subfile "$@"
 
-# TODO: more alternatives
+# try with signsrch  https://aluigi.altervista.org/mytoolz.htm#signsrch
+echo "$0: signsrch scan..."
+signsrch -s $HOME/.local/bin/signsrch.sig "$@"
+
+# try game archives via GameExtractor  http://www.watto.org/game_extractor.html
+# TODO: listing to stdout not supported https://github.com/wattostudios/GameExtractor/issues/7
+#gameextractor -list -input "$(readlink -f "$INPUTFILE")"

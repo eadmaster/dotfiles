@@ -1,0 +1,16 @@
+
+
+# grep for japanese chars
+
+# TODO: fix
+#export LC_ALL=ja_JP.SHIFT_JIS
+export LC_ALL=ja_JP.shiftjis
+#export LANG=ja_JP
+grep "$@"
+
+# try other encodings
+#export LC_ALL=ja_JP.EUC-JP
+#export LC_ALL=ja_JP.eucjp
+
+# TODO: convert to hex?
+# https://unix.stackexchange.com/questions/65715/grep-find-all-lines-that-contain-japanese-kanjis

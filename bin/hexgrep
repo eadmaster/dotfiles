@@ -1,14 +1,15 @@
 #!/bin/sh
 
 # args checking
-if [ "$#" -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ ! -f "$2" ]; then
-	echo "usage: $(basename $0) HEX_STRING BINARY_FILE"
-	exit 0
-fi
+#if [ "$#" -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ ! -f "$2" ]; then
+#	echo "usage: $(basename $0) HEX_STRING BINARY_FILE"
+#	exit 0
+#fi
 
 # http://stahlworks.com/dev/?tool=hexfind
 export SFK_COLORS=theme:black  # enable colors
-sfk hexfind "$2" -bin "/$1/"
+sfk hexfind -bin -pat "/$1/" -dir .
+#sfk hexfind -bin -pat "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 bgrep "$@"
