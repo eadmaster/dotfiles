@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# A unified wrapper for multiple file format info/analysis tools
+# update from https://github.com/eadmaster/dotfiles/blob/main/bin/fileinfo
+
 # args checking
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "usage: $(basename $0) INPUT_FILE"

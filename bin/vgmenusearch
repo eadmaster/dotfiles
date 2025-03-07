@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # dictionary-based vg menu search script
+# based on http://stahlworks.com/sfk-hexfind
 
 INPUT=$1
 [ -z "$INPUT" ] && INPUT='-dir .'
@@ -19,3 +20,5 @@ sfk hexfind -nocase -bylinelist  $DICTFILE  $INPUT
 
 #TODO:
 # convert vgmenusearch_jap.dic to utf16, eucjp, cp932
+
+# TODO: try using rsearch  https://www.romhacking.net/utilities/998/

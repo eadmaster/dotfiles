@@ -1,5 +1,8 @@
 #!/bin/sh
- 
+
+# A unified wrapper for multiple file format appending tools (cat for images, videos, etc.)
+# update from https://github.com/eadmaster/dotfiles/blob/main/bin/filecat
+
 # args checking
 if [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "usage: $(basename $0) INPUT_FILE1 INPUT_FILE2 [...] OUTPUT_FILE"

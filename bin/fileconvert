@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# A unified wrapper for multiple file format converters
+# update from https://github.com/eadmaster/dotfiles/blob/main/bin/fileconvert
+
 # args checking
 if [ "$#" -lt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "usage: $(basename $0) INPUT_FILE OUTPUT_FILE"
@@ -242,6 +245,12 @@ elif [ "$INPUTFILEEXT" = "pu" ] || [ "$INPUTFILEEXT" = "puml" ] ; then
 	exit $?
 elif [ "$INPUTFILEEXT" = "ipynb" ] ; then
 	jupyter nbconvert --to $OUTPUTFILEEXT "$INPUTFILE" --output "$OUTPUTFILE"
+	exit $?
+
+# font conversion
+elif [ "$INPUTFILEEXT" = "yaff" ] ; then
+	# https://github.com/robhagemans/monobit
+	monobit-convert "$INPUTFILE" to "$OUTPUTFILE"
 	exit $?
 fi
 

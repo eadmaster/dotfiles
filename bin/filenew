@@ -1,6 +1,7 @@
 #!/bin/sh
 
-# create a new empty file or copy from a template
+# Create a new empty file or generate from a template
+# update from https://github.com/eadmaster/dotfiles/blob/main/bin/filenew
 
 # args checking
 if [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# generate the power set, the set of all possible subsets 
+
 INPUT="$(echo $@ | tr ' ' '\n')"  # replace spaces with newlines
 [ -z "$1" ] && INPUT="$(cat)"
 [ -f "$1" ] && INPUT="$(cat $1)"

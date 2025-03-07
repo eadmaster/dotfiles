@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Extract content hashes from some well-known file formats
+# update from https://github.com/eadmaster/dotfiles/blob/main/bin/filehash
+
 # args checking
 if [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "Usage: $(basename $0) INPUT_FILE"

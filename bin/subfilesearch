@@ -11,6 +11,8 @@ hachoir-subfile "$@"
 echo "$0: signsrch scan..."
 signsrch -s $HOME/.local/bin/signsrch.sig "$@"
 
-# try game archives via GameExtractor  http://www.watto.org/game_extractor.html
-# TODO: listing to stdout not supported https://github.com/wattostudios/GameExtractor/issues/7
-#gameextractor -list -input "$(readlink -f "$INPUTFILE")"
+# try game archives via GameExtractor  https://github.com/wattostudios/GameExtractor/blob/master/help/CommandLine.html
+#  listing to stdout added in v3.13a https://github.com/wattostudios/GameExtractor/issues/7
+# GameExtractor -list -format CSV -input "$@"
+
+#TODO: tika https://github.com/apache/tika

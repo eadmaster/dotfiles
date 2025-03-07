@@ -1420,7 +1420,7 @@ if which python >/dev/null 2>&1 ; then
     #intersection() { python2setop_fromfiles "$1" "$2" intersection ;  }
     #difference() { python2setop_fromfiles "$1" "$2" difference ;  }
     #product() { python -c "import ; from pprint import pprint; set1=set(\"$1\".split()) ; set2=set(\"$2\".split()) ; pprint(list(itertools.product(set1, set2)))" ; }
-    #alias cartesian-product=productset
+    #alias cartesian-product=allsubsets
 
     # usage: $0 "el1 el2 el3 ..." EXPONENT
     #setpower() { python -c "import itertools, math; from pprint import pprint; args_list=\"$*\".split() ; pprint(list(itertools.product(args_list[0:-1], repeat=int(args_list[-1]))))" ; }

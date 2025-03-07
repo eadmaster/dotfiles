@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# A unified wrapper for multiple compressed file unpackers
+# update from https://github.com/eadmaster/dotfiles/blob/main/bin/fileunpack
+
 # perl script from atool package
 #command -p aunpack "$@"
 #_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
@@ -313,9 +316,9 @@ patool extract --outdir "$OUTPUTDIR" "$INPUTFILE"
 rar x "$INPUTFILE" "$OUTPUTDIR"
 [ $? -eq 0 ] && exit 0
 
-# try game archives via GameExtractor  http://www.watto.org/game_extractor.html
-gameextractor -extract -input "$(readlink -f "$INPUTFILE")" -output "$OUTPUTDIR"
-_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+# try game archives via GameExtractor  https://github.com/wattostudios/GameExtractor/blob/master/help/CommandLine.html
+#GameExtractor -extract -input "$(readlink -f "$INPUTFILE")" -output "$OUTPUTDIR"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 # try with Apache Tika app https://github.com/apache/tika
 tika --extract --extract-dir="$OUTPUTDIR"  "$INPUTFILE" 
