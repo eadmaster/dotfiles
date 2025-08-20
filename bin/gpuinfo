@@ -3,6 +3,11 @@ vulkaninfo | head -n364
 
 echo
 
+rocminfo
+/opt/rocm/bin/rocminfo
+
+echo
+
 lspci | grep VGA
 
 echo

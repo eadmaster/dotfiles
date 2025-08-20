@@ -11,11 +11,11 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 
-
 def serial_connect(serial_port):
     serial_conn = None
     while True:
         exception_tossed = False
+        # (badly) translated specs: "the USART interface judges whether the data frame transmisison is completed thought the idle state, that is, the high level state maintains 1 Tbuad after the stop bit"
         try:
             serial_conn = serial.Serial(
                 port=serial_port,
@@ -32,10 +32,10 @@ def serial_connect(serial_port):
         time.sleep(5)
 
 class SerialVFD:
-	GO_HOME = bytearray.fromhex("fe48")
-	GO_LINE_2 = bytearray.fromhex("fe470102")
-	SET_BRIGHTNESS = bytearray.fromhex("fe99")
-	SET_BRIGHTNESS_LOW = bytearray.fromhex("fe990a")
+	GO_HOME = bytearray.fromhex("A20000")
+	GO_LINE_2 = bytearray.fromhex("A20100")
+	#SET_BRIGHTNESS = bytearray.fromhex("fe99")
+	#SET_BRIGHTNESS_LOW = bytearray.fromhex("fe990a")
 	MAX_FRAME_RATE = 10
 
 	def __init__(self, serial_port, nc_message: str = "DISCONNECTED"):
@@ -51,9 +51,9 @@ class SerialVFD:
 		frame_limit = 1.0 / SerialVFD.MAX_FRAME_RATE
 		if time_delta >= frame_limit:
 			try:
-				self.serial_conn.write(SerialVFD.GO_HOME)
+				#self.serial_conn.write(SerialVFD.GO_HOME)
 				self.serial_conn.write(line_1_byte_array)
-				self.serial_conn.write(SerialVFD.GO_LINE_2)
+				#self.serial_conn.write(SerialVFD.GO_LINE_2)
 				self.serial_conn.write(line_2_byte_array)
 			except serial.serialutil.SerialException as e:
 				self.serial_conn = serial_connect(self.serial_port)
@@ -63,22 +63,28 @@ class SerialVFD:
 		if not value >= 0 or not value <= 255:
 			return
 		try:
-			#self.serial_conn.write(SerialVFD.SET_BRIGHTNESS)
-			#self.serial_conn.write(bytearray(value.to_bytes(1, byteorder='big')))
-			#time.sleep(1)
-			#self.serial_conn.write(bytes([0xFE,0xCA,0xF5,0xA0,0x00]))
-			#self.serial_conn.write(bytes([0xFE,0xCB,0xF5,0xA0,0x00]))
-			self.serial_conn.write(bytes([0xfe,0x99,0x10]))
+			self.serial_conn.write(bytearray.fromhex("A000"))
+			#self.serial_conn.write(bytes([0xA0,0x00]))
+			# https://github.com/stokie-ant/lcdsmartie/blob/main/display_dll_source/seetron.dpr
+			#self.serial_conn.write(bytes([27,48]))
+			#self.serial_conn.write(27)
+			#self.serial_conn.write(48)
 		except serial.serialutil.SerialException as e:
 			self.serial_conn = serial_connect(self.serial_port)
 
+	def clear(self):
+		try:
+			self.serial_conn.write(bytes([0x55]))
+		except serial.serialutil.SerialException as e:
+			self.serial_conn = serial_connect(self.serial_port)
+# end of class SerialVFD
 
 
-def rotate_long_message(message, message_max_length: int = 40):
+def rotate_long_message(message, message_max_length: int = 20):
     return message[1:] + message[0]
 
 class MessageFormatter:
-    def __init__(self, scroll_speed: float, req_line_length: int = 40):
+    def __init__(self, scroll_speed: float, req_line_length: int = 20):
         self.scroll_speed = scroll_speed
         self.req_line_length = req_line_length
 
@@ -96,11 +102,8 @@ class MessageFormatter:
 
 import sys
 
-
 line_1_message = "lines2vfd"
 line_2_message = "init OK"
-
-
 
 import threading
 
@@ -111,22 +114,22 @@ def refresh_screen_thread_main():
 	global line_1_message
 	global line_2_message
 	
-	vfd = SerialVFD('/dev/ttyUSB0')
-	#time.sleep(0.5)
-	#vfd.set_brightness(10)
-	#time.sleep(0.5)
+	vfd = SerialVFD('/dev/ttyACM0')
+	time.sleep(0.5)
+	vfd.set_brightness(10)
+	time.sleep(0.5)
 	
 	while True:
-		
 		line_1_byte_array = formatter.format_line(line_1_message)
 		line_2_byte_array = formatter.format_line(line_2_message)
 		vfd.push_frame(line_1_byte_array, line_2_byte_array)
 		
-		if(len(line_1_message)>40):
+		if(len(line_1_message)>20):
 			line_1_message = rotate_long_message(line_1_message)
-		if(len(line_2_message)>40):
+		if(len(line_2_message)>20):
 			line_2_message = rotate_long_message(line_2_message)
 		time.sleep(0.1)
+# end of refresh_screen_thread_main
 
 
 def main():
@@ -139,18 +142,35 @@ def main():
 
 	refresh_screen_thread = threading.Thread(target=refresh_screen_thread_main, args=[])
 	refresh_screen_thread.start()
+	
+	curr_line_counter=1
 
 	while True:
 
 		#sys.stdin.flush()
-		curr_line_1_message = sys.stdin.readline()
-		if curr_line_1_message:
-			line_1_message = curr_line_1_message
-			print(line_1_message)
-		curr_line_2_message = sys.stdin.readline()
-		if curr_line_2_message:
-			line_2_message = curr_line_2_message
-			print(line_2_message)
+		curr_line = sys.stdin.readline().rstrip()
+		if curr_line:
+			if len(curr_line)>20 :
+				line_1_message = curr_line[:20]
+				line_2_message = curr_line[20:]
+				#if len(curr_line[20:])>20 :
+				#	line_2_message = curr_line[20:40]
+				#	time.sleep(1)
+				#	line_1_message = curr_line[40:]
+				continue
+			else:
+				# len lower than 20
+				if curr_line_counter==1:
+					line_1_message = curr_line
+					curr_line_counter = 2
+				elif curr_line_counter==2:
+					line_2_message = curr_line
+					curr_line_counter = 1
+			
+			#print(line_1_message)
+			#print(line_2_message)
+			#print(curr_line_counter)
+			#print(curr_line)
 		
 
 if __name__ == '__main__':

@@ -7,10 +7,10 @@ INPUT=$1
 [ -z "$INPUT" ] && INPUT='-dir .'
 
 # English text
-THIS_SCRIPT_DIR="$( cd $(dirname $0) ; pwd -P )"
-DICTFILE=$THIS_SCRIPT_DIR/vgmenusearch_eng.dic
-sfk hexfind -nocase -bylinelist  $DICTFILE  $INPUT
-[ $? -eq 1 ] && echo "^^^ base ASCII matches found ^^^"
+#THIS_SCRIPT_DIR="$( cd $(dirname $0) ; pwd -P )"
+#DICTFILE=$THIS_SCRIPT_DIR/vgmenusearch_eng.dic
+#sfk hexfind -nocase -bylinelist  $DICTFILE  $INPUT
+#[ $? -eq 1 ] && echo "^^^ base ASCII matches found ^^^"
 
 # Japanese text
 THIS_SCRIPT_DIR="$( cd $(dirname $0) ; pwd -P )"

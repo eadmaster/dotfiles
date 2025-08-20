@@ -20,6 +20,10 @@ elif [ "$1" = "-m" ]; then
 	shift
 	INPUT="$@"
 	
+	# https://github.com/abhimanyu003/sttr
+	sttr url-encode "$INPUT"
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+	
 	python3 -c "import urllib.parse; print(urllib.parse.quote_plus(\"$INPUT\"));"
 	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 	
@@ -29,12 +33,12 @@ elif [ "$1" = "-m" ]; then
 	php -r "print(urlencode(\"$INPUT\") . \"\n\");"
 	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 	
-	# https://github.com/abhimanyu003/sttr
-	sttr url-encode "$INPUT"
-	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 	
 else
-
+	# https://github.com/dhondta/python-codext
+	echo "$INPUT" | codext encode url
+	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+	
 	python3 -c "import urllib.parse; print(urllib.parse.quote(\"$INPUT\"));"  | sed 's/https%3A/https:/g'
 	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 	
@@ -48,9 +52,6 @@ else
 	js -e "console.log(encodeURIComponent(\"$INPUT\"))"
 	_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
 	
-	# https://github.com/dhondta/python-codext
-	echo -en "$INPUT" | codext encode url
-	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 	#MORE ALTERNATIVES:
 	#perl -p -e 's/([^A-Za-z0-9])/sprintf("%%%02X", ord($1))/seg' 

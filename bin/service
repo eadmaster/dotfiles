@@ -249,17 +249,21 @@ elif [ "$CMD" = "start" ] || [ "$CMD" = "restart" ] ; then
 		#TODO: tor ) command -p service tor start; service privoxy start; nffmetstat -a | grep 9050 ; exit $? ;;
 	esac
 elif [ "$CMD" = "disable" ] ; then
-	sudo systemctl disable $SERVICE_NAME.service
+	sudo systemctl disable $SERVICE_NAME
 	[ $? -eq 0 ] && exit 0
 	sudo update-rc.d $SERVICE_NAME disable
+	[ $? -eq 0 ] && exit 0
+	rc-update del $SERVICE_NAME
 	exit $?
 elif [ "$CMD" = "enable" ] || [ "$CMD" = "auto" ] ; then
-	sudo systemctl enable $SERVICE_NAME.service
+	sudo systemctl enable $SERVICE_NAME
 	[ $? -eq 0 ] && exit 0
 	sudo update-rc.d $SERVICE_NAME defaults
 	sudo update-rc.d $SERVICE_NAME enable
 	[ $? -eq 0 ] && exit 0
 	sudo chkconfig $SERVICE_NAME on
+	[ $? -eq 0 ] && exit 0
+	rc-update add $SERVICE_NAME
 	exit $?
 elif [ "$CMD" = "remove" ] || [ "$CMD" = "rm" ] ; then
 	sudo update-rc.d $SERVICE_NAME remove
@@ -268,6 +272,8 @@ elif [ "$CMD" = "list" ] || [ "$CMD" = "ls" ] ; then
 	command -p service --status-all
 	systemctl --all --no-pager list-units --type=service
 	systemctl --user --all --no-pager list-units --type=service
+	rc-status
+	rc-update -v show
 	exit $?
 elif [ "$CMD" = "search" ] || [ "$CMD" = "find" ] ; then
 	service --status-all | grep  "*$2*"
@@ -281,16 +287,25 @@ elif [ "$CMD" = "logs" ] || [ "$CMD" = "log" ] ; then
 #	exit 1
 fi
 
-export SYSTEMD_LOG_LEVEL=debug  # https://stackoverflow.com/questions/49396098/output-from-systemctl-start-restart-stop
-systemctl $CMD $SERVICE_NAME
-_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
-systemctl --user $CMD $SERVICE_NAME
-_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+# systemd
+if which systemctl >/dev/null 2>&1 ; then
+	export SYSTEMD_LOG_LEVEL=debug  # https://stackoverflow.com/questions/49396098/output-from-systemctl-start-restart-stop
+	systemctl $CMD $SERVICE_NAME
+	_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+	systemctl --user $CMD $SERVICE_NAME
+	_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+fi
+
+if which rc-service >/dev/null 2>&1 ; then
+	rc-service $SERVICE_NAME $CMD
+	_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
+fi
 
 command -p service $SERVICE_NAME $CMD
 _ES=$? ; [ $_ES -eq 0 ] && exit $_ES
 #_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
+# old init scrips
 if [ "$1" = "--status-all" ]; then
 	for s in /etc/init.d/* ; do
 		$s status

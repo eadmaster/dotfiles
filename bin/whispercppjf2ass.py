@@ -8,7 +8,7 @@ if __name__ == "__main__":
 	import argparse, sys
 	parser = argparse.ArgumentParser()
 	parser.add_argument('infile', nargs='?', default="-", help="input file, default to stdin if unspecified. Supports passing urls.")
-	parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'), default=sys.stdout, help="output file, default to stdout if unspecified")
+	parser.add_argument('outfile', nargs='?', type=argparse.FileType('w', encoding='utf-8'), default=sys.stdout, help="output file, default to stdout if unspecified")
 	args = parser.parse_args()
 
 	if args.infile == "-":
@@ -21,16 +21,11 @@ if __name__ == "__main__":
 		import codecs
 		infile = codecs.getreader("utf-8")(infile)
 	else:
-		infile = open(args.infile, errors="ignore")
+		infile = open(args.infile, encoding="utf-8", errors="ignore")
 		#infile = codecs.getreader("utf-8")(infile)
 
-	# NO? won't ignore decoding erorrs
-	# input_json_str = infile.read()
-	
-	input_json_str = ""
-	for line in infile:
-		input_json_str += line+"\n"
-	
+	input_json_str = infile.read()
+		
 	parsed_json = json.loads(input_json_str) # TODO: better handle decoding errors (create a custom JSONDecoder?)
 	
 	# header

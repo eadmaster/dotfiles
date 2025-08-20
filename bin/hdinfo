@@ -1,6 +1,7 @@
  
 
 TARGET=/dev/sda
+[ ! -e $TARGET ] && TARGET=/dev/nvme0n1
 [ ! -z "$1" ] && TARGET=$1
 # else TODO: iterate over all hdds?
 

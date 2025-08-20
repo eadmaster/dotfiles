@@ -14,6 +14,17 @@ _HOSTNAME=$(hostname)  # $HOSTNAME envvar is only defined in bash
 echo "$(basename $0): serving $DIR_SERVED at http://$_MYIP:$PORT/ or http://${_HOSTNAME}.local:$PORT/"
 echo "$(basename $0): press CTRL+C to abort"
 
+# using copyparty  https://github.com/9001/copyparty/
+cd "$DIR_SERVED"
+copyparty-sfx.py -z --qrs --ses-db /tmp/copyparty_sessions.db --hist /tmp/copyparty_hist.db -p $PORT
+#  --no-ses 
+# -nw              never write anything to disk 
+[ $? -eq 0 ] && exit 0
+
+# using dufs  https://github.com/sigoden/dufs
+dufs --allow-all --port $PORT  "$DIR_SERVED"
+[ $? -eq 0 ] && exit 0
+
 # using rclone  https://rclone.org/commands/rclone_serve_http/
 # rclone serve http --addr :$PORT "$DIR_SERVED"
 rclone serve webdav --etag-hash auto --vfs-cache-mode off  --addr :$PORT "$DIR_SERVED"  # webdav supports file uploads  https://rclone.org/commands/rclone_serve_webdav/

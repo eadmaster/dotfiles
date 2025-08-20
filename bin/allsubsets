@@ -1,7 +1,12 @@
 #!/bin/sh
 
+# generate the power set, the set of all possible subsets 
 
-#while read a; do while read b; do echo "$a, $b"; done <"$1"; done <"$2"
+INPUT="$(echo $@ | tr ' ' '\n')"  # replace spaces with newlines
+[ -z "$1" ] && INPUT="$(cat)"
+[ -f "$1" ] && INPUT="$(cat $1)"
 
-python -c "import sys, itertools; set1=set(open(\"$1\").read().splitlines()) ; set2=set(open(\"$2\").read().splitlines()) ; print('\n'.join(map(str, list(itertools.product(set1, set2)))))"
+echo "$INPUT" | python -c "import sys, itertools; s=set(sys.stdin.read().splitlines()) ; print('\n'.join(map(str, list(itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1))))))"
+# TODO: remove quoting
 
+# TODO: more alternatives

@@ -16,6 +16,11 @@ def init_jap_trans():
 	katsu.use_foreign_spelling = True  # detect english words
 	return katsu
 
+# TODO: add cmdline switch to use this
+def jap_trans_no_foreign(trans_obj, line_text):
+	line_text = cutlet.normalize_text(line_text)
+	return trans_obj.romaji(line_text)
+
 
 def jap_trans(trans_obj, line_text):
 	#s = trans_obj.romaji(line_text, capitalize=False)
@@ -57,7 +62,7 @@ if __name__ == "__main__":
 	import argparse, sys
 	parser = argparse.ArgumentParser()
 	parser.add_argument('infile', nargs='?', default="-", help="input file, default to stdin if unspecified. Supports passing urls.")
-	parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'), default=sys.stdout, help="output file, default to stdout if unspecified")
+	parser.add_argument('outfile', nargs='?', type=argparse.FileType('w', encoding='utf-8'), default=sys.stdout, help="output file, default to stdout if unspecified")
 	args = parser.parse_args()
 
 	if args.infile == "-":
@@ -70,10 +75,10 @@ if __name__ == "__main__":
 		import codecs
 		infile = codecs.getreader("utf-8")(infile)
 	else:
-		infile = open(args.infile)
+		infile = open(args.infile, encoding="utf-8")
 
 	input_lrc_str = infile.read()
-	
+		
 	args.outfile.write("[by:eadmaster (automatic transliteration, may contain errors)]\n\n")
 	 
 	line_no = 0

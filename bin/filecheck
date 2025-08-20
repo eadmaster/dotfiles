@@ -114,6 +114,12 @@ case "$INPUTFILEEXT" in
 		exit $?
 		;;
 	
+	torrent )
+		# https://github.com/xmseed234/torrent-check
+		torrentcheck "$INPUTFILE" -d .
+		exit $?
+		;;
+	
 	pgp|sig|asc|sign ) # signature files
 		gpg --verbose --verify "$INPUTFILE" 2>& 1 | grep --color=always -e "^" -e '.*signature from.*'
 		# ALTERNATIVE: openssl (req. certificate path?)

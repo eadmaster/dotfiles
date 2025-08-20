@@ -318,13 +318,13 @@ hide() { mv -v "$1" ".$1" ; }
 unhide() { mv -v "$1" "${1:1}" ; }
 
 # easier find with fd https://github.com/sharkdp/fd
-if which fdfind >/dev/null 2>&1 ; then
+if which fd >/dev/null 2>&1 ; then
     #alias fd=fdfind
-    fd() { fdfind --no-ignore --hidden --ignore-case --glob "*$@*" ; }
+    f() { fd --no-ignore --hidden --ignore-case --glob "*$@*" ; }
 else
-    alias fd="find . -xdev -iname"  # 2>/dev/null  -> skip permission denied errors https://unix.stackexchange.com/questions/19430/how-do-i-remove-permission-denied-printout-statements-from-the-find-program
+    alias f="find . -xdev -iname"  # 2>/dev/null  -> skip permission denied errors https://unix.stackexchange.com/questions/19430/how-do-i-remove-permission-denied-printout-statements-from-the-find-program
 fi
-alias f=fd
+#alias f=fd
 #alias search=fd
 #alias ff=fd  # also used for firefox
 
@@ -388,6 +388,7 @@ fi
 #alias dir2iso="mkisofs -o"
 alias mountiso="sudo mount -o loop" #alternative: fuseiso, cdemu load 0 FILE.IMG
 #alias mountcdi="sudo mount -o loop" #alternative: fuseiso
+alias bin2iso=fileconvert
 
 # dosbox aliases
 if which dosbox >/dev/null 2>&1 ; then
@@ -493,13 +494,15 @@ alias hexget=hexalter
 alias hexset=hexalter
 #alias byteget=hexalter
 #alias byteset=hexalter
+alias poke=hexalter
+alias peek=hexalter
 
 # MEMO: C64 syntax: "poke DECIMAL_ADDRESS,DECIMAL_NEW_VALUE"  https://en.wikipedia.org/wiki/PEEK_and_POKE
 # TODO: move in separate scripts, add alternatives
-pspeek() { PID=$(pidof -s $2); [ -z "$PID" ] && echo "$0: process not found" && exit 1 ; ADDR=$1; sudo scanmem -c "dump $ADDR 1 ; exit;" $PID ; }  # read the contents of a memory cell at a specified address
-pspoke() { PID=$(pidof -s $2); [ -z "$PID" ] && echo "$0: process not found" && exit 1 ; ADDR=$1; VALUE=$3; sudo scanmem -c "write i8 $ADDR $VALUE ; exit;" $PID ; }  # set the contents of a memory cell 
-alias peek=pspeek
-alias poke=pspoke
+pspeek() { PID=$(pidof -s $2); [ -z "$PID" ] && echo "$0: process not found" && return 1 ; ADDR=$1; sudo scanmem -c "dump $ADDR 1 ; exit;" $PID ; }  # read the contents of a memory cell at a specified address
+pspoke() { PID=$(pidof -s $2); [ -z "$PID" ] && echo "$0: process not found" && return 1 ; ADDR=$1; VALUE=$3; sudo scanmem -c "write i8 $ADDR $VALUE ; exit;" $PID ; }  # set the contents of a memory cell 
+#alias peek=pspeek
+#alias poke=pspoke
 # ALT.: pspeek, pspoke -> use /proc/$(pidof $1)/mem
 
 # ucon64 aliases
@@ -515,7 +518,7 @@ if which ucon64 >/dev/null 2>&1 ; then
 	mkaps() { [ -z "$1" ] && echo "usage: $FUNCNAME ORIGINAL PATCHED" && return; ucon64 --nbak --mka="$1" "$2"; }  # make an aps patch
 	mkppf() { [ -z "$1" ] && echo "usage: $FUNCNAME ORIGINAL PATCHED" && return; ucon64 --nbak --mkppf="$1" "$2"; }  # make a ppf patch
 	alias addheadrom="ucon64 --nbak --ins"
-	alias addromhead=addromhead
+	alias addromhead=addheadrom
 	alias rmheadrom="ucon64 --nbak --stp"
 	alias rmromhead=rmheadrom
 	alias renrom="ucon64 --rdat"
@@ -524,14 +527,24 @@ if which ucon64 >/dev/null 2>&1 ; then
 	alias wordswap="ucon64 --nbak --swap2"
 fi
 
+# sfk aliases
+if which sfk >/dev/null 2>&1 ; then
+    alias hexset="sfk setbytes"  # http://stahlworks.com/sfk-setbytes
+    alias poke=hexset
+    alias hexsed="sfk replace -binary"   # http://stahlworks.com/sfk-rep
+    alias hexcat="sfk hexdump -raw"   # http://stahlworks.com/sfk-hexdump
+    #alias bin2hex=hexcat
+    alias partcopy="sfk partcopy"   # http://stahlworks.com/sfk-partcopy
+fi
+
 # https://github.com/marcrobledo/RomPatcher.js/issues/76
 if which RomPatcher >/dev/null 2>&1 ; then
     alias rompatch=RomPatcher
     # TODO: more
 fi
 
-xdelta1patch() { [ -z "$1" ] && echo "usage: %0 XDELTAFILE INPUTFILE" && return; xdelta patch "$1" "$2" "$1.patched" ; }
-xdelta3patch() { [ -z "$1" ] && echo "usage: %0 XDELTAFILE INPUTFILE" && return; xdelta3 -d -s "$2" "$1" "$2.patched" ; }  # https://www.pcgamingwiki.com/wiki/Xdelta
+xdelta1patch() { [ -z "$1" ] && echo "usage: $0 XDELTAFILE INPUTFILE" && return; xdelta patch "$1" "$2" "$1.patched" ; }
+xdelta3patch() { [ -z "$1" ] && echo "usage: $0 XDELTAFILE INPUTFILE" && return; xdelta3 -d -s "$2" "$1" "$2.patched" ; }  # https://www.pcgamingwiki.com/wiki/Xdelta
 
 # datfile renamers
 if [ -d $HOME/pendrive/Documents/db/datfile ]; then
@@ -579,6 +592,8 @@ if which imconvert >/dev/null 2>&1 ; then
 	#TODO: imgcolorbg() { ...  https://pypi.org/project/colorific/
 	imgcolortopleft() { imconvert "$@" -format "%[pixel:u.p{0,0}]" info:  ; }  # https://legacy.imagemagick.org/discourse-server/viewtopic.php?t=36208
 	#imgcolorreplace() { ...
+	imgcrop() { imconvert "$1" -crop "$2+0+0" "cropped_$1" ; }
+	imgcenter() { imconvert "$1" -gravity center -background black -extent $2 "centered_$1" ; }
 fi
 
 if which oiiotool >/dev/null 2>&1 ; then
@@ -920,6 +935,7 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	alias romsearch=dumpsearch
 	alias gamesearch=vgsearch
 	goodsearch() { dbgrep "$@" "$PENDRIVE/Documents/db/datfile/GoodTools" ; }
+	alias goodfind=goodsearch
 	#nointrosearch() { ugrep "$@" -i -I -z -g "$PENDRIVE/Documents/db/datfile/No Intro*.zip" ; }  # TODO: fix
 	nointrosearch() { grep -i -I  "$@" $HOME/datfiles/nointro/*.dat ; }  # TODO: remove
 	scenesearch() { dbgrep "$@" $PENDRIVE/Documents/db/datfile/scene ; }
@@ -969,7 +985,11 @@ if [ -d $PENDRIVE/Documents/book ]; then
 	#alias rtfd=bookfind
 	bookfind() { fuzzyfind "$@" $PENDRIVE/Documents/book ; }
 	manual() { fuzzyfind "$@" $PENDRIVE/Documents/book/man ; }
+	alias docsearch=bookfind
 fi
+
+dbfind() { fuzzyfind "$@" $PENDRIVE/Documents/db ; }
+alias dbsearch=dbfind
 
 if [ -d $PENDRIVE/temp/playing ]; then
 	romfind() { fuzzyfind "$@" $PENDRIVE/temp/playing ; }  # TODO: more paths
@@ -1032,9 +1052,9 @@ alias radioscan=rfscan
 # alias radiocap=...
 
 if which rtl_433 >/dev/null 2>&1 ; then
-	alias 433scan="rtl_433 -a 4"
-	alias 868scan="rtl_433 -f 868M -a 4"  # EU 433 alt.
-	alias 915scan="rtl_433 -f 915M -a 4"  # EU 433 alt.
+	alias rtl433scan="rtl_433 -a 4"
+	alias rtl868scan="rtl_433 -f 868M -a 4"  # EU 433 alt.
+	alias rtl915scan="rtl_433 -f 915M -a 4"  # EU 433 alt.
 	alias rtl4332mqtt="rtl_433 -F json -M utc | mosquitto_pub -t home/rtl_433 -l"  # https://github.com/merbanan/rtl_433/blob/master/examples/mqtt_rtl_433_test_client.py
 fi
 
@@ -1299,8 +1319,8 @@ alias groupsls="cut -d':' -f1 /etc/group | sort"  # | tr '\n' '\t'
 takeown() { sudo chown -cR $USER:$USER "$@" ; sudo chmod -cR u+X "$@" ; }
 #TODO: resetperm() { ... } #  restore default file permissions and ownership  https://unix.stackexchange.com/questions/49959/how-to-restore-default-group-user-ownership-of-all-files-under-var
 
-alias ytdl="yt-dlp -U --embed-metadata  --embed-chapters --embed-subs"  # --remux-video mp4
-alias ytformats="yt-dlp -F -U --embed-metadata  --embed-chapters --embed-subs"
+alias ytdl="yt-dlp -U --embed-metadata  --embed-chapters --embed-subs --restrict-filenames"  # --remux-video mp4
+#alias ytformats="yt-dlp -F -U --embed-metadata  --embed-chapters --embed-subs"
 ytdlid() { yt-dlp -f $2 -U --embed-metadata  --embed-chapters --embed-subs "$1" ; }
 alias ytdlmp4="ytdl --remux-video mp4" # -f mp4
 alias videoget=ytdl
@@ -1369,6 +1389,7 @@ alias jap2latin=jap2romaji
 alias kanjisearch=dictjap2eng
 alias jap2engdict=dictjap2eng
 alias eng2japdict=dicteng2jap
+alias jgrep=japgrep
 
 ### math utils
 #alias bc="bc -l"  # always prints decimal digits
@@ -1420,7 +1441,7 @@ if which python >/dev/null 2>&1 ; then
     #intersection() { python2setop_fromfiles "$1" "$2" intersection ;  }
     #difference() { python2setop_fromfiles "$1" "$2" difference ;  }
     #product() { python -c "import ; from pprint import pprint; set1=set(\"$1\".split()) ; set2=set(\"$2\".split()) ; pprint(list(itertools.product(set1, set2)))" ; }
-    #alias cartesian-product=allsubsets
+    #alias cartesian-product=productset
 
     # usage: $0 "el1 el2 el3 ..." EXPONENT
     #setpower() { python -c "import itertools, math; from pprint import pprint; args_list=\"$*\".split() ; pprint(list(itertools.product(args_list[0:-1], repeat=int(args_list[-1]))))" ; }
@@ -2124,7 +2145,7 @@ fi
 #alias g="grep -I -n --exclude \*.min.js --color=always --devices=skip"
 
 if which rg >/dev/null 2>&1 ; then
-    alias rg="rg --max-columns 200 --no-binary --no-ignore --hidden --ignore-case --fixed-strings "
+    alias rg="rg --max-columns 1000 --no-binary --no-ignore --hidden --ignore-case --fixed-strings "
     # --glob '!*.min.*'"  # exclude minified code
     # ... https://github.com/BurntSushi/ripgrep/
 else
@@ -2209,13 +2230,15 @@ if which git >/dev/null 2>&1 ; then
     #alias gitrebasefrommaster="git rebase master"
     alias gitcancelrebase="git rebase --abort"
     alias gitcancelmerge="git merge --abort"
-    alias gitpushforced="git push --force origin master"
+    alias gitpushforced="git push --force"
     alias gitpushcurrentbranch="git push --force origin HEAD"  # https://stackoverflow.com/questions/14031970/git-push-current-branch-shortcut/20922141
     gitgrepcommitmsg() { git log --all --grep="$@" ; }
     alias gitpullallbranches="git featch --all; git pull --all"
     alias gitui=gitgui
     alias gitupdatewithupstream="git fetch upstream ; git pull upstream master"
     alias gitsyncupstream=gitupdatewithupstream
+    alias gitsquashall='git reset $(git commit-tree "HEAD^{tree}" -m "Squashed all")'
+    #alias gitrevert="git restore"
 fi
 
 # pandoc aliases
@@ -2253,9 +2276,10 @@ alias findmydevices="xdg-open https://myaccount.google.com/find-your-phone"  # T
 if which wine >/dev/null 2>&1 ; then
 	#alias wine=wine32
 	alias winecmd="wine cmd"
-	alias japwine="LANG='ja_JP.Shift_JIS' wine32"
-	alias wine64tricks='WINEARCH="win64" WINEPREFIX=~/.wine64 winetricks'
+	alias japwine="LC_ALL=ja_JP.utf8 wine"
+	alias wine64tricks='WINEARCH=win64 WINEPREFIX=~/.wine64 winetricks'
 	alias wineuninstaller='wine uninstaller'
+	#alias wine98="WINEARCH=win32 WINEPREFIX=~/.wine98 wine"
 fi
 
 alias setlibrarypath2cwd="export LD_LIBRARY_PATH=."
@@ -2497,5 +2521,10 @@ if which go >/dev/null 2>&1 ; then
 fi
 
 alias igo=gore  # https://github.com/x-motemen/gore/
+
+alias findmenustrings=vgmenusearch
+
+alias setgamemode=gamemodeset
+alias setpcmode=pcmodeset
 
 unset THIS_SCRIPT_DIR

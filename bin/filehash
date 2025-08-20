@@ -97,6 +97,12 @@ case $INPUTFILETYPE in
 		#TODO: alternative using vlc
 		#vlc -I rc "$INPUTFILE" :sout='#std{mux=raw,access=file,dst=-}' vlc://quit | md5sum
 		;;
+		
+	application/x-executable | application/x-pie-executable | application/x-sharedlib )
+		# check the GNU Build ID
+		readelf -n "$INPUTFILE" | grep Build
+		exit $?
+		;;
 esac
 
 # generic algos

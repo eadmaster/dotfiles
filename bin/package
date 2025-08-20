@@ -331,6 +331,7 @@ case "$1" in
 		apk -L info "$PACKAGE_NAME"
 		
 		pacman -Si "$PACKAGE_NAME"
+		pacman -Ql "$PACKAGE_NAME"
 		yay -Si "$PACKAGE_NAME"
 		
 		#rpm -i "$PACKAGE_NAME"

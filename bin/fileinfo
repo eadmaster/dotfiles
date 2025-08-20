@@ -380,11 +380,12 @@ case $INPUTFILETYPE in
 		#exit $?
 		;;
 
-	application/x-sharedlib )
+	application/x-executable | application/x-pie-executable | application/x-sharedlib )
 		echo "$(basename $0): exported functions list:" >&2
 		nm -D "$INPUTFILE"
 		retdec-fileinfo "$INPUTFILE"
 		#gdb --batch --eval-command="info " "$INPUTFILE"
+		readelf -n "$INPUTFILE"  # shows notes+buildid 
 		readelf -h -d -A -W "$INPUTFILE"
 		exit $?
 		;;
