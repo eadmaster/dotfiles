@@ -6,23 +6,48 @@
 #rm -r $HOME/.kchmviewer/*.kchmviewer
 
 #rm -r $XDG_CACHE_HOME
-[ -z "$XDG_CACHE_HOME" ] && export XDG_CACHE_HOME=$HOME/.cache
-rm -r "$XDG_CACHE_HOME/moonchild productions"
-rm -r "$XDG_CACHE_HOME/mozilla"
+export XDG_CACHE_HOME=$HOME/.cache
+#rm -r "$XDG_CACHE_HOME/moonchild productions"
+#rm -r "$XDG_CACHE_HOME/mozilla"
 
 #rm -r $XDG_CONFIG_HOME/tmp
 
+echo "$0: packages cache clean..."
 sudo apt-get clean
 #sudo rm /var/lib/apt/lists/*
+paccache -rk1
+# pacman -Scc  # risky?
+yay -Sc
 
-# gnome bug  http://askubuntu.com/questions/151101/why-are-goutputstream-xxxxx-files-created-in-home-folder
-rm $HOME/.goutputstream-*
-
-# wine cleanup
+echo "$0: wine cleanup..."
+rm $HOME/.wine/drive_c/windows/temp/*
+rm $HOME/.wine/drive_c/users/$USER/Temp/*
 rm $HOME/.wine64/drive_c/users/$USER/Temp/*
+rm -rf ~/.cache/winetricks/*
 
-#
+echo "$0: Recent documents..."
+rm $HOME/. local/share/RecentDocuments/*.*
+
+# ocular's annotations  https://unix.stackexchange.com/questions/395599/customize-the-folder-where-okular-saves-annotations
 rm $HOME/.local/share/okular/docdata/*.*
 #ln -s /tmp $HOME/.local/share/okular/docdata
 
+echo "$0: python pip cache..."  # ~/.cache/pip/
+pip cache purge
+uv cache clean
+
+echo "$0: ccache..."  # ~/.cache/ccache
+ccache -C
+
+echo "$0: go build cache..."
+go clean -cache
+
+# docker
+echo "$0: docker..."
 dockerclean
+
+# browsers caches
+#rm -rf "$HOME/.cache/basilisk-dev/*"
+#rm -rf "$HOME/.cache/chromium/*"
+#rm -rf "$HOME/.cache/moonchild productions/*"
+#rm -rf $HOME/.cache/waterfox/*

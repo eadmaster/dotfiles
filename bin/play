@@ -55,7 +55,7 @@ echo "$(basename $0) info: created $TEMP_PLAYLIST_FILE" >&2
 play_or_enqueue() {
 	# setup lyrics viewer
 	#[ ! -d /tmp/lyrics ] && 7z x -o"/tmp/lyrics" "$PENDRIVE/Documents/mus/lyrics.zip" > /dev/null
-	#gtk-launch  osdlyrics  # start detached from the terminal
+	gtk-launch  osdlyrics  # start detached from the terminal
 	
 	if [ "$_ENQUEUE" = "1" ]; then
 		enqueue $TEMP_PLAYLIST_FILE

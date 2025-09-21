@@ -18,6 +18,9 @@ fi
 #	[ $? -ne 127 ] && exit $?
 #fi
 
+$HOME/opt/palemoon/palemoon "$@" # 2> /dev/null
+[ $? -ne 127 ] && exit $?
+
 $HOME/opt/waterfox-classic/waterfox "$@" 2> /dev/null
 [ $? -ne 127 ] && exit $?
 

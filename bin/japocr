@@ -2,7 +2,7 @@
 
 # https://github.com/JaidedAI/EasyOCR/blob/master/easyocr/cli.py
 easyocr --lang ja --detail 0 --paragraph 1 --file "$@"
-_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 # https://www.paddleocr.ai/main/en/quick_start.html#command-line-usage
 #paddleocr ocr -i "$@" s#...

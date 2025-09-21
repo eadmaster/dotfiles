@@ -471,6 +471,8 @@ case "$1" in
 		
 		apt-file search --regex "/$FILENAME\$" 
 		
+		pacman -F "$FILENAME"
+		
 		# TODO: nix-env ...
 		# ALTERNATIVE (req. custom index building): https://github.com/bennofs/nix-index
 		#nix-locate $FILENAME

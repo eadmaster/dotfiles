@@ -1,7 +1,8 @@
 
 # https://github.com/ReFirmLabs/binwalk/wiki/Usage
 echo "$0: binwalk scan..."
-binwalk --verbose --extract --signature --carve "$@"
+#binwalk --verbose --extract --signature --carve "$@"
+binwalk --verbose --extract  "$@"
 # WANTED: better magic file: --magic=/usr/share/misc/magic.mgc
 
 echo "$0: hachoir-subfile scan..."

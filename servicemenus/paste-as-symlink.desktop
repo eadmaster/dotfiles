@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Service
+Icon=insert-link
+Actions=OpenAsRoot
+MimeType=inode/directory;
+X-KDE-Priority=TopLevel
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin,inode/directory,inode/directory-locked,inode/directory-hidden
+Terminal=false
+
+[Desktop Action OpenAsRoot]
+# old, single-file only, no exists check
+Exec=xsel -b -o | cut -d'/' -f3- | xargs -I {} ln -s {} .
+#Exec=xsel -b -o | cut -d'/' -f3- | xargs -r -I {} test -e {} && ln {} -s .  
+#Exec=sh -c "xsel -b -o | tr '\n' '\0' | xargs -r -0 -n1 -I {}  sh -c "echo \"$f\" | cut -d'/' -f3- | xargs sh -c 'test -e {} && ln -s {} .' ; done"
+#Icon=paste
+Icon=insert-link
+Name=Paste As Symbolic Link
+Terminal=false

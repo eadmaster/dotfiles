@@ -2,7 +2,7 @@
 
 # Android detection
 if [ ! -z "$ANDROID_ROOT" ]; then
-	# using the Termux:API add-on
+	# using the Termux:API add-on  https://wiki.termux.com/wiki/Termux-tts-speak
 	termux-tts-speak "$@"
 	_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 	
@@ -18,9 +18,9 @@ if grep -i -q 'Microsoft\|Cygwin' /proc/version; then
 fi
 
 # devices without audio card
-if [ -f "/etc/openwrt_release" ] || [ ! -z "$KINDLE_TZ" ]; then
-	exit 1
-fi
+#if [ -f "/etc/openwrt_release" ] || [ ! -z "$KINDLE_TZ" ]; then
+#	exit 1
+#fi
 
 # MEMO: MacOSX has builtin "say" command
 command -p say "$@"

@@ -174,13 +174,17 @@ elif [ "$SERVICE_NAME" = "samba" ]; then
 	exit 1
 elif [ "$SERVICE_NAME" = "hotspot" ]; then
 	if [ "$CMD" = "start" ]; then
-		sudo create_ap wlan0 eth0 "$(hostname)_softAP" $MY_HOTSPOT_PASSWORD  --daemon 
+		echo "$0: starting $(hostname)_hotspot with password $MY_HOTSPOT_PASSWORD..."
+		#sudo ufw disable
+		sudo create_ap -m nat wlan0 $IFACE  "$(hostname)_hotspot" $MY_HOTSPOT_PASSWORD  #--daemon   --country  $COUNTRY
+		#ALT.: service soft_ap status  # using  /etc/create_ap.conf
 		exit $?
 	elif [ "$CMD" = "status" ]; then
 		sudo create_ap --list-running
 		exit $?
 	elif [ "$CMD" = "stop" ]; then
 		sudo create_ap --stop wlan0
+		#sudo create_ap --fix-unmanaged
 		exit $?
 	fi
 	exit 1

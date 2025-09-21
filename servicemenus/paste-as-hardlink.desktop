@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Service
+Icon=insert-link
+Actions=OpenAsRoot
+MimeType=inode/directory;
+X-KDE-Priority=TopLevel
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin,inode/directory,inode/directory-locked,inode/directory-hidden
+Terminal=false
+
+[Desktop Action OpenAsRoot]
+# old, single-file only, no exists check
+Exec=xsel -b -o | cut -d'/' -f3- | xargs -I {} ln {} .
+#TODO: multiple files support + check if the file exist, avoid pasting regular text by accident.
+#Exec=sh -c "for f in $(xsel -b -o); do echo "$f" ; done| xargs test -e  && xsel -b -o | cut -d'/' -f3- | xargs -I {} ln {} -s ."
+#Icon=paste
+Icon=insert-link
+Name=Paste As Hard Link
+Terminal=false

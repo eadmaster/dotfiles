@@ -19,6 +19,16 @@ case $1 in
 
 		echo "$(basename $0) info: recording microphone on $OUTPUTFILE, press CTRL+C to stop..."
 
+
+		# Android detection
+		if [ ! -z "$ANDROID_ROOT" ]; then
+			# using the Termux:API add-on  https://wiki.termux.com/wiki/Termux-microphone-record
+			termux-microphone-record -d -f "$OUTPUTFILE"
+			_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+			
+			exit 127
+		fi
+		
 		# using ffmpeg  https://trac.ffmpeg.org/wiki/Capture/ALSA
 		# TODO: add "-application voip" switch
 		# -ar 44100

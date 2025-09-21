@@ -972,8 +972,8 @@ if [ -d $PENDRIVE/Documents/db ]; then
 	wiiusearch() { grep -i "$1" $PENDRIVE/Documents/db/vg/wiiu/wiiutdb_titles.txt ; }
 	xboxsearch() { grep -i "$1" $PENDRIVE/Documents/db/vg/xbox/xbox_titleids.tsv ; }
 	xb360search() { grep -i "$1" $PENDRIVE/Documents/db/vg/xb360/gamesdatabase_*.tsv ; }
-	3dssearch() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/3ds/*.json ; }
-	nswsearch() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/nsw/*.json ; }
+	3dssearch() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/3ds/*.json ; }  # TODO: rewrite using jq?
+	nswsearch() { awk -v IGNORECASE=1 -v RS=}, "/$*/" $PENDRIVE/Documents/db/vg/nsw/*.json ; }  # TODO: rewrite using jq?
 	# MEMO: do not quote escaped paths!
 
 fi
@@ -1177,6 +1177,7 @@ if which snap >/dev/null 2>&1 ; then
     alias snapuninstall="sudo snap remove"
     alias snapupdate="sudo snap refresh"
     alias snapdownload="snap download"  # https://forum.snapcraft.io/t/download-snaps-and-install-offline/15713
+    # TODO: direct download script via http https://askubuntu.com/questions/1075694/how-to-get-snap-download-url
     alias snapget=snapdownload
 fi
 
@@ -1193,9 +1194,7 @@ if which flatpak >/dev/null 2>&1 ; then
     alias flatpakuninstall="flatpak uninstall"
     alias flatpakupdate="flatpak update"
     alias flatpakrun="flatpak run --filesystem=host --filesystem=home --share=network --device=dri --socket=pulseaudio --socket=system-bus --socket=session-bus "
-    #flatpakdownload() { flatpak install --no-deps flathub "$1" ; flatpak create-usb  . $1 ; flatpak remove "$1" }
-    # flatpak build-bundle /var/lib/flatpak/repo/ $1.flatpak "$1" stable ;  }
-    # flatpak --verbose create-usb /r 
+    #flatpakdownload() { # moved into a script
     alias flatpakget=flatpakdownload
 fi
 
@@ -1773,6 +1772,17 @@ if which rclone >/dev/null 2>&1 ; then
     alias gdrivemount="mkdir /tmp/gdrive ; rclone mount gdrive: /tmp/gdrive --vfs-cache-mode writes --daemon -vv"
     #alias mountgdrive=gdrivemount
     #alias umountgdrive="fusermount -u /tmp/gdrive"
+    #alias mv_chars2null
+    #alias mv_chars2underscore
+    alias mv_lowercase="rclone convmv -v --max-depth 1 --name-transform lowercase ."
+    alias mv_uppercase="rclone convmv -v --max-depth 1 --name-transform uppercase ."
+    alias mv_prefix="rclone convmv -v --max-depth 1 --name-transform prefix="
+    alias mv_suffix="rclone convmv -v --max-depth 1 --name-transform suffix_keep_extension="
+    alias mv_spaces2underscore="rclone convmv -v --max-depth 1 --name-transform replace=' :_' ."
+    alias mv_ascii="rclone convmv -v --max-depth 1 --name-transform ascii ."
+    #renext() { rename.ul -vo .$1 .$2 *.$1 ; } 
+    renext() { rclone convmv -v --max-depth 1 --name-transform "regex=$1$/$2" --include  "*.$1" .  ; } 
+    alias chext=renext
 fi
 
 #alias ss=binpack.py
@@ -1887,7 +1897,7 @@ alias androidmount="mkdir /tmp/adb ; sudo umount /tmp/adb ; adbfs /tmp/adb -o ha
 # TODO: setadbmount -> adbfs /tmp/adb
 #alias androidmount="rclone mount adb: ..." # WIP: https://github.com/rclone/rclone/issues/2956
 
-alias pendrivemount="mkdir /tmp/pendrive ; sudo mount -v /dev/sdb1 /tmp/pendrive -o users"
+#alias pendrivemount="mkdir /tmp/pendrive ; sudo mount -v /dev/sdb1 /tmp/pendrive -o users"
 #alias pendriveumount="sudo umount /tmp/pendrive"
 
 # libimobiledevice-utils aliases
@@ -2191,10 +2201,6 @@ alias voice2command=mic2command.py
 #alias facedet=facerec
 #alias facerec=face_recognition
 
-#renext() { rename.ul -vo .$1 .$2 *.$1 ; } 
-renext() { rename.pl -v "s/.$1/.$2/" *.$1 ; } 
-alias chext=renext
-
 # git aliases
 if which git >/dev/null 2>&1 ; then
 	export GIT_EDITOR=nano
@@ -2280,6 +2286,7 @@ if which wine >/dev/null 2>&1 ; then
 	alias wine64tricks='WINEARCH=win64 WINEPREFIX=~/.wine64 winetricks'
 	alias wineuninstaller='wine uninstaller'
 	#alias wine98="WINEARCH=win32 WINEPREFIX=~/.wine98 wine"
+	alias wine98=wine32
 fi
 
 alias setlibrarypath2cwd="export LD_LIBRARY_PATH=."
@@ -2526,5 +2533,8 @@ alias findmenustrings=vgmenusearch
 
 alias setgamemode=gamemodeset
 alias setpcmode=pcmodeset
+
+japstrings() { jstrings -l 6 -e shiftjis "$@" | grep -P '[\x80-\x{FFFF}]{3,}' | grep -Pv '[\x{FF65}-\x{FF9F}]'  ; }
+
 
 unset THIS_SCRIPT_DIR

@@ -38,7 +38,7 @@ esac
 WHISPER_PATH=$HOME/opt/whispercpp
 TMP_FILE=/tmp/rec16.wav
 
-LANGUAGE="auto"
+#LANGUAGE="auto"
 LANGUAGE="ja"
 #LANGUAGE="en"
 #LANGUAGE="it"
@@ -51,12 +51,12 @@ MODEL_FILE=$WHISPER_PATH/models/ggml-model-whisper-small-q5_1.bin
 ffmpeg -y -i "$INPUTFILE"  -vn -ar 16000 -ac 1 -c:a pcm_s16le $TMP_FILE > /dev/null 2>&1
 
 # run Whisper
-whispercpp -m $MODEL_FILE -f $TMP_FILE -${WHISPEROPT} -of "$OUTPUTFILE" # > /dev/null 2>&1  #  -l en -l $LANGUAGE 
+whispercpp  -l $LANGUAGE  -m $MODEL_FILE -f $TMP_FILE -${WHISPEROPT} -of "$OUTPUTFILE" # > /dev/null 2>&1  #  -l en -l $LANGUAGE 
 
-if [ LANGUAGE = "ja" ]; then
-	transliterate ${TMP_FILE}.${OUTPUTFILEEXT} ${TMP_FILE}_trans.${OUTPUTFILEEXT}
-	mv ${TMP_FILE}_trans.${OUTPUTFILEEXT} ${TMP_FILE}.${OUTPUTFILEEXT}
-fi
+#if [ LANGUAGE = "ja" ]; then
+#	transliterate ${TMP_FILE}.${OUTPUTFILEEXT} ${TMP_FILE}_trans.${OUTPUTFILEEXT}
+#	mv ${TMP_FILE}_trans.${OUTPUTFILEEXT} ${TMP_FILE}.${OUTPUTFILEEXT}
+#fi
 
 if [ $OUTPUTFILEEXT = "ass" ]; then
 	whispercppjf2ass.py ${TMP_FILE}.json "${INPUTFILENAME}.ass"

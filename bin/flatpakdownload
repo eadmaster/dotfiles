@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# https://unix.stackexchange.com/questions/404905/offline-install-of-a-flatpak-application/541583#541583
+
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ -z "$1" ] ; then
+	echo "usage: $(basename $0) FLATPACK_NAME"
+	echo
+	exit 0
+fi
+
+if which ostreeWIP >/dev/null 2>&1 ; then
+    TEMP_REPO=$(mktemp -d)
+    echo "Creating temporary OSTree repo at $TEMP_REPO"
+
+    ostree --repo="$TEMP_REPO" init --mode=archive-z2
+    ostree --repo="$TEMP_REPO" --no-gpg-verifyremote add flathub https://dl.flathub.org/repo/
+    ostree --repo="$TEMP_REPO" pull flathub app/$1/x86_64/stable
+    flatpak build-bundle "$TEMP_REPO" dosbox-x.flatpak com.dosbox_x.DOSBox-X --runtime --deps
+    exit $1
+fi
+
+
+flatpak install --user --no-deploy --no-deps  flathub  "$1"
+flatpak build-bundle -vv ~/.local/share/flatpak/repo "$1.flatpak"  "$1" stable
+# ALT.: flatpak create-usb  . $1  # https://docs.flatpak.org/en/latest/flatpak-command-reference.html#flatpak-create-usb
+#TODO: clean ~/.local/share/flatpak/repo

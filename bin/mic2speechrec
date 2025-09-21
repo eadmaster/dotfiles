@@ -1,5 +1,14 @@
 
 
+# Android detection
+if [ ! -z "$ANDROID_ROOT" ]; then
+	# using the Termux:GUI add-on  https://wiki.termux.com/wiki/Termux-dialog
+	termux-dialog speech | jq -r .text
+    _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+    
+    exit 127
+fi
+
 # https://github.com/ggerganov/whisper.cpp#real-time-audio-input-example
 WHISPER_PATH=$HOME/opt/whispercpp
 $WHISPER_PATH/stream -m $WHISPER_PATH/models/ggml-base.en.bin -t 8 --step 500 --length 5000

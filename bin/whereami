@@ -4,7 +4,7 @@ command -p whereami "$@"
 #_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 if [ ! -z "$ANDROID_ROOT" ]; then
-	# using the Termux:API add-on
+	# using the Termux:API add-on  https://wiki.termux.com/wiki/Termux-location
 	termux-location "$@"
 	#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 	

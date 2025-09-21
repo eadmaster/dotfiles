@@ -7,6 +7,10 @@ INPUTFILEEXT=$( echo -n $INPUTFILEEXT | tr '[A-Z]' '[a-z]' ) # force lowercase e
 [ "$INPUTFILEEXT" = "mx2" ] && _APPENDED_OPTIONS="-carta"
 [ "$INPUTFILEEXT" = "dsk" ] && _APPENDED_OPTIONS="-diska"
 
+export OPENMSX_HOME=$HOME/opt/openmsx
+$HOME/opt/openmsx/bin/openmsx $_APPENDED_OPTIONS "$@"
+[ $? -ne 127 ] && exit $?
+
 command -p openmsx $_APPENDED_OPTIONS "$@"
 [ $? -ne 127 ] && exit $?
 

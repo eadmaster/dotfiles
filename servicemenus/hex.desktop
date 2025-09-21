@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Service
+ServiceTypes=KonqPopupMenu/Plugin
+Actions=OpenAsRoot
+Icon=imhex
+MimeType=all/allfiles
+X-KDE-Priority=TopLevel
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin,all/allfiles
+
+[Desktop Action OpenAsRoot]
+Exec=imhex %U
+Name=Hex edit...
+Icon=imhex

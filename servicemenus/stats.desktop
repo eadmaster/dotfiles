@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Service
+Icon=qdirstat
+Actions=OpenAsRoot
+MimeType=inode/directory
+X-KDE-Priority=TopLevel
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin,inode/directory
+X-TDE-Priority=TopLevel
+X-TDE-ServiceTypes=KonqPopupMenu/Plugin,inode/directory,inode/directory-locked,inode/directory-hidden
+Terminal=false
+
+[Desktop Action OpenAsRoot]
+Exec=qdirstat
+Icon=qdirstat
+Name=QDirStat...

@@ -4,7 +4,10 @@
 #command -p rename "$@"
 #_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
 
-# alternative from file-rename package (old perl ver?)
+# alternative from rclone https://rclone.org/commands/rclone_convmv/
+rclone convmv -v --max-depth 1 --name-transform regex="$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
 rename.pl "s/$1/$2/g" "$3"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
 file-rename "s/$1/$2/g" "$3"

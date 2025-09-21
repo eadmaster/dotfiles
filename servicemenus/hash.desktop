@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Service
+Actions=OpenAsRoot
+Icon=application-certificate
+MimeType=all/allfiles
+X-KDE-Priority=TopLevel
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin,all/allfiles
+
+[Desktop Action OpenAsRoot]
+Exec=gtkhash $1
+Name=Hash...
+Icon=application-certificate

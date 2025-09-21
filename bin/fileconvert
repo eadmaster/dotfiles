@@ -221,14 +221,15 @@ elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "csv" ] || [ "$INPUTFIL
 	[ -s "$OUTPUTFILE" ] && exit $?
 	# using catmandu  https://github.com/LibreCat/Catmandu
 	catmandu convert $INPUTFILEEXTUPPER to $OUTPUTFILEEXTUPPER < "$INPUTFILE" > "$OUTPUTFILE"  # TODO: verbose
-	# TODO: using https://github.com/TomWright/dasel
+	# using https://github.com/TomWright/dasel
+	dasel -i $INPUTFILEEXT -o $OUTPUTFILEEXT  < "$INPUTFILE" > "$OUTPUTFILE" 
 	exit $?
 elif [ "$OUTPUTFILEEXT" = "json" ]; then
+	# using fq (supports a lot of formats) https://github.com/wader/fq
+	fq --monochrome-output -d $INPUTFILEEXT . "$INPUTFILE" > "$OUTPUTFILE"
 	# using jc (supports a lot of formats) https://github.com/kellyjonbrazil/jc
 	#jc --pretty --monochrome --$INPUTFILEEXT < "$INPUTFILE" > "$OUTPUTFILE"
 	#[ -s "$OUTPUTFILE" ] && exit $?
-	# using fq (supports a lot of formats) https://github.com/wader/fq
-	fq --monochrome-output -d $INPUTFILEEXT . "$INPUTFILE" > "$OUTPUTFILE"
 	exit $?
 
 # graph conversions
@@ -384,7 +385,8 @@ case $INPUTFILEEXT in
 		# else try other alternatives
 		;;
 	bin|nrg|mdf|pdi|cdi|b5i )  # iso
-		iat "$INPUTFILE" "$OUTPUTFILE"
+		iat "$INPUTFILE" "$OUTPUTFILE" # old ver
+		iat -i "$INPUTFILE" -o "$OUTPUTFILE"
 		exit $?
 		;;
 	vdi|vhd|vmdk|raw )

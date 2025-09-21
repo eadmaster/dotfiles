@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Service
+Icon=doublecmd
+#Icon=media-floppy
+Actions=OpenAsRoot
+MimeType=inode/directory
+X-KDE-Priority=TopLevel
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin,inode/directory
+
+[Desktop Action OpenAsRoot]
+Exec=doublecmd %U
+Icon=doublecmd
+#Icon=media-floppy
+Name=Double Commander...

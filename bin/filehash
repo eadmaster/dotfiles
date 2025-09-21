@@ -44,6 +44,14 @@ case $INPUTFILETYPE in
 			echo
 			echo
 		fi
+		
+		if which exiftool >/dev/null 2>&1 ; then
+			echo "$0: exiftool image data hash (MD5): "
+			# TODO: needs normalization to be meaningful: magick input.png -alpha off -colorspace sRGB -depth 8 -type TrueColor png:- |
+			exiftool -api ImageHashType=MD5 -ImageDataHash "$INPUTFILE"
+			echo
+			echo
+		fi
 		;;
 		
 	audio/* )

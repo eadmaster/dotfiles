@@ -10,11 +10,11 @@
 [ "$2" = "pcfx" ] && _APPENDED_OPTIONS="-loadcd pcfx"
 [ "$2" = "psx" ] && _APPENDED_OPTIONS="-loadcd psx"
 
-/usr/games/mednafen $_APPENDED_OPTIONS "$@"
+#enable -n command
+/usr/bin/mednafen $_APPENDED_OPTIONS "$@"
 [ $? -ne 127 ] && exit $?
 
-enable -n command
-command -p mednafen $_APPENDED_OPTIONS "$@"
+/usr/games/mednafen $_APPENDED_OPTIONS "$@"
 [ $? -ne 127 ] && exit $?
 
 extractrun mednafen $_APPENDED_OPTIONS "$@"

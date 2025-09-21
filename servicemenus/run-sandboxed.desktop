@@ -1,0 +1,17 @@
+[Desktop Entry]
+Name=Run Sandboxed
+Icon=firetools
+Type=Service
+Actions=OpenAsRoot
+;MimeType=all/allfiles
+MimeType=application/x-executable;application/x-shellscript;text/x-script;application/x-pie-executable
+X-KDE-Priority=TopLevel
+Terminal=true
+Categories=Qt;System;Security;
+Keywords=jail;security;seccomp;
+
+[Desktop Action OpenAsRoot]
+# xdg-terminal -e bash -c "
+Exec=firejail --net=none  --noprofile "%f"
+Icon=firetools
+Name=Run Sandboxed

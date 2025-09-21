@@ -261,7 +261,7 @@ case "$INPUTFILEEXT" in
 	flatpak )
 		# https://github.com/faveoled/flatpak-extract
 		flatpak-extract.py --tmpdir $HOME/flatpak-extract --outdir "$OUTPUTDIR"  "$INPUTFILE"
-		[ $? -eq 0 ] && exit 0
+		exit $?
 		;;
 	
 	# TODO: ... https://github.com/xvoland/Extract/blob/master/extract.sh
@@ -280,7 +280,7 @@ esac
 case $INPUTFILETYPE in
 	application/pdf )
 		pdfimages -j "$INPUTFILE" "$OUTPUTDIR/"
-		pdftotext "$INPUTFILE" > "$OUTPUTDIR/$INPUTFILE.txt"
+		pdftotext "$INPUTFILE" "$OUTPUTDIR/$INPUTFILE.txt"
 		pdfdetach -saveall "$INPUTFILE" #-o "$OUTPUTDIR/"
 		exit $?
 		;;
