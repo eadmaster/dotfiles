@@ -1,6 +1,6 @@
 #!/bin/bash
 
-firejail --private "$1"
+firejail --private --net=none "$1"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 # else
 # very basic sandboxing alternative by overriding some envvars

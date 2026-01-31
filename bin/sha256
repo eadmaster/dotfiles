@@ -6,6 +6,9 @@ _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 busybox sha256sum "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
+coreutils sha256sum "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
 openssl dgst -sha256 -r "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
@@ -16,8 +19,11 @@ else
 fi
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
-# using rclone  https://rclone.org/commands/rclone_hashsum/
+# https://rclone.org/commands/rclone_hashsum/
 rclone hashsum sha256  "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
+imhex --hash sha256 "$@"
 _ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 #else

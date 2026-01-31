@@ -1,0 +1,36 @@
+#!/bin/bash
+
+
+# args checking
+if [ "$#" -lt 3 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	echo "usage: $(basename $0) ROMFILE TBLPATH SRCSTRING"
+	echo
+	exit 0
+fi
+
+ROMFILE="$1"
+ROMFILE=$(readlink -f "$ROMFILE")  # needs absolute path
+ROMFILESIZE=$(stat -c%s "$ROMFILE")
+ROMFILESIZEHEX=$(printf '%x' "$ROMFILESIZE")
+TBLPATH="$2"
+SRCSTRING="$3"
+
+cd $TBLPATH
+
+for tbl in *.tbl
+do
+    echo "$0: trying $tbl ..."
+    
+    if file "$tbl" | grep -q 'UTF-8'; then
+        # output is already utf8
+        romjuice "$ROMFILE" "$tbl" 0 $ROMFILESIZEHEX  - -h "" | grep -q "$SRCSTRING"
+    else
+        # output needs sjis->utf8 conversion
+        romjuice "$ROMFILE" "$tbl" 0 $ROMFILESIZEHEX  - -h "" | iconv -f SJIS -t UTF-8 | grep -q "$SRCSTRING"
+    fi
+    
+    if [ $? -eq 0 ]; then
+        echo "^^^ match found using $tbl ^^^"
+        #break
+    fi
+done

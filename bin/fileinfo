@@ -137,12 +137,32 @@ case $INPUTFILEEXT in
 		#aaru image info "$INPUTFILE"
 		exit $?
 		;;
+
+	wbfs|wia|gcz|wdf )
+		# https://wit.wiimm.de/info/command-line.html
+		wit dump "$INPUTFILE" "$OUTPUTDIR"
+		exit $?
+		;;
 	
+	dat|xml)
+		# rom datfile
+		# https://github.com/SabreTools/SabreTools
+		SabreTools stats --log-level=none --output-dir=/tmp "$INPUTFILE"  # no stdout support: --filename=- 
+		cat /tmp/report.txt
+		rm -r logs  # remove after https://github.com/SabreTools/SabreTools/issues/116
+		[ "$INPUTFILEEXT" != "xml" ] && exit $?
+		;;
+		
 	# TODO:
 	#ips|ups|aps|delta|ppf|bps )  # https://datacrystal.romhacking.net/wiki/Patch
 	#	exit $?
 	#	;;
-		
+	ips )
+		# https://github.com/nstbayless/ipsnect/
+		ipsnect "$INPUTFILE"
+		exit $?
+		;;
+
 	nsp|xci|nro|nsz )
 		# https://github.com/garoxas/NX_Game_Info
 		nxgameinfo_cli -z "$INPUTFILE"
@@ -191,10 +211,10 @@ case $INPUTFILEEXT in
 		;;
 	
 	exe|dll ) # windows executable
-		pev  "$INPUTFILE"
-		wrestool --extract --raw --type=version "$INPUTFILE"
-		wrestool --list "$INPUTFILE"
-		retdec-fileinfo "$INPUTFILE"
+		readpe  "$INPUTFILE"  # https://github.com/mentebinaria/readpe
+		#wrestool --extract --raw --type=version "$INPUTFILE"
+		#wrestool --list "$INPUTFILE"
+		retdec-fileinfo "$INPUTFILE"  # https://github.com/avast/retdec
 		sfk ver "$INPUTFILE"  # http://stahlworks.com/sfk-version
 		exit $?
 		;;
@@ -419,6 +439,10 @@ file -i "$@"
 file "$@"
 #file -z -k "$@"
 
+# via imhex (libmagic-based) https://github.com/WerWolv/ImHex-Patterns
+imhex --magic desc "$@"
+imhex --magic mime "$@"
+
 # try with exiftool
 exiftool "$INPUTFILE"
 
@@ -431,6 +455,21 @@ hachoir-metadata "$INPUTFILE"
 # try with tika  https://github.com/apache/tika
 tika --text --metadata  "$INPUTFILE"
 
-# also try with fq https://github.com/wader/fq/
+# try with fq https://github.com/wader/fq/
 fq . "$INPUTFILE"
 
+# try with magika https://github.com/google/magika
+magika "$INPUTFILE"
+
+# try game archives via GameExtractor  https://github.com/wattostudios/GameExtractor/blob/master/help/CommandLine.html
+#  listing to stdout added in v3.13a https://github.com/wattostudios/GameExtractor/issues/7
+# GameExtractor -list -format CSV -input "$@"
+
+#TODO: tika https://github.com/apache/tika
+# https://github.com/apache/tika/blob/main/tika-core/src/main/resources/org/apache/tika/mime/tika-mimetypes.xml
+
+# AuroraLib https://github.com/Venomalia/AuroraLib.Compression/pull/17
+auracomp -mime -in "$INPUTFILE"
+
+# try with Kurimu https://github.com/FanTranslatorsInternational/Kuriimu2-CommandLine-Update
+$HOME/opt/Kuriimu2Cmd/Kuriimu2 open "$(readlink -f "$INPUTFILE")"  # TODO: batch mode

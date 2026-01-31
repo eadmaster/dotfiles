@@ -104,6 +104,19 @@ case "$INPUTFILEEXT" in
 		ucon64 "$INPUTFILE"
 		exit $?
 		;;
+
+	wbfs|wia|gcz|wdf )
+		# https://wit.wiimm.de/info/command-line.html
+		wit VERIFY "$INPUTFILE" "$OUTPUTDIR"
+		exit $?
+		;;
+	
+	dat|xml )
+		# https://github.com/SabreTools/SabreTools/wiki/Verify
+		SabreTools ve --log-level=none "$INPUTFILE"
+		rm -r logs  # remove after https://github.com/SabreTools/SabreTools/issues/116
+		[ "$INPUTFILEEXT" != "xml" ] && exit $?
+		;;
 		
 	crc|crc32|sfv|md5|sfvmd5|ed2k|emulecollection|hash )
 		rhash -c "$INPUTFILE"

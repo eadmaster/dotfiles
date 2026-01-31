@@ -1,11 +1,16 @@
 #!/bin/sh
 
+# https://github.com/rtr46/meikiocr/#usage---cli
+meikiocr "$@"
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+
 # https://github.com/JaidedAI/EasyOCR/blob/master/easyocr/cli.py
 easyocr --lang ja --detail 0 --paragraph 1 --file "$@"
-#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 # https://www.paddleocr.ai/main/en/quick_start.html#command-line-usage
 #paddleocr ocr -i "$@" s#...
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 
 # https://github.com/tesseract-ocr/tesseract/wiki/ControlParams#user-content-useful-parameters-for-japanese-and-chinese
 tesseract   "$@" stdout -l jpn_vert+jpn+eng --psm 5 --oem 1

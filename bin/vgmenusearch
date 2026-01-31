@@ -3,22 +3,43 @@
 # dictionary-based vg menu search script
 # based on http://stahlworks.com/sfk-hexfind
 
-INPUT=$1
-[ -z "$INPUT" ] && INPUT='-dir .'
+INPUT="$@"
+[ -z "$INPUT" ] && INPUT='-dir .'  # sfk recursive search
 
-# English text
-#THIS_SCRIPT_DIR="$( cd $(dirname $0) ; pwd -P )"
-#DICTFILE=$THIS_SCRIPT_DIR/vgmenusearch_eng.dic
-#sfk hexfind -nocase -bylinelist  $DICTFILE  $INPUT
+THIS_SCRIPT_DIR="$( cd $(dirname $0) ; pwd -P )"
+
+# English text in ASCII
+#sfk hexfind -nocase -bylinelist  $THIS_SCRIPT_DIR/vgmenusearch_eng.dic  $INPUT
 #[ $? -eq 1 ] && echo "^^^ base ASCII matches found ^^^"
 
-# Japanese text
-THIS_SCRIPT_DIR="$( cd $(dirname $0) ; pwd -P )"
-DICTFILE=$THIS_SCRIPT_DIR/vgmenusearch_jap.dic
-sfk hexfind -nocase -bylinelist  $DICTFILE  $INPUT
+# Japanese text in Shift-JIS
+sfk hexfind -nocase -bylinelist  $THIS_SCRIPT_DIR/vgmenusearch_jap.sjis  $INPUT
 [ $? -eq 1 ] && echo "^^^ Shift-JIS matches found ^^^"
 
-#TODO:
-# convert vgmenusearch_jap.dic to utf16, eucjp, cp932
+echo
+
+# Japanese text in Shift-JIS byte-swapped
+#sfk hexfind -dir . -pat /4183428367838083/ -pat /8C837483EB83/  -pat /B182A482B282AB82/
+#                      "Item" (アイテム)        "Level" (レベル"        "Attack" (こうげき)
+sfk hexfind -dir . -pat "/4183428367838083/"  -pat "/8C837483EB83/"  -pat "/B182A482B282AB82/" -pat "/49837683568387839383/" -pat "/72834D839383/"  -pat "/5A835F835B816783/"   -pat "/BC8340837683/"
+#                        Item: アイテム                             Level: レベル             Attack: こうげき                                Options: オプション                         Begin: ビギン                        Start: スタート                        Save: セーブ
+# TODO: move in an external file, more strings
+[ $? -eq 1 ] && echo "^^^ Shift-JIS Byte-Swapped matches found ^^^"
+
+echo
+
+# Japanese text in Unicode/UTF-16LE
+#buggy:
+#sfk -wchar hexfind  -nocase -bylinelist  $THIS_SCRIPT_DIR/vgmenusearch_jap.utf16le  $INPUT
+#[ $? -eq 1 ] && echo "^^^ UTF16-LE matches found ^^^"
+
+# alt: 
+rg --text --only-matching --no-line-number --byte-offset --encoding utf-16le -Ff $THIS_SCRIPT_DIR/vgmenusearch_jap.utf8 
+# TODO: fix drifted offsets
+[ $? -eq 0 ] && echo "^^^ UTF16-LE matches found ^^^"
+
+# alt. 2: (slower)
+#ugrep --binary-files=text --byte-offset --perl-regexp --only-matching  --encoding=UTF-16LE -f $THIS_SCRIPT_DIR/vgmenusearch_jap.utf8  -r  # --format="%f:0x%b:%+ %+\n" .
+#[ $? -eq 0 ] && echo "^^^ UTF16-LE matches found ^^^"
 
 # TODO: try using rsearch  https://www.romhacking.net/utilities/998/

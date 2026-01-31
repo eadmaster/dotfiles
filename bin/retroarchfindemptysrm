@@ -23,7 +23,8 @@ do
 	for KNOWN_EMPTY_SAVE_HASH in "${KNOWN_EMPTY_SAVE_HASHES_LIST[@]}"; do
 		if [ $KNOWN_EMPTY_SAVE_HASH = $CURR_FILE_MD5 ]; then
 			#echo "$(basename $0) info: EMPTY save: $CURR_FILE" >&2
-			rm -v "$CURR_FILE"
+			#rm -v "$CURR_FILE"
+			echo "$CURR_FILE"
 		fi
 	done
 

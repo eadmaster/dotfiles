@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# Character-to-Hex Converter Script
+# Converts a string of characters into a concatenated sequence of
+# corresponding hexadecimal codes based on an external map file.
+
+# Ensure the system environment supports UTF-8 for correct character splitting
+# when dealing with multi-byte characters like Hiragana.
+
+# --- 1. Define the Associative Array ---
+declare -A char_map
+
+# --- 2. Input Validation ---
+tbl_file="$1"
+input_string="$2"
+
+if [ $# -ne 2 ]; then
+    echo "Usage: $0 <tbl_file> <string_to_convert>"
+    echo "Example: $0 table.tbl おうい"
+    exit 1
+fi
+
+if [ ! -f "$tbl_file" ]; then
+    echo "Error: Map file '$tbl_file' not found." >&2
+    exit 1
+fi
+
+# --- 3. Load the Map from the external file ---
+# The map file is expected to be in the format: HEX=CHAR (e.g., 1000=あ).
+# We read it line by line, splitting by '=', and populate the associative array
+# with key=CHAR and value=HEX for easy lookup later.
+while IFS='=' read -r hex_raw char_raw; do
+    # Normalize line endings: strip carriage return (\r) characters from both variables
+    # to handle files created with Windows (CRLF) line endings.
+    hex="${hex_raw//$'\r'/}"
+    char="${char_raw//$'\r'/}"
+    
+    # Skip empty lines or lines without the required format
+    if [[ -n "$hex" && -n "$char" ]]; then
+        char_map["$char"]="$hex"
+    fi
+done < "$tbl_file"
+
+# Check if the map was successfully loaded
+if [ ${#char_map[@]} -eq 0 ]; then
+    echo "Error: Map file '$tbl_file' loaded zero entries. Check file format (HEX=CHAR)." >&2
+    exit 1
+fi
+
+# --- 4. Processing and Conversion ---
+# The conversion uses a command substitution block to handle
+# the character-by-character loop, printing the hex codes without newlines.
+final_output=$(
+    # 'grep -o .' splits the multi-byte string into one character per line.
+    echo "$input_string" | grep -o . | while read -r char; do
+        # Look up the hex value for the current character
+        hex_value=${char_map["$char"]}
+
+        # Check if the character was found in the map
+        if [ -n "$hex_value" ]; then
+            printf "%s" "$hex_value"
+        else
+            # Print a warning to stderr if a character is missing
+            echo "Warning: Character '$char' not found in the map. Skipping." >&2
+        fi
+    done
+)
+
+# --- 5. Output Result ---
+echo "$final_output"

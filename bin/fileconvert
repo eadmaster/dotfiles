@@ -129,6 +129,9 @@ elif [ "$INPUTFILEEXT" = "db" ] && [ "$OUTPUTFILEEXT" = "txt"] ; then
 # WANTED: html microdata, microformats extractors
 
 # ROM dumps conversions
+elif [ "$INPUTFILEEXT" = "bin" ] && [ "$OUTPUTFILEEXT" = "iso" ] ; then
+	iat -i "$INPUTFILE" -o "$OUTPUTFILE" --iso
+	exit $?
 elif [ "$INPUTFILEEXT" = "gen" ] || [ "$INPUTFILEEXT" = "bin" ] && [ "$OUTPUTFILEEXT" = "smd" ] ; then  # ROM DUMPS
 	cp "$INPUTFILE" "$OUTPUTFILE"
 	ucon64 --gen --smd --nbak "$OUTPUTFILE"
@@ -152,8 +155,19 @@ elif [ "$OUTPUTFILEEXT" = "smc" ] ; then
 # TODO: n64, z64...
 elif [ "$OUTPUTFILEEXT" = "chd" ] ; then
 	chdman createcd -i "$INPUTFILE" -o "$OUTPUTFILE"
+	# TODO: mono $HOME/opt/BizHawk/DiscoHawk.exe
 	exit $?
-	
+
+# TODO: datfiles conversion
+#elif [ "$INPUTFILEEXT" = "dat" ] && [ "$OUTPUTFILEEXT" = "xml" ] ; then
+#	# https://github.com/jjolly/logiqx/blob/master/dev/datutil/readme.txt
+#	# https://wiki.recalbox.com/en/tutorials/utilities/dat-management/datutil
+#	datutil -v "$INPUTFILE"
+#
+# 	# https://github.com/SabreTools/SabreTools/wiki/Update
+#	SabreTools -ud --base-dat="$INPUTFILE"  -f="$OUTPUTFILE" mame0234.dat
+#	exit $?
+
 # savegame / memcard conversion
 elif [ "$INPUTFILEEXT" = "gcs" ] && [ "$OUTPUTFILEEXT" = "gci" ] ; then  # ROM SAVEGAMES
 	# remove the 272 bytes header
@@ -223,6 +237,8 @@ elif [ "$INPUTFILEEXT" = "json" ] || [ "$INPUTFILEEXT" = "csv" ] || [ "$INPUTFIL
 	catmandu convert $INPUTFILEEXTUPPER to $OUTPUTFILEEXTUPPER < "$INPUTFILE" > "$OUTPUTFILE"  # TODO: verbose
 	# using https://github.com/TomWright/dasel
 	dasel -i $INPUTFILEEXT -o $OUTPUTFILEEXT  < "$INPUTFILE" > "$OUTPUTFILE" 
+	# using https://github.com/abhimanyu003/sttr
+	#sttr ${INPUTFILEEXT}-${OUTPUTFILEEXT} < "$INPUTFILE" > "$OUTPUTFILE" 
 	exit $?
 elif [ "$OUTPUTFILEEXT" = "json" ]; then
 	# using fq (supports a lot of formats) https://github.com/wader/fq
@@ -342,6 +358,7 @@ case $INPUTFILEEXT in
 		pandoc -o "$OUTPUTFILE" "$INPUTFILE"
 		_ES=$? ; [ $_ES -eq 0 ] && exit $_ES
 		# TODO: try other alternatives
+		# sttr markdown-html
 		exit $?
 		;;
 	zip|rar|7z|arj|bz2|cab|cpio|gz|lzma|lha|lzh|tar|tgz|tbz|wim|iso )

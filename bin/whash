@@ -16,19 +16,41 @@ TARGET_PATH_BASENAME="`basename \"$TARGET_PATH\"`"
 TARGET_PATH_NOEXT="`echo \"$TARGET_PATH\" | rev | cut -d'.' -f2- | rev`"
 TARGET_PATH_DIR="`dirname \"$TARGET_PATH\"`"
 
-# check http, ftp headers
-curl -s --head "$TARGET_PATH" | grep -e "ETag" -e "Content-Digest" -e "MD5" -e "CRC" -e "HASH" -e "SHA"
+# check http headers
+if [[ $TARGET_PATH == http* ]]; then
+	#curl -s --head "$TARGET_PATH" | grep -e "ETag" -e "Content-Digest" -e "MD5" -e "CRC" -e "HASH" -e "SHA"
+	curl -s --head -L \
+		 -H "Want-Digest: SHA-256, SHA-512, MD5" \
+		 "$TARGET_PATH" | grep -Ei "ETag|Digest|MD5|CRC|HASH|SHA|x-amz-checksum" || echo "No matching headers found."
+
+	## 2. Method: WebDAV PROPFIND (Nextcloud/ownCloud only)
+	#ALT.: rclone hashsum SHA-1 remote:path/to/file --webdav-vendor nextcloud
+	#echo "[*] Trying WebDAV PROPFIND (Nextcloud/OC)..."
+	#curl -s -X PROPFIND \
+	#     -H "Content-Type: text/xml" \
+	#     --data '<?xml version="1.0" encoding="UTF-8"?>
+	#<d:propfind xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns">
+	#  <d:prop>
+	#    <oc:checksums/>
+	#  </d:prop>
+	#</d:propfind>' "$TARGET_PATH" | grep -oP '(?<=<oc:checksums>).*?(?=</oc:checksums>)' || echo "WebDAV checksums not supported."
+fi
+
+## FTP HASH Command
+if [[ $TARGET_PATH == ftp* ]]; then
+    echo "[*] Trying FTP HASH command..."
+    # Extract filename for the FTP HASH command
+    FILENAME=$(basename "$TARGET_PATH")
+    curl -s --quote "HASH $FILENAME" "$TARGET_PATH" -I | grep "213" || echo "FTP HASH command failed."
+fi
 
 # check hash files on the server
-# TODO: disable redirections -> remove " | head -n2"
-wget -q -O- "$TARGET_PATH.md5" | head -n2  2>/dev/null
-wget -q -O- "$TARGET_PATH_NOEXT.md5"  | head -n2  2>/dev/null
-wget -q -O- "$TARGET_PATH.sfv"  | head -n2  2>/dev/null
-wget -q -O- "$TARGET_PATH_NOEXT.sfv" | head -n2  2>/dev/null
-wget -q -O- "$TARGET_PATH.metalink" | head -n2  2>/dev/null  #| grep md5
-wget -q -O- "$TARGET_PATH_NOEXT.metalink"  | head -n2  2>/dev/null  #| grep md5
-wget -q -O- "$TARGET_PATH.jigdo"  | head -n2  2>/dev/null  #| grep MD5Sum
-wget -q -O- "$TARGET_PATH_NOEXT.jigdo" | head -n2  2>/dev/null  #| grep MD5Sum
-
-wget -q -O- "$TARGET_PATH_DIR/md5sums.txt" | grep "$TARGET_PATH_BASENAME"
-
+curl -sfL "$TARGET_PATH.md5"  2>/dev/null
+curl -sfL "$TARGET_PATH_NOEXT.md5"  2>/dev/null
+curl -sfL "$TARGET_PATH.sfv"  2>/dev/null
+curl -sfL "$TARGET_PATH_NOEXT.sfv"  2>/dev/null
+curl -sfL "$TARGET_PATH.metalink" 2>/dev/null  #| grep -Ei "md5|sha" 
+curl -sfL "$TARGET_PATH_NOEXT.metalink" 2>/dev/null  #| grep -Ei "md5|sha"
+curl -sfL "$TARGET_PATH.jigdo" 2>/dev/null  #| grep -i "MD5Sum"
+curl -sfL "$TARGET_PATH_NOEXT.jigdo" 2>/dev/null  #| grep -i "MD5Sum"
+curl -sfL "$TARGET_PATH_DIR/md5sums.txt" 2>/dev/null  | grep "$TARGET_PATH_BASENAME"

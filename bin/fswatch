@@ -1,0 +1,24 @@
+
+
+# https://github.com/emcrisostomo/fswatch
+#command -p fswatch "$@"
+#_ES=$? ; [ $_ES -ne 127 ] && exit $_ES 
+
+
+# ALTERNATIVES:
+
+#NO? inotifywait -m -r -e modify,create,delete,move "$@"
+
+echo "$0: watching \"$@\" for changes..." >&2
+while true; do
+    # 1. Wait for ANY change in the directory (ls -lR is the trigger)
+    watch -t -g ls -lR "$@"  > /dev/null 2>&1
+
+    # 2. Immediately find files modified in the last 2 seconds
+    #    This prints the filenames directly to stdout
+    find "$@" -type f -mmin 1
+    #find "$@" -type f -newermt "2 seconds"
+    
+    # 3. Brief pause to prevent CPU hammering and allow Ctrl+C
+    sleep 1
+done

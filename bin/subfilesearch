@@ -1,8 +1,9 @@
 
 # https://github.com/ReFirmLabs/binwalk/wiki/Usage
+# Some signatures with a high rate of false positives are, by default, only looked for at the beginning of a file. Try running with the -a flag.   https://github.com/redballoonsecurity/ofrak
 echo "$0: binwalk scan..."
-#binwalk --verbose --extract --signature --carve "$@"
-binwalk --verbose --extract  "$@"
+#binwalk --verbose --extract --signature --carve "$@"  # old
+binwalk --verbose   "$@"  # --search-all
 # WANTED: better magic file: --magic=/usr/share/misc/magic.mgc
 
 echo "$0: hachoir-subfile scan..."
@@ -12,8 +13,7 @@ hachoir-subfile "$@"
 echo "$0: signsrch scan..."
 signsrch -s $HOME/.local/bin/signsrch.sig "$@"
 
-# try game archives via GameExtractor  https://github.com/wattostudios/GameExtractor/blob/master/help/CommandLine.html
-#  listing to stdout added in v3.13a https://github.com/wattostudios/GameExtractor/issues/7
-# GameExtractor -list -format CSV -input "$@"
-
-#TODO: tika https://github.com/apache/tika
+# look for well-known containers
+#grep -aobP ".{0,16}(BMG1|NARC|MES|BMS |RTXT).{0,16}" -r
+sfk hexfind -text "/BMG1/" "/NARC/" "/MES[byte 00]/" "/BMS /" "/RTXT[byte FE][byte FF]/" $INPUT
+# TODO: more fomats

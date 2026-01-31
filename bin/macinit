@@ -388,7 +388,6 @@ fi
 #alias dir2iso="mkisofs -o"
 alias mountiso="sudo mount -o loop" #alternative: fuseiso, cdemu load 0 FILE.IMG
 #alias mountcdi="sudo mount -o loop" #alternative: fuseiso
-alias bin2iso=fileconvert
 
 # dosbox aliases
 if which dosbox >/dev/null 2>&1 ; then
@@ -429,7 +428,8 @@ alias hddinfo=hdinfo
 alias hdtest="sudo smartctl -s on -C -t short /dev/sda"
 alias hdtemp=hdinfo
 alias hddtemp=hdinfo
-alias hdpoweroff="power off"
+#alias hddpoweroff="udisksctl power-off -b"
+alias hddpoweroff="power off"
 #alias mbtemp=...
 #alias hwinfo=lshw -> MOVED IN hwinfo
 alias raminfo="sudo dmidecode --type 17 ; sudo modprobe eeprom ; decode-dimms"
@@ -494,16 +494,18 @@ alias hexget=hexalter
 alias hexset=hexalter
 #alias byteget=hexalter
 #alias byteset=hexalter
-alias poke=hexalter
-alias peek=hexalter
+alias filepoke=hexalter
+alias filepeek=hexalter
 
 # MEMO: C64 syntax: "poke DECIMAL_ADDRESS,DECIMAL_NEW_VALUE"  https://en.wikipedia.org/wiki/PEEK_and_POKE
 # TODO: move in separate scripts, add alternatives
-pspeek() { PID=$(pidof -s $2); [ -z "$PID" ] && echo "$0: process not found" && return 1 ; ADDR=$1; sudo scanmem -c "dump $ADDR 1 ; exit;" $PID ; }  # read the contents of a memory cell at a specified address
-pspoke() { PID=$(pidof -s $2); [ -z "$PID" ] && echo "$0: process not found" && return 1 ; ADDR=$1; VALUE=$3; sudo scanmem -c "write i8 $ADDR $VALUE ; exit;" $PID ; }  # set the contents of a memory cell 
+peek() { PID=$(pgrep -i $2); [ -z "$PID" ] && echo "$0: process not found" && return 1 ; ADDR=$1; sudo scanmem -c "dump $ADDR 1 ; exit;" $PID ; }  # read the contents of a memory cell at a specified address
+poke() { PID=$(pgrep -i $2); [ -z "$PID" ] && echo "$0: process not found" && return 1 ; ADDR=$1; VALUE=$3; sudo scanmem -c "write i8 $ADDR $VALUE ; exit;" $PID ; }  # set the contents of a memory cell 
 #alias peek=pspeek
 #alias poke=pspoke
 # ALT.: pspeek, pspoke -> use /proc/$(pidof $1)/mem
+
+byteswap() { [ -f "$1" ] && dd if="$1" of="$1.swapped" conv=swab || dd conv=swab ; }  #  https://stackoverflow.com/questions/6438099/command-line-to-reverse-byte-order-change-endianess
 
 # ucon64 aliases
 if which ucon64 >/dev/null 2>&1 ; then
@@ -522,15 +524,17 @@ if which ucon64 >/dev/null 2>&1 ; then
 	alias rmheadrom="ucon64 --nbak --stp"
 	alias rmromhead=rmheadrom
 	alias renrom="ucon64 --rdat"
-	alias byteswap="ucon64 --nbak --swap"  # ALT.: byteswap() { dd if="$1" of="$1.swapped" conv=swab; }  #  https://stackoverflow.com/questions/6438099/command-line-to-reverse-byte-order-change-endianess
-	alias byteswap2="ucon64 --nbak --swap2"
-	alias wordswap="ucon64 --nbak --swap2"
+	#alias byteswap="ucon64 --nbak --swap"  # no longer working?
+	#alias wordswap="ucon64 --nbak --swap2"
+	alias addhead="ucon64 --nbak --insn="  # faster than using dd
+	alias addtail="ucon64 --padn="   # faster than using dd
+	alias rmhead="ucon64 --nbak --stpn="   # faster than using dd
 fi
 
 # sfk aliases
 if which sfk >/dev/null 2>&1 ; then
     alias hexset="sfk setbytes"  # http://stahlworks.com/sfk-setbytes
-    alias poke=hexset
+    alias filepoke=hexset
     alias hexsed="sfk replace -binary"   # http://stahlworks.com/sfk-rep
     alias hexcat="sfk hexdump -raw"   # http://stahlworks.com/sfk-hexdump
     #alias bin2hex=hexcat
@@ -569,7 +573,6 @@ alias bps=flips
 addhead() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE BYTES_TO_ADD" && return; dd if="$1" of="$1.headed" bs=1 seek="$2"; }  # ALTERNATIVE: ucon64 --nbak --insn=$2 $1
 addtail() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE BYTES_TO_ADD" && return; truncate -c -s+$2 "$1"; }  # ALTERNATIVEs: ucon64 --padn=$2 "$1"
 #alias pad=addtail
-
 rmhead() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE BYTES_TO_REMOVE" && return; dd if="$1" of="$1.nohead" bs=1 skip="$2"; }  # ALTERNATIVE: ucon64 --nbak --stpn=$2 $1
 alias delhead=rmhead
 #alias truncatehead=rmhead
@@ -1028,6 +1031,7 @@ alias addressbook=contactsearch
 alias contactsls=contactsearch
 alias phonesearch=contactsearch
 #phonesearch() { contactsearch $1 | grep -m1 'CELL' | cut -d: -f2 ; }
+alias finduser=contactsearch
 
 alias whocall=phoneid
 alias whoisphone=phoneid
@@ -1293,12 +1297,19 @@ bits2range() { echo -n "0 .. " ; echo "2 ^ $1 - 1" | bc ; }  # TODO: divide by 2
 range2bits() { python -c "import math ; print(int(math.floor(math.log($1)/math.log(2)) + 1))" ; } # TODO: add an extra bit for the sign
 alias biteditor="bitwise -i"  # https://github.com/mellowcandle/bitwise
 
-[ -f "$THIS_SCRIPT_DIR/hexcmp" ] || hexcmp() { ucon64 -c="$@"; }
+#[ -f "$THIS_SCRIPT_DIR/hexcmp" ] || hexcmp() { ucon64 -c="$@"; }
 alias hexcmp=hexdiff
 alias bindiff=hexdiff
 alias bincmp=hexdiff
 #alias diffbin=hexcmp
 #alias diffhex=hexcmp
+
+if which imhex >/dev/null 2>&1 ; then
+    #alias tblhexedit="imhex --encoding="  # unsupported  https://github.com/WerWolv/ImHex/issues/2506
+    alias hexdiffui=imhex  # Open both of the files you want to compare; View > Diffing
+	# TODO: better alternative?
+    #alias mimeget="imhex --magic mime "  # alt.
+fi
 
 alias hexsearch=hexgrep
 alias bingrep=hexgrep
@@ -1318,16 +1329,17 @@ alias groupsls="cut -d':' -f1 /etc/group | sort"  # | tr '\n' '\t'
 takeown() { sudo chown -cR $USER:$USER "$@" ; sudo chmod -cR u+X "$@" ; }
 #TODO: resetperm() { ... } #  restore default file permissions and ownership  https://unix.stackexchange.com/questions/49959/how-to-restore-default-group-user-ownership-of-all-files-under-var
 
-alias ytdl="yt-dlp -U --embed-metadata  --embed-chapters --embed-subs --restrict-filenames"  # --remux-video mp4
+alias ytdl="yt-dlp -U  --embed-chapters --embed-subs --restrict-filenames"  #  --write-comments --embed-metadata  --remux-video mp4
 #alias ytformats="yt-dlp -F -U --embed-metadata  --embed-chapters --embed-subs"
-ytdlid() { yt-dlp -f $2 -U --embed-metadata  --embed-chapters --embed-subs "$1" ; }
+ytdlid() { yt-dlp -f $2 -U  "$1" ; }
 alias ytdlmp4="ytdl --remux-video mp4" # -f mp4
 alias videoget=ytdl
 #alias videourlget="youtube-dl --get-url" -> MOVED IN mediaurlget
 alias videourlget=mediaurlget
-alias geturls=html2urls
+#alias geturls=html2urls
 #alias getlinks=html2urls
-alias html2links=html2urls
+#alias html2links=html2urls
+alias urlsextract=html2urls
 alias yt2m3u=youtube2m3u
 
 alias posix-shell=posh
@@ -1341,9 +1353,9 @@ alias suggestext="file --extension"
 alias checkext="file --extension"
 mime2ext() { python -m mimetypes -e "$1" ; }
 
-niceget() { ps -o nice -p $(pidof -s $1); }
+niceget() { ps -o nice -p $(pgrep -i $1); }
 alias prioget=getnice
-prioset() { renice $1 $(pidof -s $2); } # TODO: add aliases high=-10, low=10
+prioset() { renice $1 $(pgrep -i $2); } # TODO: add aliases high=-10, low=10
 #alias pidget=pidof
 #alias pidget=pgrep
 #alias pgrep="ps -e | grep "
@@ -1389,6 +1401,13 @@ alias kanjisearch=dictjap2eng
 alias jap2engdict=dictjap2eng
 alias eng2japdict=dicteng2jap
 alias jgrep=japgrep
+
+if which uconv >/dev/null 2>&1 ; then
+    alias hiragana2katakana='uconv -f UTF-8 -t UTF-8 -x Hiragana-Katakana'
+    alias katakana2hiragana='uconv -f UTF-8 -t UTF-8 -x Katakana-Hiragana'
+    alias halfwidth2fullwidth="uconv -f UTF-8 -t UTF-8 -x Halfwidth-Fullwidth"
+    # ...
+fi
 
 ### math utils
 #alias bc="bc -l"  # always prints decimal digits
@@ -1774,8 +1793,8 @@ if which rclone >/dev/null 2>&1 ; then
     #alias umountgdrive="fusermount -u /tmp/gdrive"
     #alias mv_chars2null
     #alias mv_chars2underscore
-    alias mv_lowercase="rclone convmv -v --max-depth 1 --name-transform lowercase ."
-    alias mv_uppercase="rclone convmv -v --max-depth 1 --name-transform uppercase ."
+    alias mv_lowercaseall="rclone convmv -v --max-depth 1 --name-transform lowercase ."
+    alias mv_uppercaseall="rclone convmv -v --max-depth 1 --name-transform uppercase ."
     alias mv_prefix="rclone convmv -v --max-depth 1 --name-transform prefix="
     alias mv_suffix="rclone convmv -v --max-depth 1 --name-transform suffix_keep_extension="
     alias mv_spaces2underscore="rclone convmv -v --max-depth 1 --name-transform replace=' :_' ."
@@ -2168,6 +2187,8 @@ alias ack=rg
 #alias ag=rg
 #alias ripgrep=rg
 
+alias greptext="grep -I --no-messages"
+
 alias svnget="svn checkout"
 
 # alias mp3gain=replaygain
@@ -2287,6 +2308,7 @@ if which wine >/dev/null 2>&1 ; then
 	alias wineuninstaller='wine uninstaller'
 	#alias wine98="WINEARCH=win32 WINEPREFIX=~/.wine98 wine"
 	alias wine98=wine32
+	alias winewindowed="wine explorer /desktop=name,1024x768 "
 fi
 
 alias setlibrarypath2cwd="export LD_LIBRARY_PATH=."
@@ -2529,12 +2551,51 @@ fi
 
 alias igo=gore  # https://github.com/x-motemen/gore/
 
-alias findmenustrings=vgmenusearch
-
 alias setgamemode=gamemodeset
 alias setpcmode=pcmodeset
 
-japstrings() { jstrings -l 6 -e shiftjis "$@" | grep -P '[\x80-\x{FFFF}]{3,}' | grep -Pv '[\x{FF65}-\x{FF9F}]'  ; }
+if which sttr >/dev/null 2>&1 ; then
+    alias urlsextract="sttr extract-urls"
+    alias hex2ascii="sttr hex-decode"
+    alias ascii2hex="sttr hex-encode"
+    alias linescount="sttr lines-count"
+    #alias md2html="sttr markdown-html"  # moved in script
+fi
+
+if which tblstr2hex >/dev/null 2>&1 ; then
+    alias str2sjishex="tblstr2hex $HOME/thingy_tables/generic_imhex/shiftjis.tbl"
+    alias str2unicodehex="tblstr2hex $HOME/thingy_tables/generic/utf16-le.tbl"
+    #alias str2eucjphex="tblstr2hex $HOME/thingy_tables/generic_imhex/euc_jp.tbl"
+    alias str2utf8hex="tblstr2hex $HOME/thingy_tables/generic_imhex/utf8.tbl"
+    sjishexgrep() { hexgrep $(str2sjishex "$@") ; }
+    unicodehexgrep() { hexgrep $(str2unicodehex "$@") ; }
+    japhexgrep() { sjishexgrep "$@" ; unicodehexgrep "$@" ; sfk hexfind -pat "/$1/" -dir . }
+fi
+
+alias findmenustrings=vgmenusearch
+
+#alias utf16lestrings="strings -e l -t x"  # l = 16-bit littleendian, restricted to ascii chars
+
+if which stringsext >/dev/null 2>&1 ; then
+    #alias japstrings=sjisstrings
+    japstrings() { stringsext -tx -e utf-8 -e utf-16le -e EUC-JP  -e Shift_JIS -a None -u Asian --chars-min 4 "$@" | grep -P '[\p{Hiragana}\p{Katakana}]{4,}' ; }
+    alias utf16lestrings="stringsext --encoding  UTF-16LE --chars-min 4"
+fi
+
+if which hf >/dev/null 2>&1 ; then
+    alias huggingface_download="hf download"
+fi
+
+if which SabreTools >/dev/null 2>&1 ; then
+    alias dir2xml="SabreTools d2d --log-level=none"  # xml format by default
+    alias dir2dat="SabreTools d2d --log-level=none --output-type=romcenter"
+    #alias dir2sfv="SabreTools d2d --output-type=sfv"  # no header like rhash
+fi
+
+alias psxisoextract=dumpsxiso  # (creates an xml file for rebuilding) https://github.com/Lameguy64/mkpsxiso
+#NO(BUGGY WITH MULTITRACK CUEs)? alias psxisoextract=psxrip # https://github.com/cebix/psximager/issues/9
+alias psxisols="psxrip --lbn-table"
+alias psxisoreplace=psxinject  # https://github.com/cebix/psximager
 
 
 unset THIS_SCRIPT_DIR

@@ -61,7 +61,7 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 				code_prefix = address[:2]
 				address = address[2:]  # cut 1st 2 digits , used to identify GS code type 
 				
-				if "?" in address:
+				if "?" in address or "?" in value:
 					sys.stderr.write("err: unsupported code type (skipped): %s\n" % line)
 					continue
 				
@@ -71,7 +71,8 @@ def chtnative2retroarch(input_cht_file_str, input_sys_str, output_file):
 					address = "1" + address
 				elif input_sys_str in ["pce"]:
 					# take the 3 least significant digits from the code address (e.g. F82DB4 -> DB4) https://github.com/libretro/beetle-pce-fast-libretro/issues/93#issuecomment-547064141
-					address = address[1:]
+					#address = address[1:]  # needed by some games
+					address = address
 				
 				# TODO: parse all code types, depends on system https://macrox.gshi.org/The%20Hacking%20Text.htm#playstation_code_types
 				
@@ -145,7 +146,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='converts .cht cheat tables from Native/Emulator-handled to Retroarch-handled format')
 	parser.add_argument('infile', nargs='?', default="-", help="input file, defaults to stdin if unspecified. Supports passing urls.")
 	parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'), default=sys.stdout, help="output file, defaults to stdout if unspecified")
-	parser.add_argument("system", help="perform system-specific conversions. Supported values: sat, n64, dc, ps1, pce.")
+	parser.add_argument("system", help="perform system-specific conversions. Supported values: dc, sat, n64, ps1, pce, snes.")
 	args = parser.parse_args()
 
 	if args.infile == "-":
@@ -155,8 +156,8 @@ if __name__ == "__main__":
 		from urllib.request import urlopen
 		infile = urlopen(args.infile)
 		# switch to text file mode
-		import codecs
-		infile = codecs.getreader("utf-8")(infile)
+		infile = open(args.infile, encoding="utf-8", errors="ignore")
+		#infile = codecs.getreader("utf-8")(infile)
 	else:
 		infile = open(args.infile)
 

@@ -31,39 +31,42 @@ def ezcht2retroarch(input_cht_file_str, output_file):
 				print("unsupported code (skipped): " + line)
 				continue
 			# else
-			if commas_sep_count==1:
-				address, value = code_value.split(",")
-				code_size = 3 # assume 8-bit
-			elif commas_sep_count==2:
-				address, value_type, value = code_value.split(",")
-				if value_type=="F":
-					code_size = 3 # assume 8-bit
-				elif value_type=="8":
-					# assume 16-bit
-					code_size = 4
-				elif value_type=="80":
-					# assume 32-bit
-					code_size = 5
+			code_size = 3 # assume 8-bit
+			
+			address = None
+			for i, code_part in enumerate(code_value.split(",")):
+				# 1st field is the address
+				if not address:
+					address = code_part
+					if int(address, 16) <= 0x40000:
+						print("invalid address: " + address)
+						break  # skip line
+					# end if
+					continue
+				# end if address
+				
+				value = code_part
+				
+				# output curr code
+				output_file.write("\n")
+				
+				if i==1:
+					output_file.write("cheat%d_desc = \"%s\"\n" % (cheat_counter, code_description))
 				else:
-					print("unsupported code size, assume 8-bit: " + value_type)
-					code_size = 3 # assume 8-bit
-					#continue					
-			
-			# output curr code
-			output_file.write("\n")
-			
-			output_file.write("cheat%d_desc = \"%s\"\n" % (cheat_counter, code_description))
-	
-			output_file.write("cheat%d_address = \"%d\"\n" % (cheat_counter, int(address, 16) - 0x40000)) #  0x2000000 + 
-			output_file.write("cheat%d_value = \"%d\"\n" % (cheat_counter, int(value, 16)))
-			output_file.write("cheat%d_memory_search_size = \"%d\"\n" % (cheat_counter, code_size))
-			output_file.write("cheat%d_cheat_type = \"1\"\n" % (cheat_counter))
-			output_file.write("cheat%d_handler = \"1\"\n" % (cheat_counter))
-			output_file.write("cheat%d_enable = false\n" % (cheat_counter))
-			output_file.write("# original code: %s\n" % (line))  # debug
-			
-			cheat_counter += 1
-		# end if new code
+					# append the part number to the description
+					output_file.write("cheat%d_desc = \"%s (part %d)\"\n" % (cheat_counter, code_description, i))
+		
+		
+				output_file.write("cheat%d_address = \"%d\"\n" % (cheat_counter, int(address, 16) - 0x40000 + i -1 )) #  0x2000000 + 3005B0E
+				output_file.write("cheat%d_value = \"%d\"\n" % (cheat_counter, int(value, 16)))
+				output_file.write("cheat%d_memory_search_size = \"%d\"\n" % (cheat_counter, code_size))
+				output_file.write("cheat%d_cheat_type = \"1\"\n" % (cheat_counter))
+				output_file.write("cheat%d_handler = \"1\"\n" % (cheat_counter))
+				output_file.write("cheat%d_enable = false\n" % (cheat_counter))
+				output_file.write("# original code: %s\n" % (line))  # debug
+				
+				cheat_counter += 1
+			# end if new code
 	# end for lines
 	
 	# print the correct cheats counter
@@ -87,8 +90,8 @@ if __name__ == "__main__":
 		from urllib.request import urlopen
 		infile = urlopen(args.infile)
 		# switch to text file mode
-		import codecs
-		infile = codecs.getreader("utf-8")(infile)
+		infile = open(args.infile, encoding="utf-8", errors="ignore")
+		#infile = codecs.getreader("utf-8")(infile)
 	else:
 		infile = open(args.infile)
 

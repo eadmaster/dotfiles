@@ -45,6 +45,10 @@ case "$1" in
 					sudo snap install "$INPUTFILE"
 					exit $?
 				;;
+				zst )  # pkg.tar.zst
+					sudo pacman -U "$INPUTFILE"
+					exit $?
+				;;
 			esac
 			# else
 			echo "$(basename $0) err: unsupported package format: $INPUTFILEEXT" >&2
@@ -231,6 +235,9 @@ case "$1" in
 			exit $?
 		fi
 		
+		sudo pacman -Sy "$PACKAGE_NAME"
+		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
+		
 		sudo apt-get install --only-upgrade "$PACKAGE_NAME"
 		_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
 		
@@ -390,7 +397,7 @@ case "$1" in
 		
 		# TODO: search PPAs in https://launchpad.net/
 		
-		python $HOME/bin/_OLD/ppasearch.py "$PACKAGE_NAME" 
+		#python $HOME/bin/_OLD/ppasearch.py "$PACKAGE_NAME" 
 		# TODO using official API  https://launchpad.net/+apidoc/1.0.html
 		# https://askubuntu.com/questions/403782/is-there-an-alternative-for-ppasearch-in-newer-versions-of-ubuntu
 		#curl "https://api.launchpad.net/1.0/projects?search?text=$PACKAGE_NAME" | jq -c '.entries[] | pick(.display_name, .summary, .web_link)'
@@ -455,7 +462,11 @@ case "$1" in
 		#wget -S  --spider 1bin.org/$(uname)/$PACKAGE_NAME
 		# TODO: show version  https://github.com/nikvdp/1bin/issues/2
 		
-		#exit 0
+		# check builds on https://pkgs.pkgforge.dev/
+		curl -f "https://pkgs.pkgforge.dev/repo/bincache/x86_64-linux/$PACKAGE_NAME/$PACKAGE_NAME/raw.json"
+		curl -f "https://pkgs.pkgforge.dev/repo/pkgcache/x86_64-linux/$PACKAGE_NAME/appimage/official/stable/$PACKAGE_NAME/raw.json"
+		
+		exit 0
 		;;
 
 	findfile|searchfile )

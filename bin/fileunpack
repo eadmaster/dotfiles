@@ -201,6 +201,8 @@ case "$INPUTFILEEXT" in
 		
 	rar )
 		rar x "$INPUTFILE" "$OUTPUTDIR"
+		[ $? -eq 0 ] && exit 0
+		unrar x "$INPUTFILE" "$OUTPUTDIR"
 		exit $?
 		;;
 	
@@ -275,6 +277,36 @@ case "$INPUTFILEEXT" in
 		
 		# ... https://superuser.com/questions/1301583/how-can-i-extract-files-from-an-appimage
 		;;
+	
+	nds )
+		# https://github.com/haroohie-club/NitroPacker
+		#NitroPacker unpack -r PATH/TO/ROM.nds -o PATH/TO/UNPACK/DIRECTORY -p PROJECT_NAME
+    
+		# https://github.com/AetiasHax/ds-rom
+		dsrom extract --rom "$INPUTFILE" --path "$OUTPUTDIR"
+		exit $?
+		;;
+
+	3ds )
+		# https://github.com/3DSGuy/Project_CTR/blob/master/ctrtool/README.md
+		# https://gbatemp.net/threads/3ds-romfs-bin-extraction.399611/post-5729855
+		ctrtool -x --romfsdir="$OUTPUTDIR" "$INPUTFILE"
+		ctrtool -p --exefs="${OUTPUTDIR}/DecryptedExeFS.bin"  "$INPUTFILE"
+		mkdir "$OUTPUTDIR/exe"
+		ctrtool -t exefs --exefsdir="${OUTPUTDIR}/exe" "${OUTPUTDIR}/DecryptedExeFS.bin" --decompresscode 
+		sleep 10
+		exit $?
+		;;
+	
+	wbfs|wia|gcz|wdf )
+		# https://wit.wiimm.de/info/command-line.html
+		#rm -r "$OUTPUTDIR"
+		wit --progress  extract "$INPUTFILE" "$OUTPUTDIR"
+		exit $?
+		;;
+		
+	# TODO: nsp
+	
 esac
 
 case $INPUTFILETYPE in
@@ -326,17 +358,20 @@ rar x "$INPUTFILE" "$OUTPUTDIR"
 
 # try with Apache Tika app https://github.com/apache/tika
 tika --extract --extract-dir="$OUTPUTDIR"  "$INPUTFILE" 
-[ $? -eq 0 ] && exit 0
+#[ $? -eq 0 ] && exit 0
 
-binwalk --extract --rm --dd='.*' --directory="$OUTPUTDIR"  "$INPUTFILE" 
+binwalk --extract --directory="$OUTPUTDIR"  "$INPUTFILE" 
+#binwalk --extract --rm --dd='.*' --directory="$OUTPUTDIR"  "$INPUTFILE" 
 # --rm (delete carved/unusable files?) https://github.com/ReFirmLabs/binwalk/issues/473
 # --dd='.*' (extract all known file types) https://stackoverflow.com/questions/37904544/binwalk-not-extracting-files-from-binary
-[ $? -eq 0 ] && exit 0
+#[ $? -eq 0 ] && exit 0
 
-hachoir-subfile "$INPUTFILE" "$OUTPUTDIR"
-[ $? -eq 0 ] && exit 0
+#hachoir-subfile "$INPUTFILE" "$OUTPUTDIR"
+#[ $? -eq 0 ] && exit 0
 
-
+# try with auracomp  https://github.com/Venomalia/AuroraLib.Compression/
+auracomp -d -in "$INPUTFILE"  -out "$OUTPUTDIR"
+# TODO: add dry mode https://github.com/Venomalia/AuroraLib.Compression/issues/16
 
 #if [ "$INPUTFILEEXT" = "zip" ]; then
 #	unzip "$INPUTFILE" -d "$OUTPUTDIR"
