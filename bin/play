@@ -57,6 +57,9 @@ play_or_enqueue() {
 	#[ ! -d /tmp/lyrics ] && 7z x -o"/tmp/lyrics" "$PENDRIVE/Documents/mus/lyrics.zip" > /dev/null
 	gtk-launch  osdlyrics  # start detached from the terminal
 	
+	# setup visualizer
+	#$HOME/opt/glava-ncs/glava-ncs &
+	
 	if [ "$_ENQUEUE" = "1" ]; then
 		enqueue $TEMP_PLAYLIST_FILE
 	else

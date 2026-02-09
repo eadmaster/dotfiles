@@ -22,3 +22,7 @@ aioblescan
 
 # ALTERNATIVEs:
 #  NO? btscanner (ncurses-based)
+
+echo "$(basename $0): scanning BTLE sensors..."   >&2
+# via https://github.com/theengs/explorer
+python $HOME/opt/theengs/ScanAndDecode.py

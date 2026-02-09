@@ -505,6 +505,15 @@ poke() { PID=$(pgrep -i $2); [ -z "$PID" ] && echo "$0: process not found" && re
 #alias poke=pspoke
 # ALT.: pspeek, pspoke -> use /proc/$(pidof $1)/mem
 
+addhead() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE BYTES_TO_ADD" && return; dd if="$1" of="$1.headed" bs=1 seek="$2"; }  # ALTERNATIVE: ucon64 --nbak --insn=$2 $1
+addtail() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE BYTES_TO_ADD" && return; truncate -c -s+$2 "$1"; }  # ALTERNATIVEs: ucon64 --padn=$2 "$1"
+#alias pad=addtail
+rmhead() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE BYTES_TO_REMOVE" && return; dd if="$1" of="$1.nohead" bs=1 skip="$2"; }  # ALTERNATIVE: ucon64 --nbak --stpn=$2 $1
+alias delhead=rmhead
+#alias truncatehead=rmhead
+rmtail() { truncate -c -s-$2 "$1"; }  # ALT.: ucon64 --strip=$2 "$1"
+#alias strip=rmtail
+#alias swapendianess=rax2 -e "$1"  # swap an immediate value
 byteswap() { [ -f "$1" ] && dd if="$1" of="$1.swapped" conv=swab || dd conv=swab ; }  #  https://stackoverflow.com/questions/6438099/command-line-to-reverse-byte-order-change-endianess
 
 # ucon64 aliases
@@ -526,8 +535,8 @@ if which ucon64 >/dev/null 2>&1 ; then
 	alias renrom="ucon64 --rdat"
 	#alias byteswap="ucon64 --nbak --swap"  # no longer working?
 	#alias wordswap="ucon64 --nbak --swap2"
-	alias addhead="ucon64 --nbak --insn="  # faster than using dd
-	alias addtail="ucon64 --padn="   # faster than using dd
+	alias addhead="ucon64 --nbak --insn= "  # faster than using dd (MEMO: must be AFTER the function alt.)
+	alias addtail="ucon64 --padn= "   # faster than using dd
 	alias rmhead="ucon64 --nbak --stpn="   # faster than using dd
 fi
 
@@ -569,16 +578,6 @@ if [ -d $HOME/pendrive/Documents/db/datfile ]; then
 fi
 
 alias bps=flips
-
-addhead() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE BYTES_TO_ADD" && return; dd if="$1" of="$1.headed" bs=1 seek="$2"; }  # ALTERNATIVE: ucon64 --nbak --insn=$2 $1
-addtail() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE BYTES_TO_ADD" && return; truncate -c -s+$2 "$1"; }  # ALTERNATIVEs: ucon64 --padn=$2 "$1"
-#alias pad=addtail
-rmhead() { [ -z "$1" ] && echo "usage: $FUNCNAME INPUTFILE BYTES_TO_REMOVE" && return; dd if="$1" of="$1.nohead" bs=1 skip="$2"; }  # ALTERNATIVE: ucon64 --nbak --stpn=$2 $1
-alias delhead=rmhead
-#alias truncatehead=rmhead
-rmtail() { truncate -c -s-$2 "$1"; }  # ALT.: ucon64 --strip=$2 "$1"
-#alias strip=rmtail
-#alias swapendianess=rax2 -e "$1"  # swap an immediate value
 
 alias mp=mplayer
 #alias play=mplayer
@@ -1175,15 +1174,15 @@ if which apt >/dev/null 2>&1 ; then
 fi
 
 # snap aliases    
-if which snap >/dev/null 2>&1 ; then
-    alias snapls="snap list"
-    alias snapinstall="sudo snap install --classic"
-    alias snapuninstall="sudo snap remove"
-    alias snapupdate="sudo snap refresh"
-    alias snapdownload="snap download"  # https://forum.snapcraft.io/t/download-snaps-and-install-offline/15713
-    # TODO: direct download script via http https://askubuntu.com/questions/1075694/how-to-get-snap-download-url
-    alias snapget=snapdownload
-fi
+#if which snap >/dev/null 2>&1 ; then
+#    alias snapls="snap list"
+#    alias snapinstall="sudo snap install --classic"
+#    alias snapuninstall="sudo snap remove"
+#    alias snapupdate="sudo snap refresh"
+#    alias snapdownload="snap download"  # https://forum.snapcraft.io/t/download-snaps-and-install-offline/15713
+#    # TODO: direct download script via http https://askubuntu.com/questions/1075694/how-to-get-snap-download-url
+#    alias snapget=snapdownload
+#fi
 
 # gem (ruby package manager) aliases
 if which gem >/dev/null 2>&1 ; then
@@ -1192,38 +1191,38 @@ if which gem >/dev/null 2>&1 ; then
     #alias gemls=...
 fi
     
-if which flatpak >/dev/null 2>&1 ; then
-    alias flatpakls="flatpak list --columns=name,application,size,version,branch,origin,installation"
-    alias flatpakinstall="flatpak install flathub"
-    alias flatpakuninstall="flatpak uninstall"
-    alias flatpakupdate="flatpak update"
-    alias flatpakrun="flatpak run --filesystem=host --filesystem=home --share=network --device=dri --socket=pulseaudio --socket=system-bus --socket=session-bus "
-    #flatpakdownload() { # moved into a script
-    alias flatpakget=flatpakdownload
-fi
+#if which flatpak >/dev/null 2>&1 ; then
+#    alias flatpakls="flatpak list --columns=name,application,size,version,branch,origin,installation"
+#    alias flatpakinstall="flatpak install flathub"
+#    alias flatpakuninstall="flatpak uninstall"
+#    alias flatpakupdate="flatpak update"
+#    alias flatpakrun="flatpak run --filesystem=host --filesystem=home --share=network --device=dri --socket=pulseaudio --socket=system-bus --socket=session-bus "
+#    #flatpakdownload() { # moved into a script
+#    alias flatpakget=flatpakdownload
+#fi
 
 # nix aliases
-if which nix-env >/dev/null 2>&1 ; then
-    alias nixinstall="nix-env --verbose --prebuilt-only --install"
-    alias nixuninstall="nix-env -e"
-    alias nixlist="nix-env -q | cat"
-    nixinfo() { nix-env -qa --description ".*$@.*" | cat ; }
-    alias nixsearch="nix-env -qa"
-    alias nixupdate="nix-env --verbose -u"
-    # ... https://nixos.wiki/wiki/Cheatsheet
-fi
+#if which nix-env >/dev/null 2>&1 ; then
+#    alias nixinstall="nix-env --verbose --prebuilt-only --install"
+#    alias nixuninstall="nix-env -e"
+#    alias nixlist="nix-env -q | cat"
+#    nixinfo() { nix-env -qa --description ".*$@.*" | cat ; }
+#    alias nixsearch="nix-env -qa"
+#    alias nixupdate="nix-env --verbose -u"
+#    # ... https://nixos.wiki/wiki/Cheatsheet
+#fi
 
 # zap aliases  https://github.com/srevinsaju/zap
-if which zap >/dev/null 2>&1 ; then
+#if which zap >/dev/null 2>&1 ; then
 #    alias appimageinstall="zap install"
 #    alias appimageinstalllocal="zap install"
-    alias appimageinstallgithub="zap install --github --from "
-    alias appimageuninstall="zap remove"
-    alias appimageupdate="zap update"
-    alias appimagelist="zap list"
+#    alias appimageinstallgithub="zap install --github --from "
+#    alias appimageuninstall="zap remove"
+#    alias appimageupdate="zap update"
+#    alias appimagelist="zap list"
 #    #appimageinfo() { nix-env -qa --description ".*$@.*" | cat ; }
-    alias appimagesearch="zap search"
-fi
+#    alias appimagesearch="zap search"
+#fi
 
 alias color=colorsearch
 #alias colorname=colorsearch
@@ -2569,21 +2568,22 @@ if which tblstr2hex >/dev/null 2>&1 ; then
     alias str2utf8hex="tblstr2hex $HOME/thingy_tables/generic_imhex/utf8.tbl"
     sjishexgrep() { hexgrep $(str2sjishex "$@") ; }
     unicodehexgrep() { hexgrep $(str2unicodehex "$@") ; }
-    japhexgrep() { sjishexgrep "$@" ; unicodehexgrep "$@" ; sfk hexfind -pat "/$1/" -dir . }
+    japhexgrep() { sjishexgrep "$@" ; unicodehexgrep "$@" ; sfk hexfind -pat "/$@/" -dir . ; }
 fi
 
 alias findmenustrings=vgmenusearch
 
-#alias utf16lestrings="strings -e l -t x"  # l = 16-bit littleendian, restricted to ascii chars
+#alias unicodestrings="strings -e l -t x"  # l = 16-bit littleendian, restricted to ascii chars
 
 if which stringsext >/dev/null 2>&1 ; then
     #alias japstrings=sjisstrings
     japstrings() { stringsext -tx -e utf-8 -e utf-16le -e EUC-JP  -e Shift_JIS -a None -u Asian --chars-min 4 "$@" | grep -P '[\p{Hiragana}\p{Katakana}]{4,}' ; }
-    alias utf16lestrings="stringsext --encoding  UTF-16LE --chars-min 4"
+    alias unicodestrings="stringsext --encoding  UTF-16LE --chars-min 2"
 fi
 
 if which hf >/dev/null 2>&1 ; then
     alias huggingface_download="hf download"
+    # ...
 fi
 
 if which SabreTools >/dev/null 2>&1 ; then

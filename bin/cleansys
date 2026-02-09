@@ -28,7 +28,7 @@ rm -rf ~/.cache/winetricks/*
 echo "$0: Recent documents..."
 rm $HOME/. local/share/RecentDocuments/*.*
 
-# ocular's annotations  https://unix.stackexchange.com/questions/395599/customize-the-folder-where-okular-saves-annotations
+# ocular annotations  https://unix.stackexchange.com/questions/395599/customize-the-folder-where-okular-saves-annotations
 rm $HOME/.local/share/okular/docdata/*.*
 #ln -s /tmp $HOME/.local/share/okular/docdata
 
@@ -36,11 +36,16 @@ echo "$0: python pip cache..."  # ~/.cache/pip/
 pip cache purge
 uv cache clean
 
+# TODO:  ~/.npm/, ~/local/share/pnpm/
+
 echo "$0: ccache..."  # ~/.cache/ccache
 ccache -C
 
 echo "$0: go build cache..."
 go clean -cache
+
+echo "$0: cargo cache..."
+cargo cache --remove-dir all
 
 # docker
 echo "$0: docker..."

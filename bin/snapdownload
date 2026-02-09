@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# https://unix.stackexchange.com/questions/560065/how-can-i-manually-download-a-snap-package-for-example-with-wget
+
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ -z "$1" ] ; then
+	echo "usage: $(basename $0) FLATPACK_NAME"
+	echo
+	exit 0
+fi
+
+DOWNLOAD_URL=$(curl -H 'Snap-Device-Series: 16' http://api.snapcraft.io/v2/snaps/info/$1 | jq -r '."channel-map" | map(select(.channel.architecture == "amd64" and .channel.name == "stable")) | .[0].download.url')
+echo "$0: downloading $DOWNLOAD_URL"
+
+curl -L -H 'Snap-Device-Series: 16' -O $DOWNLOAD_URL

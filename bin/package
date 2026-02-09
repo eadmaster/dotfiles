@@ -385,18 +385,19 @@ case "$1" in
 		fi
 		
 		echo "$0: apt:"
-		apt search "$PACKAGE_NAME"
-		[ $? -ne 0 ] && apt-cache search "$PACKAGE_NAME"
-
-		# alternative remote repositories search
-		. /etc/os-release  #load $UBUNTU_CODENAME
-		CPU_ARCH=$(dpkg --print-architecture)
-		#echo "searching in remote repos..." >&2
-		wget -q -O- "http://screenshots.getdeb.net/dists/$UBUNTU_CODENAME-getdeb/apps/binary-$CPU_ARCH/Packages.gz" | gzip -dc | awk -v RS="\n\n" "/$PACKAGE_NAME/"
-		# TODO: more remote repos
+		if which apt >/dev/null 2>&1 ; then
+			apt search "$PACKAGE_NAME"
+			[ $? -ne 0 ] && apt-cache search "$PACKAGE_NAME"
+		else
+			# alternative remote repositories search
+			. /etc/os-release  #load $UBUNTU_CODENAME
+			CPU_ARCH=$(dpkg --print-architecture)
+			#echo "searching in remote repos..." >&2
+			#wget -q -O- "http://screenshots.getdeb.net/dists/$UBUNTU_CODENAME-getdeb/apps/binary-$CPU_ARCH/Packages.gz" | gzip -dc | awk -v RS="\n\n" "/$PACKAGE_NAME/"
+			# TODO: more remote repos
+		fi
 		
 		# TODO: search PPAs in https://launchpad.net/
-		
 		#python $HOME/bin/_OLD/ppasearch.py "$PACKAGE_NAME" 
 		# TODO using official API  https://launchpad.net/+apidoc/1.0.html
 		# https://askubuntu.com/questions/403782/is-there-an-alternative-for-ppasearch-in-newer-versions-of-ubuntu
@@ -405,25 +406,20 @@ case "$1" in
 		#curl "https://api.launchpad.net/1.0/projects/+search?field.text=$PACKAGE_NAME"
 		
 		yum search "$PACKAGE_NAME"
-
+		
 		dnf search "$PACKAGE_NAME"
 
-		echo "$0: pkg:"
-		pkg search -f "$PACKAGE_NAME"
+		#echo "$0: pkg:"
+		#pkg search -f "$PACKAGE_NAME"
 		
 		echo "$0: apk:"
 		apk search "$PACKAGE_NAME"
 		
 		echo "$0: brew:"
 		brew search "$PACKAGE_NAME"
-		
-		echo "$0: nix:"
-		#nix search "$PACKAGE_NAME" | cat  # NO? no ver. reported
-		nix-env -qa ".*$PACKAGE_NAME.*" | cat
-		
+				
 		pacman -Ss "$PACKAGE_NAME"
-		yay -Ss "$PACKAGE_NAME"
-
+		
 		rpm -qa "$PACKAGE_NAME"
 		
 		conda search "$PACKAGE_NAME"
@@ -434,8 +430,9 @@ case "$1" in
 		# via maven central repository web API  https://search.maven.org/classic/#api
 		#wget -O- "http://search.maven.org/solrsearch/select?q=guice&rows=3&wt=json" | jq 'map(del(.Country, .number, .Language))'  # TODO: remove sections, compact output  https://github.com/stedolan/jq/issues/643
 		
-		echo "$0: pip:"
-		pip search "$PACKAGE_NAME"
+		#echo "$0: pip:"
+		#pip search "$PACKAGE_NAME"  # no longer supported
+		# TODO: curl search  https://pypi.org/project/$PACKAGE_NAME/
 
 		#npm search "$PACKAGE_NAME"
 
@@ -448,23 +445,52 @@ case "$1" in
 		#composer search "$PACKAGE_NAME"
 		
 		# TODO: perl cpan?
-		
+
+		echo "$0: AUR:"
+		if which yay >/dev/null 2>&1 ; then
+			yay -Ss "$PACKAGE_NAME"
+		else
+			curl --fail --head --silent --output /dev/null  "https://aur.archlinux.org/cgit/aur.git/snapshot/$PACKAGE_NAME.tar.gz"
+			[ $? -eq 0 ] && echo "$0: FOUND https://aur.archlinux.org/packages/$PACKAGE_NAME"
+		fi
+
+		echo "$0: nix:"
+		if which nix-env >/dev/null 2>&1 ; then
+			#nix search "$PACKAGE_NAME" | cat  # NO? no ver. reported
+			nix-env -qa ".*$PACKAGE_NAME.*" | cat
+		else
+			#curl --fail --head --silent --output /dev/null  "https://nixsoftware.voxelworld.ru/en/packages/$PACKAGE_NAME"  # unofficial
+			curl --fail --head --silent --output /dev/null  "https://raw.githubusercontent.com/NixOS/nixpkgs/refs/heads/master/pkgs/by-name/$(echo $PACKAGE_NAME | cut -c 1-2)/$PACKAGE_NAME/package.nix"  
+			# no official api? https://github.com/NixOS/nix/issues/4538
+			[ $? -eq 0 ] && echo "$0: FOUND https://search.nixos.org/packages?show=$PACKAGE_NAME"
+		fi
+
 		echo "$0: snap:"
-		snap find "$PACKAGE_NAME"
+		if which snap >/dev/null 2>&1 ; then
+			snap find "$PACKAGE_NAME"
+		else
+			curl --fail --head --silent --output /dev/null  "https://snapcraft.io/$PACKAGE_NAME"
+			[ $? -eq 0 ] && echo "$0: FOUND https://snapcraft.io/$PACKAGE_NAME"
+		fi
 
 		echo "$0: flatpak:"
-		flatpak search "$PACKAGE_NAME"
+		if which flatpak >/dev/null 2>&1 ; then
+			flatpak search "$PACKAGE_NAME"
+		else
+			#curl --location 'https://flathub.org/api/v2/search' --header 'Content-Type: application/json' -d "{\"query\":\"$PACKAGE_NAME\",\"filters\":[]}" | jq '.total_hits' | jq .totalHits
+			curl -s -X POST 'https://flathub.org/api/v2/search' -H 'Content-Type: application/json'  -d "{\"query\":\"$PACKAGE_NAME\"}" | jq -e '.totalHits > 0'  > /dev/null
+			[ $? -eq 0 ] && echo "$0: FOUND https://flathub.org/en/apps/search?q=$PACKAGE_NAME"
+		fi
 		
 		# github releases search https://appimage.github.io/apps/
-		zap seach "$PACKAGE_NAME"  # appimages only  https://github.com/srevinsaju/zap
-		
-		# check static builds on 1bin
-		#wget -S  --spider 1bin.org/$(uname)/$PACKAGE_NAME
-		# TODO: show version  https://github.com/nikvdp/1bin/issues/2
-		
+		# assume owner = repo name -> TODO: global search
+		#curl -L -H "Accept: application/vnd.github+json" https://api.github.com/repos/$PACKAGE_NAME/$PACKAGE_NAME/releases/latest | jq .
+	
 		# check builds on https://pkgs.pkgforge.dev/
 		curl -f "https://pkgs.pkgforge.dev/repo/bincache/x86_64-linux/$PACKAGE_NAME/$PACKAGE_NAME/raw.json"
 		curl -f "https://pkgs.pkgforge.dev/repo/pkgcache/x86_64-linux/$PACKAGE_NAME/appimage/official/stable/$PACKAGE_NAME/raw.json"
+		
+		# TODO: check in Repology https://repology.org/api
 		
 		exit 0
 		;;
