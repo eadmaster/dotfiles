@@ -265,6 +265,7 @@ d=busybox du -shx $*
 ;= f=busybox find $*
 g=busybox grep $*
 ;= rg=unix grep -r -I -n -H  --exclude \*.min.js --color=always $*
+rg=rg --max-columns 200 --no-binary --no-ignore --hidden --ignore-case --fixed-strings $*
 
 unmount=umount $*
 eject=umount $*
@@ -629,6 +630,7 @@ getip=ipget
 ;= showip=ipget
 ;= newip,renewip=ipconfig /flushdns ^& ipconfig /release ^& ipconfig /renew
 
+poweron=power on $*
 wake=power on $*
 shut=power off $*
 shutmon=power off monitor
@@ -817,8 +819,9 @@ new=filenew $*
 create=filenew $*
 crack=filecrack $*
 convert=fileconvert $*
-taggrep=filetaggrep
-id3grep=filetaggrep
+taggrep=filetaggrep $*
+id3grep=filetaggrep $*
+mount=filemount $*
 
 ;= massconvert=dir /B $1 $B xargs -I {} fileconvert {} $2
 ;= massconvert=FOR /F "delims=" %F IN ('dir /B $1') DO @fileconvert "%F" $2
@@ -944,8 +947,8 @@ hextail=tail $* $B hexdump
 ;= hexedit=hex $*
 ;= subfile=dd if=$1 of=$1.sub bs=1 skip=$2 count=$3 -> extract part of a file
 ;=                                            ^ offset  ^ bytes to extract
-hexdiff=hexcmp $*
-diffhex=hexcmp $*
+hexcmp=hexdiff $*
+diffhex=hexdiff $*
 
 ;= extract a part of a file
 ;= bincut=dd if=$1 of=$1.sub bs=1 skip=$2 count=$3
@@ -1109,6 +1112,8 @@ datsearch=dumpsearch $*
 vgsearch=filegrep $* %PENDRIVE%\Documents\db\vg
 downloadsearch=filegrep -l $* %PENDRIVE%\Documents\db\download
 geosearch=filegrep $* %PENDRIVE%\Documents\db\geo
+electfind=unix find %PENDRIVE%\Documents\db\elect -iname "*$**" 
+;= pinouts=filegrep $* %PENDRIVE%\Documents\db\elect\pinout
 
 ;= findarcade=for %F in (%PENDRIVE%\Documents\db\datfile\arcade\*.zip) do @filegrep $* "%F"
 ;= findgb=for %F in (%PENDRIVE%\Documents\db\datfile\GameBase\*.zip) do @filegrep $* "%F"
@@ -1330,6 +1335,7 @@ setsoftap=service softap start
 ;= httpd=uhttpd $*
 ;= https=uhttpd $*
 uhttpd=service http $*
+uhttps=service http $*
 ;= serve=uhttpd $*
 ;= ftpd=uftpd $*
 ;= ftps=uftpd $*
@@ -1373,25 +1379,24 @@ getclipboard=pbpaste $*
 
 resetip=ipset dynamic
 resetdns=dnsset default
-
 setres=nircmdc setdisplay $1 $2 24
+setdpi=MultiMonitorTool /SetScale 1 $1
 ;= resetres=MultiMonitorTool /setmax 1
-setgamma=gamma $*
-
 setrotation=MultiMonitorTool /SetOrientation 1 $*
 resetrotation=MultiMonitorTool /SetOrientation 1 0 2 0 
 ;= setportrait=MultiMonitorTool /SetOrientation 1 90
+setgamma=gamma $*
 
-dec2hex=printf "%%x\n" $1
-dec2oct=printf "%%o\n" $1
+dec2hex=printf %x $1
+dec2oct=printf %o $1
 bin2hex=python -c "print(hex(int(\"$1\", base=2))[2:]);"
 bin2dec=python -c "print(int(\"$1\", base=2));"
 dec2bin=python -c "print(bin(int(\"$1\"))[2:]);"
 hex2dec=SET /A _Result = 0x$1
 ;= ALTERNATIVE: hex2dec=printf "%%d\n" 0x$1
 oct2dec=SET /A _Result = 0$1
-dec2sci=printf "%%e\n" $1
-sci2dec=printf "%%.96f\n" $1 ^| sed "s/0\+$//"
+;= dec2sci=printf %e $1
+;= sci2dec=printf %%.96f $1 ^| sed "s/0\+$//"
 
 recmic=record mic $*
 micrec=record mic $*
@@ -1422,7 +1427,6 @@ gdrivecat=rclone cat gdrive:$*
 gdrivemount=rclone mount gdrive: G: --vfs-cache-mode writes
 ;= TODO: --daemon;
 ;= gdriveumount=
-eadmastertkput=rclone copy $1 eadmastertk:$2 -v
 
 share=smbshare $*
 unshare=smbsharerm $*

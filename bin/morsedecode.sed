@@ -1,17 +1,5 @@
-#!/bin/sh
+#!/bin/sed -f
 
-command -p morse2ascii "$@"
-_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-
-# https://github.com/dhondta/python-codext
-codext decode morse "$@"
-_ES=$? ; [ $_ES -ne 127 ] && exit $_ES
-
-# alternative using sed
-INPUT="$1"
-[ -z "$1" ] && INPUT=$(cat)
-[ -f "$1" ] && INPUT=$(cat "$1")
-echo "$INPUT" | sed -e '
 #replace daw and dits
 s/ daw/-/g
 s/ dit/./g
@@ -81,6 +69,3 @@ s/\//\
 s/[ \t]//g
 # transform newslines to spaces
 #:a;{N;s/\n/ /};ba
-' | tr '\n' ' '
-
-echo

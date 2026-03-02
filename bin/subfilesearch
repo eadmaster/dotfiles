@@ -6,10 +6,18 @@ echo "$0: binwalk scan..."
 binwalk --verbose   "$@"  # --search-all
 # WANTED: better magic file: --magic=/usr/share/misc/magic.mgc
 
+# https://github.com/onekey-sec/unblob
+echo "$0: unblob scan..."
+unblob --skip-extraction "$@"
+
+# https://github.com/vstinner/hachoir
 echo "$0: hachoir-subfile scan..."
 hachoir-subfile "$@"
 
-# try with signsrch  https://aluigi.altervista.org/mytoolz.htm#signsrch
+# https://github.com/armijnhemel/binaryanalysis-ng
+bang "$@"
+
+# https://aluigi.altervista.org/mytoolz.htm#signsrch
 echo "$0: signsrch scan..."
 signsrch -s $HOME/.local/bin/signsrch.sig "$@"
 

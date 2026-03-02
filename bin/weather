@@ -66,7 +66,7 @@ weather-util "$CITY"
 
 echo
 
-inxi -w -W "$LAT,$LON"
+inxi -w "$LAT,$LON"
 
 # TODO: more tools https://askubuntu.com/questions/390329/weather-from-terminal#comment1153501_738127
 # TODO: more web APIs: https://github.com/toddmotto/public-apis#weather
@@ -74,12 +74,8 @@ inxi -w -W "$LAT,$LON"
 
 echo
 
-if which ansiweather >/dev/null 2>&1 ; then
-	ansiweather -l "$CITY"
-else
-	# download the script and execute
-	curl -s https://raw.githubusercontent.com/fcambus/ansiweather/master/ansiweather | bash
-fi
+# https://github.com/fcambus/ansiweather
+ansiweather -l "$CITY" -a 0 | tr - '\n'
 
 echo
 
@@ -89,23 +85,25 @@ weather-Cli get $CITY
 echo
 
 # https://github.com/tobealive/wthrr-the-weathercrab
-wthrr
+wthrr "$CITY $COUNTRY"
 
-wget -U "wget" -q -O- "http://v2.wttr.in/$CITY?1n"
+echo
+
+curl "http://wttr.in/~$CITY?1n"
 #wget -q -O- "http://wttr.in/$LAT,$LON?1n"
 
 echo
 
-echo "UV index: " #>&2
+#echo "UV index: " #>&2
 
 # from https://openweathermap.org/api/uvi
-wget -q -O- "http://api.openweathermap.org/data/2.5/uvi?appid=$OPENWEATHERMAP_APPID&lat=$LAT&lon=$LON" |  jq .value
+#curl "http://api.openweathermap.org/data/2.5/uvi?appid=$OPENWEATHERMAP_APPID&lat=$LAT&lon=$LON" |  jq .value
 
-echo
+#echo
 
-echo "air quality:" #>&2
+#echo "air quality:" #>&2
 
-wget -q -O- "https://api.openaq.org/v1/latest?coordinates=$LAT,$LON&limit=1"  |  jq -r '.results[].measurements[] | "\(.parameter | ascii_upcase): \(.value) \(.unit)"'
+#curl "https://api.openaq.org/v1/latest?coordinates=$LAT,$LON&limit=1"  |  jq -r '.results[].measurements[] | "\(.parameter | ascii_upcase): \(.value) \(.unit)"'
 
 #TODO:
 #echo "CO (at sea level):" >&2
@@ -117,11 +115,11 @@ wget -q -O- "https://api.openaq.org/v1/latest?coordinates=$LAT,$LON&limit=1"  | 
 #echo "SO2 (at sea level):" >&2
 #wget -q -O- "http://api.openweathermap.org/pollution/v1/so2/$LAT,$LON/current.json?appid=$OPENWEATHERMAP_APPID" | jq '.data[] | select(.pressure >= 90 and .pressure <= 110)'
 
-echo
+#echo
 
 # http://ec.europa.eu/environment/air/quality/standards.htm
-echo "$(basename $0): MEMO: safe limits are PM2.5<25, PM10<40, SO2<125, NO2<40, lead(Pb)<0.5, CO<10000, benzene(C6H6)<5, ozone(O3)<120, UVI<3" >&2
-echo
+#echo "$(basename $0): MEMO: safe limits are PM2.5<25, PM10<40, SO2<125, NO2<40, lead(Pb)<0.5, CO<10000, benzene(C6H6)<5, ozone(O3)<120, UVI<3" >&2
+#echo
 
 #TODO: echo "earthquakes:" #>&2
 #wget -q -O- "http://webservices.ingv.it/fdsnws/event/1/query?starttime=$(date -d '-1 day' +'%Y-%m-%dT%H:%M:%S')&endtime=$(date -d '+1 day' +'%Y-%m-%dT%H:%M:%S')&latitude=$LAT&longitude=$LON&maxradius=0.5&format=text" | csvjson | jq .   # minmagnitude=1"  # | rows convert test.csv json:- | jq .

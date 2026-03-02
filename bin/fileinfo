@@ -181,7 +181,9 @@ case $INPUTFILEEXT in
 		;;
 	
 	xdelta )
+		xdelta info "$INPUTFILE"  # old
 		xdelta3 printhdr "$INPUTFILE"
+		echo "$0: xdelta3 uses the VCDIFF standard"
 		exit $?
 		;;
 		

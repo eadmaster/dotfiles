@@ -690,7 +690,7 @@ alias curl="curl --insecure --fail --show-error --location --remote-time "  # de
 alias curlupload="curl --upload-file"
 #alias httpdelete="curl -XDELETE"
 #alias httpremove="curl -XDELETE"
-wgrep() { wcat "$2" | grep "$1" ; }
+wgrep() { wcat "$2" | html2text | grep "$1" ; }
 wsize() { curl --head --silent --location "$1" | grep -i "content-length:" |  cut -d' ' -f2 | bytes2human ; }
 wdate() { curl --head --silent --location "$1" | grep -i "last-modified:" |  cut -d' ' -f2- ; }
 wmime() { curl --head --silent --location "$1" | grep -i "content-type:" |  cut -d' ' -f2- ; }
@@ -1274,13 +1274,22 @@ alias urlquote=urlencode
 alias urlunquote=urldecode
 alias urlencodeplus="urlencode -m"
 alias urldecodeplus="urlencode -d -m"
-alias morseencode=morse
-alias morsedecode=morse2ascii
+alias morseencode=morse.sed
+#alias morsedecode=morse2ascii
 alias geoencode=geocode
 alias geodecode="geocode -m reverse"
 alias geodist="geocode --distance"
 alias gpsdist=geodist
-alias calcspell=beghilos
+alias calcspell=beghilos.sed
+alias catescaped="cat -v"  # show binary data with escape codes
+
+alias mojibakestrip="awk -F' ' 'NF > 1'"  # show lines with at least 1 space
+alias mojibakefind="grep -v ' '"  # find lines with high entropy / no spaces 
+
+if which rtl_fm >/dev/null 2>&1 ; then
+    alias radiorec="rtl_fm -s 22050 - -f"  # pass a frequency like "433.92M"
+    alias sdrinput="rtl_fm -s 22050 - -f"
+fi
 
 # TODO: move into a script? https://unix.stackexchange.com/questions/465483/cmdline-umask-calculator
 #  awk alternative  https://askubuntu.com/questions/152001/how-can-i-get-octal-file-permissions-from-command-line
@@ -1314,8 +1323,10 @@ alias hexsearch=hexgrep
 alias bingrep=hexgrep
 alias binreplace=hexreplace
 
-alias entropy="binwalk -E"
-#alias plotentropy="binwalk -E"
+if which binwalk >/dev/null 2>&1 ; then
+    alias entropy-binwalk="binwalk -E"
+    #alias plotentropy="binwalk -E"
+fi
 
 alias uid=id
 alias mygroups="groups | sort | tr ' ' '\n'"
@@ -2019,6 +2030,7 @@ alias gid="id -g"
 
 #alias airquality="weather 2> /dev/null | grep -A5 'air quality'"  # TODO: move in a separate script?
 #alias uvindex="weather 2> /dev/null | grep 'UV index'"  # TODO: move in a separate script?
+alias meteo=weather
 
 alias wordscount="wc -w"
 alias linescount="wc -l"
@@ -2138,6 +2150,13 @@ if which pip >/dev/null 2>&1 ; then
     #alias venvinit='virtualenv --system-site-packages  .venv ; source .venv/local/bin/activate'
 fi
 
+if which pipx >/dev/null 2>&1 ; then
+    alias pipxupdate="pipx upgrade"
+    pipxinstallfromgit() { pipx install "git+$1" ; }
+    alias pipxinstallinto="pipx inject"
+    #alias pipxlistoutdated="pipx ..."  # https://github.com/pypa/pipx/issues/149
+fi
+
 if which go >/dev/null 2>&1 ; then 
     alias goinstall="go get -v"
     alias goupdate="go get -v -u"
@@ -2199,6 +2218,8 @@ alias videohash=filehash
 alias mediahash=filehash
 
 alias filenormalize="strip-nondeterminism -v"  # https://salsa.debian.org/reproducible-builds/strip-nondeterminism
+alias fileoptimize=minuimus.pl  # https://birds-are-nice.me/software/minuimus.html
+#alias fileoptimize=leanify  # https://github.com/JayXon/Leanify
 
 # NLP
 if which tika >/dev/null 2>&1 ; then  # Apache Tika app https://github.com/apache/tika
@@ -2250,6 +2271,7 @@ if which git >/dev/null 2>&1 ; then
     alias gitswitchbranch="git checkout"
     alias gitcreatebranch="git checkout -b"
     alias gitundo="git rebase -i HEAD~1"
+    alias gitsubmodulesfetch="git submodule update --init --recursive"
     #alias gitrebase="git rebase -i HEAD~20"
     #alias gitrebase="git rebase -i --root"
     #alias gitsquash=gitrebase
@@ -2379,9 +2401,9 @@ alias neighbourscan=nearbyscan
 alias findnearby=nearbyscan
 #alias fing=nearbyscan
 
-alias matchsearch=netplaysearch
+alias matchsearch=netplayscan
 #alias gamespy=xqf
-alias gamespy=netplaysearch
+alias gamespy=netplayscan
 
 alias smiley=emoji
 alias emoticon=emoji
@@ -2592,10 +2614,20 @@ if which SabreTools >/dev/null 2>&1 ; then
     #alias dir2sfv="SabreTools d2d --output-type=sfv"  # no header like rhash
 fi
 
-alias psxisoextract=dumpsxiso  # (creates an xml file for rebuilding) https://github.com/Lameguy64/mkpsxiso
+alias psxisoextract="dumpsxiso --noxml"  # https://github.com/Lameguy64/mkpsxiso
 #NO(BUGGY WITH MULTITRACK CUEs)? alias psxisoextract=psxrip # https://github.com/cebix/psximager/issues/9
 alias psxisols="psxrip --lbn-table"
 alias psxisoreplace=psxinject  # https://github.com/cebix/psximager
+alias psxisoinfo=psxbp  # https://github.com/alex-free/lib-enigma
+
+githubreposize() { curl -s "https://api.github.com/repos/$@" | jq '.size' | numfmt --to=iec --from-unit=1024 ; }  # TODO: extract from full URL  https://gist.github.com/dingzeyuli/f07c126b74371adba4b7dbe181cb57d2
+# TODO: gitreposize
+
+if which ipfs >/dev/null 2>&1 ; then
+    alias ipfshash="ipfs add --quiet --only-hash "
+    #alias ipfsdecode='ipfs cid format -f "Ver: %v | Codec: %c | Hash: %h | Len: %L | Digest: %m"'
+    alias ipfsdecode='ipfs cid format -f "{\"cid\":\"%b\",\"version\":%v,\"codec\":\"%c\",\"hash_func\":\"%h\",\"digest\":\"%m\"}"'
+fi
 
 
 unset THIS_SCRIPT_DIR

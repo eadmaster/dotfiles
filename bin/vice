@@ -4,7 +4,7 @@
 #mv /r/snapshot.vsf /root/snapshot.vsf
 
 x64sc "$@"
-[ $? -ne 127 ] && exit ?
+[ $? -ne 127 ] && exit $?
 
 x64 "$@"
 [ $? -ne 127 ] && exit $?

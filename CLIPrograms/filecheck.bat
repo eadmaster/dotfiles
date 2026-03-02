@@ -56,8 +56,10 @@ if [%INPUTEXT%]==[.exe] set TOOL=sigcheck %*
 if [%INPUTEXT%]==[.torrent] (
 	REM echo %0: checking files in current dir...
 	REM set TOOL=ctorrent -c %*
-	set TOOL=aria2 --check-integrity --dry-run %*
+	REM set TOOL=aria2 --check-integrity --dry-run %*
 	REM TODO: fix https://github.com/aria2/aria2/issues/1525
+	torrentcheck -t %* -p .
+	goto :eof
 )
 
 set ARCEXTLIST=zip rar 7z arj bz2 cab cpio gz lha lzh tar tgz tbz wim odt odp odg ods docx pptx xlsx

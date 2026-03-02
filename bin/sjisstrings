@@ -1,0 +1,16 @@
+
+# using https://github.com/drojaazu/jstrings
+jstrings  -l 2 -e shiftjis --cutoff 200  "$@" | grep -P '[\x80-\x{FFFF}]{2,}' | grep -Pv '[\x{FF65}-\x{FF9F}]{2,}' 
+# --no_offset
+
+# more aggressive filter:
+# grep -P '^0x[0-9a-fA-F]+\s([\p{Hiragana}\p{Katakana}\x{3000}-\x{303F}\x{FF01}-\x{FF60}])(?!.*\1).*([\p{Hiragana}\p{Katakana}\x{3000}-\x{303F}\x{FF01}-\x{FF60}])(?!.*\2).*([\p{Hiragana}\p{Katakana}\x{3000}-\x{303F}\x{FF01}-\x{FF60}])'
+
+
+# using https://www.romhacking.net/utilities/645/
+# SJIS_Dump "$@" 2 0
+
+# using https://github.com/getreu/stringsext
+#stringsext --encoding Shift_JIS --chars-min 4 "$@" | grep -Pv '[\x{FF65}-\x{FF9F}]' 
+#stringsext --encoding  UTF-16BE --chars-min 4 --unicode-block-filter Kana  "$@" | grep -Pv '[\x{FF65}-\x{FF9F}]' 
+#stringsext --encoding  UTF-16LE --chars-min 4 --unicode-block-filter Kana  "$@" | grep -Pv '[\x{FF65}-\x{FF9F}]' 

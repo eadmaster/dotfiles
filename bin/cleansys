@@ -13,11 +13,10 @@ export XDG_CACHE_HOME=$HOME/.cache
 #rm -r $XDG_CONFIG_HOME/tmp
 
 echo "$0: packages cache clean..."
-sudo apt-get clean
-#sudo rm /var/lib/apt/lists/*
+sudo apt-get clean  # /var/lib/apt/lists
 paccache -rk1
-# pacman -Scc  # risky?
-yay -Sc
+# pacman -Scc  # /var/cache/pacman/pkg
+yay -Sc   # ~/.cache/yay/
 
 echo "$0: wine cleanup..."
 rm $HOME/.wine/drive_c/windows/temp/*
@@ -34,9 +33,11 @@ rm $HOME/.local/share/okular/docdata/*.*
 
 echo "$0: python pip cache..."  # ~/.cache/pip/
 pip cache purge
-uv cache clean
+uv cache clean  # ~/.cache/uv
 
 # TODO:  ~/.npm/, ~/local/share/pnpm/
+
+#TODO: echo "$0: huggingface..."  # ~/.cache/huggingface
 
 echo "$0: ccache..."  # ~/.cache/ccache
 ccache -C

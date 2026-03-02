@@ -196,7 +196,7 @@ elif [ "$INPUTFILEEXT" = "dsv" ] && [ "$OUTPUTFILEEXT" = "sav" ] ; then
 	exit $?
 elif [ "$INPUTFILEEXT" = "mpk" ] || [ "$INPUTFILEEXT" = "eep" ] || [ "$INPUTFILEEXT" = "fla" ] || [ "$INPUTFILEEXT" = "sra" ] && [ "$OUTPUTFILEEXT" = "srm" ] ; then
 	# using https://github.com/drehren/ra_mp64_srm_convert
-	ra_mp64_srm_convert --create-srm "$INPUTFILE" # --output-dir
+	ra_mp64_srm_convert --create-srm "$INPUTFILE" --output-dir "$OUTPUTFILEDIR"
 	# OLD: https://github.com/heuripedes/pj64tosrm
 	exit $?
 
@@ -269,8 +269,12 @@ elif [ "$INPUTFILEEXT" = "yaff" ] ; then
 	# https://github.com/robhagemans/monobit
 	monobit-convert "$INPUTFILE" to "$OUTPUTFILE"
 	exit $?
-fi
 
+# audio tracks
+elif [ "$INPUTFILEEXT" = "bin" ] && [ "$OUTPUTFILEEXT" = "flac" ] || [ "$OUTPUTFILEEXT" = "wav" ] || [ "$OUTPUTFILEEXT" = "mp3" ] || [ "$OUTPUTFILEEXT" = "ogg" ]; then
+	ffmpeg -f s16le -ar 44.1k -ac 2 -i "$INPUTFILE" "$OUTPUTFILE"
+	exit $?
+fi
 
 # switch on mimetype
 case $INPUTFILETYPE in
